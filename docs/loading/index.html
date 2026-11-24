@@ -360,7 +360,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0b16; c
 
 	window.GameDetails = function (servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, language) {
 		if (language) lang = String(language).toLowerCase().indexOf("pt") === 0 ? "pt" : "en";
-		if (!param("name") && servername) { name = servername; buildTitle(name); text("brandName", name); }
+		if (!param("fixed") && servername && servername !== name) { name = servername; buildTitle(name); text("brandName", name); if (!logo) text("logo", name.charAt(0).toUpperCase()); }
 		if (mapname) text("vMap", mapname);
 		if (maxplayers) text("vSlots", maxplayers + " " + L("players"));
 		if (gamemode) text("vMode", gamemode);

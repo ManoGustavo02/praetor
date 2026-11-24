@@ -15,12 +15,15 @@ local function txt(k) return P.Trim(tostring(P.Setting(k) or "")) end
 function P.LoadingURL()
 	local base = txt("loading_base")
 	if base == "" then base = P.Defaults.loading_base end
+	-- empty = the server name; the page also takes the live name Garry's Mod gives it
 	local name = txt("loading_name")
-	if name == "" then name = GetHostName() end
+	local fixed = name ~= ""
+	if not fixed then name = GetHostName() end
 	local acc = txt("loading_accent"):gsub("[^%x]", "")
 	if #acc ~= 6 then acc = "8e62ff" end
 
 	local q = { "name=" .. enc(P.Str(name, 60)), "accent=" .. acc, "map=%m" }
+	if fixed then q[#q + 1] = "fixed=1" end
 	local sub = txt("loading_sub")
 	if sub ~= "" then q[#q + 1] = "sub=" .. enc(P.Str(sub, 80)) end
 	for _, k in ipairs({ "bg", "logo" }) do
