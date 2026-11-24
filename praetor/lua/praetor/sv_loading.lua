@@ -32,7 +32,7 @@ function P.LoadingURL()
 	end
 	local disc = txt("loading_discord")
 	if disc == "" then disc = txt("ban_discord") end
-	if disc ~= "" then q[#q + 1] = "discord=" .. enc(P.Str(disc:gsub("^https?://", ""), 60)) end
+	if disc ~= "" then q[#q + 1] = "discord=" .. enc(P.Str((disc:gsub("^https?://", "")), 60)) end
 
 	if not P.Setting("loading_music") then
 		q[#q + 1] = "music=0"
@@ -46,7 +46,7 @@ function P.LoadingURL()
 	-- tips last: they are cut so the link never gets too long
 	local tips = {}
 	for line in (txt("loading_tips") .. "\n"):gmatch("([^\n]*)\n") do
-		line = P.Trim(line:gsub("|", "/"))
+		line = P.Trim((line:gsub("|", "/")))
 		if line ~= "" then
 			local part = enc(P.Str(line, 140))
 			local nextLen = #url + #"&tips=" + #table.concat(tips, "%7C") + 3 + #part
