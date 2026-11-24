@@ -2,7 +2,7 @@
 
 A full admin mod for Garry's Mod that replaces SAM or ULX on its own: ranks, 94 commands, logs, chat box, scoreboard, AutoMod, reports, bans with a ban screen, votes, staff panel, prop protection and a loading screen. Everything is set up in one in-game menu.
 
-- Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3488399438
+- Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3844482190
 - Loading screen: https://manogustavo02.github.io/praetor/loading/
 
 ## Folders

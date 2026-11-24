@@ -2,7 +2,7 @@
 local P = Praetor
 
 -- settings only the owners can change (they protect the server itself)
-P.OwnerSettings = { rank_lock = true, rank_lock_max = true, equal_target = true, webhook_url = true, family_ban = true, family_block = true, loading_base = true }
+P.OwnerSettings = { rank_lock = true, rank_lock_max = true, equal_target = true, webhook_url = true, family_ban = true, family_block = true }
 
 -- settings that never leave the server (players only learn if they are set)
 P.PrivateSettings = { webhook_url = true }

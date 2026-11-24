@@ -5,9 +5,9 @@ P.Settings = P.Settings or {}
 P.Hooks = P.Hooks or {}
 
 P.Col = {
-	bronze  = Color(142, 98, 255),
-	bronzeL = Color(188, 160, 255),
-	bronzeD = Color(86, 54, 180),
+	bronze  = Color(201, 147, 74),
+	bronzeL = Color(232, 194, 122),
+	bronzeD = Color(122, 84, 40),
 	ivory   = Color(237, 228, 211),
 	muted   = Color(168, 156, 140),
 	crimson = Color(178, 52, 66),
@@ -123,23 +123,6 @@ P.Defaults = {
 	ac_spam           = true,       -- spawn spam
 	ac_spam_count     = 12,         -- spawns allowed ...
 	ac_spam_secs      = 3,          -- ... in this many seconds
-	-- loading screen (a web page on GitHub Pages, see sv_loading)
-	loading_on        = true,       -- use Praetor's loading screen (a server with its own keeps it until this is saved)
-	loading_base      = "https://manogustavo02.github.io/praetor/loading/",
-	loading_name      = "",         -- empty = server name
-	loading_sub       = "",         -- short line under the name
-	loading_tips      = "",         -- one tip per line (empty = Praetor's tips)
-	loading_accent    = "8e62ff",   -- colour (hex)
-	loading_bg        = "",         -- link to a background picture
-	loading_logo      = "",         -- link to a logo picture
-	loading_discord   = "",         -- empty = the ban screen link
-	loading_music     = true,
-	loading_music_url = "",         -- empty = Praetor's music; or a link to an .mp3 / .ogg
-	loading_vol       = 40,         -- 0 - 100
-	-- scoreboard music
-	tab_music         = true,       -- music while the TAB is open (each player can turn it off)
-	tab_music_url     = "",         -- empty = Praetor's music; or a link to an .mp3 / .ogg
-	tab_music_vol     = 30,         -- 0 - 100
 	ac_net            = true,       -- net message flood
 	ac_net_limit      = 1500,       -- net messages per second before a kick
 	ac_chat           = true,       -- chat flood

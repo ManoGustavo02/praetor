@@ -72,7 +72,7 @@ function P.ModelPreview(model)
 	local paintMdl = mdl.Paint
 	mdl.Paint = function(s, w, h)
 		UI.Rect(0, 0, w, h, Color(14, 11, 17))
-		surface.SetDrawColor(142, 98, 255, 16)
+		surface.SetDrawColor(92, 132, 255, 16)
 		for i = 0, h, S(8) do surface.DrawRect(0, i, w, 1) end
 		paintMdl(s, w, h)
 		UI.Outline(0, 0, w, h, C.line)

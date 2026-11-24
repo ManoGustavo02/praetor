@@ -145,7 +145,7 @@ do
 		self:SetTall(S(34))
 		self:SetTextColor(C.ivory)
 		self:SetCursorColor(C.bronzeL)
-		self:SetHighlightColor(Color(142, 98, 255, 90))
+		self:SetHighlightColor(Color(92, 132, 255, 90))
 		self:SetPlaceholderColor(C.dim)
 		self:SetDrawLanguageID(false)
 		self.focus = 0
@@ -154,7 +154,7 @@ do
 	function PANEL:Paint(w, h)
 		self.focus = UI.Lerp(self.focus, self:HasFocus() and 1 or 0, 14)
 		UI.Notch(0, 0, w, h, S(4), C.bg, P.LerpColor(self.focus, C.line, C.bronze))
-		self:DrawTextEntryText(C.ivory, Color(142, 98, 255, 110), C.bronzeL)
+		self:DrawTextEntryText(C.ivory, Color(92, 132, 255, 110), C.bronzeL)
 		if self:GetText() == "" and self:GetPlaceholderText() and self:GetPlaceholderText() ~= "" and not self:HasFocus() then
 			local x = self:IsMultiline() and S(6) or S(6)
 			draw.SimpleText(self:GetPlaceholderText(), self:GetFont(), x, self:IsMultiline() and S(6) or h / 2, C.dim, TEXT_ALIGN_LEFT, self:IsMultiline() and TEXT_ALIGN_TOP or TEXT_ALIGN_CENTER)
@@ -692,7 +692,7 @@ function UI.PlayerPick(parent, value, onChange, opts)
 	e:Dock(FILL)
 	e:DockMargin(S(36), 0, 0, 0)
 	e.Paint = function(s2, w, h)
-		s2:DrawTextEntryText(C.ivory, Color(142, 98, 255, 110), C.bronzeL)
+		s2:DrawTextEntryText(C.ivory, Color(92, 132, 255, 110), C.bronzeL)
 	end
 	box.focus = 0
 	box.Paint = function(s2, w, h)

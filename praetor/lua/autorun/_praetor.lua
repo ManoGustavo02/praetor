@@ -61,7 +61,6 @@ local server = {
 	"sv_import.lua",
 	"sv_menu.lua",
 	"sh_workshop_guard.lua",
-	"sv_loading.lua",
 }
 
 local client = {
@@ -131,7 +130,6 @@ if SERVER then
 	send("materials/praetor/icons/", "*.png")
 	send("materials/praetor/", "*.png")
 	send("sound/praetor/", "*.ogg")
-	send("sound/praetor/music/", "*.mp3")
 	send("resource/fonts/", "praetor_*.ttf")
 else
 	for _, f in ipairs(client) do include(dir .. f) end

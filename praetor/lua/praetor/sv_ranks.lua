@@ -275,7 +275,7 @@ local function cleanGroup(g, id)
 	return {
 		id = id,
 		name = name,
-		col = P.ColorTable(P.ReadColor(g.col, Color(188, 160, 255))),
+		col = P.ColorTable(P.ReadColor(g.col, Color(146, 172, 255))),
 		icon = isstring(g.icon) and g.icon:match("^[%w_]+$") and g.icon or "shield",
 		staff = g.staff == true,
 	}

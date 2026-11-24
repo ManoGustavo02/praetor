@@ -32,14 +32,8 @@ local SECTIONS = {
 		{ "chat_image_size", "number" },
 		{ "chat_image_hosts", "longtext" },
 	} },
-	{ "loading", {
-		{ "loading_on", "bool" }, { "loading_name", "text" }, { "loading_sub", "text" }, { "loading_tips", "longtext" },
-		{ "loading_accent", "text" }, { "loading_bg", "text" }, { "loading_logo", "text" }, { "loading_discord", "text" },
-		{ "loading_music", "bool" }, { "loading_music_url", "text" }, { "loading_vol", "number" }, { "loading_base", "text", owner = true },
-	} },
 	{ "scoreboard", {
 		{ "scoreboard", "bool" },
-		{ "tab_music", "bool" }, { "tab_music_url", "text" }, { "tab_music_vol", "number" },
 		{ "scoreboard_group", "choice", { "group", "rank", "job", "none" } },
 		{ "scoreboard_title", "text" },
 	} },
@@ -262,7 +256,6 @@ local function clientSection(sc)
 	cv("praetor_overhead", P.L("cl_overhead"), nil)
 	cv("praetor_chatbox", P.L("cl_chatbox"), P.L("cl_chatbox_d"))
 	cv("praetor_chat_images", P.L("cl_chat_images"), nil)
-	cv("praetor_tab_music", P.L("cl_tab_music"), nil)
 	local row = vgui.Create("DPanel", sc)
 	row:Dock(TOP)
 	row:SetTall(S(44))

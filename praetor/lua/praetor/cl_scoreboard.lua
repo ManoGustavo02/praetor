@@ -668,62 +668,12 @@ function SB.Open()
 	-- never an empty card: the last player picked, or yourself
 	pick(IsValid(SB.selected) and SB.selected or LocalPlayer())
 	UI.Sound("open")
-	SB.MusicPlay()
 end
 
 function SB.Close()
 	if IsValid(SB.frame) then SB.frame:Remove() end
 	CloseDermaMenus()
-	SB.MusicPause()
 end
-
--- ------------------------------------------------------------------ music while the TAB is open
--- Starts where it stopped last time, fades in on open and out on close.
-local musicVar = CreateClientConVar("praetor_tab_music", "1", true, false, "Music while the Praetor TAB is open (0 = off)", 0, 1)
-local station, stationSrc, fade, want = nil, nil, 0, false
-
-local function musicSrc()
-	local u = P.Trim(tostring(P.Setting("tab_music_url") or ""))
-	if u:find("^https?://") then return u end
-	return "sound/praetor/music/tab.mp3"
-end
-
-local function musicVol() return math.Clamp((tonumber(P.Setting("tab_music_vol")) or 30) / 100, 0, 1) end
-
-function SB.MusicPlay()
-	want = P.Setting("tab_music") and musicVar:GetBool()
-	if not want then return end
-	local src = musicSrc()
-	if IsValid(station) and stationSrc == src then
-		station:Play()
-		return
-	end
-	if IsValid(station) then station:Stop() end
-	station, stationSrc = nil, src
-	local cb = function(ch)
-		if not IsValid(ch) then return end
-		if stationSrc ~= src then ch:Stop() return end
-		station = ch
-		ch:EnableLooping(true)
-		ch:SetVolume(0)
-		if want then ch:Play() else ch:Pause() end
-	end
-	if src:find("^https?://") then sound.PlayURL(src, "noblock noplay", cb) else sound.PlayFile(src, "noplay", cb) end
-end
-
-function SB.MusicPause() want = false end
-
-hook.Add("Think", "Praetor.TabMusic", function()
-	if not IsValid(station) then return end
-	local target = want and musicVol() or 0
-	fade = math.Approach(fade, target, FrameTime() * 1.2)
-	station:SetVolume(fade)
-	if not want and fade <= 0 and station:GetState() == GMOD_CHANNEL_PLAYING then station:Pause() end
-end)
-
-cvars.AddChangeCallback("praetor_tab_music", function(_, _, v)
-	if v == "0" then want = false end
-end, "Praetor.TabMusic")
 
 hook.Add("ScoreboardShow", "Praetor.Scoreboard", function()
 	if not P.Setting("scoreboard") then return end

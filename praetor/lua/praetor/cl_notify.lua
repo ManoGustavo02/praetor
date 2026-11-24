@@ -5,7 +5,7 @@ local UI = P.UI
 local C = UI.C
 local S = P.S
 
-local TAG = Color(142, 98, 255)
+local TAG = Color(92, 132, 255)
 
 local function prefix(out)
 	out[#out + 1] = C.bronzeD
@@ -195,8 +195,8 @@ hook.Add("HUDPaint", "Praetor.Announce", function()
 	local x = (ScrW() - w) / 2
 	local y = S(90) - (1 - math.min(1, age * 3)) * S(30)
 	UI.Round(x, y, w, h, S(8), Color(18, 19, 24, 238 * a), Color(50, 53, 63, 255 * a))
-	UI.Round(x, y, w, S(4), S(2), Color(142, 98, 255, 255 * a))
-	draw.SimpleText(P.Upper(P.L("announcement")), "Praetor.SmallB", x + w / 2, y + S(16), Color(188, 160, 255, 255 * a), TEXT_ALIGN_CENTER)
+	UI.Round(x, y, w, S(4), S(2), Color(92, 132, 255, 255 * a))
+	draw.SimpleText(P.Upper(P.L("announcement")), "Praetor.SmallB", x + w / 2, y + S(16), Color(146, 172, 255, 255 * a), TEXT_ALIGN_CENTER)
 	for i = 1, nl do
 		draw.SimpleText(announce.lines[i], "Praetor.Big", x + w / 2, y + S(46) + (i - 1) * S(26), Color(238, 240, 245, 255 * a), TEXT_ALIGN_CENTER)
 	end
@@ -267,7 +267,7 @@ hook.Add("PostDrawTranslucentRenderables", "Praetor.Jail", function(depth, sky)
 			if c and c ~= vector_origin and c:DistToSqr(EyePos()) < 2500 * 2500 then
 				render.SetColorMaterial()
 				local r, hgt = 56, 96
-				local col = Color(142, 98, 255, 230)
+				local col = Color(92, 132, 255, 230)
 				for i = 0, 15 do
 					local ang = i / 16 * math.pi * 2
 					local x, y = math.cos(ang) * r, math.sin(ang) * r
