@@ -1,0 +1,209 @@
+[h2]1.4.2[/h2]
+[b]English[/b][list]
+[*][b]Physgun freeze[/b]: holding a player and pressing right click freezes them right where they are, in the air too, like a prop. Right click again while holding them unfreezes. It no longer runs the freeze command, so no "you froze X" line in the chat. While frozen by the physgun the player takes no damage and can't move, shoot or use anything. Moving a frozen player keeps them frozen where you drop them.
+[*]Fix: DarkRP gave an error on start ("removeSayCommand" in FSpectate). Praetor now has the ULib chat command functions that other addons call.
+[/list]
+
+[b]Português[/b][list]
+[*][b]Congelar com a physgun[/b]: segurando um jogador e apertando o botão direito ele congela ali mesmo, até no ar, igual a um prop. Botão direito de novo segurando ele descongela. Não usa mais o comando de congelar, então não aparece "você congelou X" no chat. Enquanto está congelado pela physgun o jogador não leva dano e não consegue andar, atirar nem usar nada. Mover um jogador congelado mantém ele congelado onde você soltar.
+[*]Correção: o DarkRP dava erro ao iniciar ("removeSayCommand" no FSpectate). O Praetor agora tem as funções de comando de chat do ULib que outros addons chamam.
+[/list]
+
+[h2]1.4.1[/h2]
+[b]English[/b][list]
+[*]Fix: nothing could be typed in the windows that open over the menu (ban and kick reason, ban time, warning, command blocks, forms...). Only the preset buttons worked. Every text box works now.
+[*]Fix: the chat buttons (All, Team, Nearby, Staff, send, microphone) did not answer clicks after the chat had been closed once.
+[*]Chat: the coloured bar at the start of the text box looked like a cursor that never went away. The channel colour is now a thin line under the text.
+[*]Chat: click a GIF or picture to see its link, with buttons to copy it or open it.
+[*]Chat microphone: the first time, GMod asks if the server may use your microphone. The chat now closes so that window can be clicked, and a message says what to do.
+[*]Anti-crash: no more false alarms. A single hitch (common on a local server) does not count any more: the lag must hold for a second and a half on most frames, and there must be props moving or stuck in each other to blame. With nothing to freeze, nothing is announced. New setting "Props moving needed to blame the physics" (25).
+[*]Ranks tab reorganized: every title was showing under its own field, so "Group" sat over the ban time. Now each section has its own block: [b]Punishments[/b] (longest ban, with quick buttons and "no limit") and [b]Automatic promotion[/b] (from which rank, after any time: 90m, 5h30m, 1d, 3d, 1w, 1mo...). The Promotions tab takes any time too.
+[*]The longest ban of a rank also counts for the !voteban it starts. A vote started by a player is never permanent.
+[*]Map vote: the pictures of gm_construct, gm_flatgrass and other maps that come with the game show now. The "Save" and "Start map vote" buttons have their own line under the options.
+[*]!screengrab works on yourself (for testing).
+[/list]
+
+[b]Português[/b][list]
+[*]Correção: não dava para escrever nada nas janelas que abrem por cima do menu (motivo de ban e kick, tempo do ban, advertência, blocos de comando, formulários...). Só os botões prontos funcionavam. Agora toda caixa de texto funciona.
+[*]Correção: os botões do chat (Todos, Time, Perto, Staff, enviar, microfone) não respondiam ao clique depois que o chat tinha sido fechado uma vez.
+[*]Chat: a barra colorida no começo da caixa de texto parecia um cursor que nunca sumia. A cor do canal agora é uma linha fina embaixo do texto.
+[*]Chat: clique num GIF ou imagem para ver o link dele, com botões para copiar ou abrir.
+[*]Microfone do chat: na primeira vez o GMod pergunta se o servidor pode usar seu microfone. Agora o chat fecha para dar para clicar nessa janela, e uma mensagem explica o que fazer.
+[*]Anti-crash: sem alarme falso. Uma travadinha só (comum em servidor local) não conta mais: a lentidão tem que durar um segundo e meio na maioria dos frames, e precisa ter props se mexendo ou presos um no outro para culpar. Sem nada para congelar, nada é anunciado. Configuração nova "Props se mexendo para culpar a física" (25).
+[*]Aba de Cargos reorganizada: cada título aparecia embaixo do próprio campo, então "Grupo" ficava em cima do tempo de ban. Agora cada parte tem seu bloco: [b]Punições[/b] (tempo máximo de ban, com botões rápidos e "sem limite") e [b]Promoção automática[/b] (de qual cargo, depois de qualquer tempo: 90m, 5h30m, 1d, 3d, 1w, 1mo...). A aba de Promoções também aceita qualquer tempo.
+[*]O tempo máximo de ban do cargo também vale para o !voteban que ele começar. Votação começada por jogador nunca é permanente.
+[*]Votação de mapa: as fotos do gm_construct, gm_flatgrass e outros mapas que vêm com o jogo aparecem agora. Os botões "Salvar" e "Iniciar votação de mapa" ficam numa linha própria embaixo das opções.
+[*]O !screengrab funciona em você mesmo (para testar).
+[/list]
+
+[h2]1.4.0[/h2]
+[b]English[/b][list]
+[*][b]Prop protection[/b]: everything a player spawns is theirs (props, entities, vehicles, NPCs, things made by tools and dupes). Players only touch their own things: physgun, gravgun, toolgun, context menu, unfreeze and damage. Nobody touches the things of others, not of a friend and not of the staff. Ranks with "Touch everyone's props" (moderator and up by default) hold, freeze, tool and delete anything, and deleting someone else's prop goes to the logs. Props of who left are removed after 5 minutes (they are theirs again if the player comes back first). Map entities are kept for the staff. A small card under the crosshair shows whose thing you aim at, and turns red and shakes when you try to touch something that is not yours. Speaks CPPI (wire, AdvDupe2...), and turns itself off when FPP (DarkRP) or another prop protection is installed.
+[*][b]Ban screen[/b]: a banned player sees a full screen card with the reason, who banned, the date, the time left (live), the ban code with a copy button and [b]your Discord link[/b] (set in Settings > Bans and ban screen, with your own text). It shows when they are banned while playing and when they try to join again, then they are kicked. While on it they are invisible and frozen, can't talk or do anything. 3 tries in 10 minutes and only the Steam message shows, so a ban can't hold a slot. The Steam message also has the code and the link now.
+[*][b]Ban lines in the chat[/b]: "X was banned by Y for Z. Reason: ..." for every ban (commands, ban tab, votes, linked accounts), and "X tried to join, but is banned (time left, reason, by)". Each one can be shown to everyone, only staff or nobody.
+[*][b]Screenshot of a player's screen[/b]: !screengrab <player> or the "Screenshot" button on the player. The picture opens in a viewer (fit or real size), says who took it, when, the resolution and if the game was not the active window. The new "Screenshots" tab keeps the last 80 with search. If the game does not answer (a cheat can block it) it goes to the Security tab. Every screenshot goes to the logs.
+[*][b]New report system[/b] (when Blackbox is not handling reports): the player picks who (the people they just fought or talked with come first, with "hurt you" or "talked in the chat"), what happened in category tiles, writes the details and can attach a picture of their own screen from the moment they opened the window. "My reports" shows the queue position and who is handling it, a small card on the side of the screen follows it live, the player talks with the staff inside the report, can cancel it, and says if it helped when it is closed.
+[*][b]Report desk for the staff[/b]: a queue sorted by priority (cheating first, many reports against the same player go up, players with false reports count less), with the category, both players, how long it waits, who took it and "3 reports" when the same player is reported again. The report shows both players online or not, what the server saw (damage between them, their last chat lines, past reports and punishments, distance), the attached picture, the conversation with quick answers, and every action: sit, goto, bring, spectate, screenshot, sheet. Take, let go or take over, and close with an outcome (punished, warned, no proof, false report, solved) and a note the player reads. Reports nobody took ring again every 2 minutes.
+[*][b]Linked accounts ban by default now[/b]: an account that joins from the address of a banned player is banned for the rest of that ban, with the reason "Tried to get around the ban of Name (STEAM_0:...)". The Family Sharing ban says the same with the SteamID of the banned account.
+[*]Fix: the scheduled restart tab gave an error when the game opened.
+[*]Fix: map pictures from the Workshop also load for players who join later.
+[/list]
+
+[b]Português[/b][list]
+[*][b]Proteção de props[/b]: tudo que o jogador spawna é dele (props, entidades, veículos, NPCs, coisas feitas por ferramentas e dupes). Os jogadores só mexem no que é deles: physgun, gravgun, toolgun, menu de contexto, descongelar e dano. Ninguém mexe nas coisas dos outros, nem do amigo e nem da staff. Cargos com "Mexer nos props de todos" (de moderador para cima, de fábrica) seguram, congelam, usam ferramenta e apagam qualquer coisa, e apagar o prop de outra pessoa vai para os logs. Os props de quem saiu são removidos depois de 5 minutos (voltam a ser dele se o jogador voltar antes). As coisas do mapa ficam só para a staff. Um cartãozinho embaixo da mira mostra de quem é o que você está mirando, e fica vermelho e treme quando você tenta mexer no que não é seu. Fala CPPI (wire, AdvDupe2...) e desliga sozinha quando o FPP (DarkRP) ou outra proteção de props estiver instalada.
+[*][b]Tela de ban[/b]: o banido vê um cartão em tela cheia com o motivo, quem baniu, a data, o tempo restante (ao vivo), o código do ban com botão de copiar e [b]o link do seu Discord[/b] (em Configurações > Bans e tela de ban, com seu próprio texto). Aparece quando ele é banido jogando e quando tenta entrar de novo, e depois ele é expulso. Enquanto isso ele fica invisível e congelado, sem falar nem fazer nada. 3 tentativas em 10 minutos e só aparece a mensagem da Steam, então um ban não segura vaga. A mensagem da Steam agora também tem o código e o link.
+[*][b]Avisos de ban no chat[/b]: "X foi banido por Y por Z. Motivo: ..." em todo ban (comandos, aba de bans, votações, contas ligadas), e "X tentou entrar, mas está banido (tempo restante, motivo, quem baniu)". Cada um pode aparecer para todos, só para a staff ou para ninguém.
+[*][b]Print da tela do jogador[/b]: !screengrab <jogador> ou o botão "Print da tela" no jogador. A imagem abre num visualizador (ajustada ou no tamanho real), mostra quem tirou, quando, a resolução e se o jogo não era a janela ativa. A aba nova "Prints da tela" guarda os últimos 80, com busca. Se o jogo não responder (um cheat pode bloquear) vai para a aba de segurança. Todo print vai para os logs.
+[*][b]Sistema de denúncia novo[/b] (quando o Blackbox não está cuidando das denúncias): o jogador escolhe quem (quem lutou ou falou com ele agora há pouco aparece primeiro, com "te machucou" ou "falou no chat"), o que aconteceu em blocos de categoria, escreve os detalhes e pode anexar um print da própria tela do momento em que abriu a janela. "Minhas denúncias" mostra a posição na fila e quem está cuidando, um cartãozinho no canto da tela acompanha ao vivo, o jogador conversa com a staff dentro da denúncia, pode cancelar e diz se ajudou quando ela é encerrada.
+[*][b]Mesa de denúncias da staff[/b]: fila em ordem de prioridade (hack primeiro, várias denúncias contra o mesmo jogador sobem, quem já fez denúncia falsa conta menos), com a categoria, os dois jogadores, há quanto tempo espera, quem pegou e "3 denúncias" quando o mesmo jogador é denunciado de novo. A denúncia mostra os dois jogadores online ou não, o que o servidor viu (dano entre eles, as últimas falas no chat, denúncias e punições antigas, distância), o print anexado, a conversa com respostas rápidas e todas as ações: sit, goto, bring, spectate, print da tela, ficha. Pegar, largar ou assumir, e encerrar com um resultado (punido, advertido, sem provas, denúncia falsa, resolvida) e uma nota que o jogador lê. Denúncia que ninguém pegou toca de novo a cada 2 minutos.
+[*][b]Contas ligadas agora banem de fábrica[/b]: a conta que entra do endereço de um banido é banida pelo resto desse ban, com o motivo "Tentativa de burlar o ban de Fulano (STEAM_0:...)". O ban por Family Sharing diz o mesmo, com o SteamID da conta banida.
+[*]Correção: a aba de reinício programado dava erro ao abrir o jogo.
+[*]Correção: as fotos dos mapas da Oficina também carregam para quem entra depois.
+[/list]
+
+[h2]1.3.0[/h2]
+[b]English[/b][list]
+[*][b]Staff panel[/b] (new tab): time online and on duty, commands, kicks, bans, warnings, reports closed, Blackbox cases, support rooms and the rating from players for every staff member. Today / 7 days / 30 days / all time, a 14 day chart, and who has been away for too long.
+[*][b]Support rooms[/b] (new tab): !sit takes the players (and you) to a room, !endsit sends everyone back where they were. Save rooms per map with !setsit or from the tab; with no room saved, a closed room is built up in the sky. Reports have a "Support room" button, and claiming a report can open a room by itself. Nobody takes damage inside.
+[*][b]Automatic promotions[/b] (new tab): players go up a rank by themselves after the hours of play you set (user → regular → VIP...). The tab shows who is closest to going up, and the player sees a big card when it happens.
+[*][b]Linked accounts[/b]: accounts that join from the same address are linked (the address is stored only as a salted hash). The staff is alerted, and an alt of a banned player can be only reported, kicked or banned for the rest of the ban. The player sheet shows the linked accounts.
+[*][b]Scheduled restart[/b] (new tab): times of the day to reload the map or restart the server, warnings in the chat and on screen, a bar in the last 5 minutes and a big countdown in the last 10 seconds. Players can vote to postpone it a few times. New commands !restartin <minutes> and !cancelrestart.
+[*][b]Player votes[/b]: !votekick, !voteban, !votemute, !voteclearprops, !votecleanup and !votefreeze. Pick the percentage, minimum votes and players, cooldown, ban time, and if they only work with no staff online. Staff can't be targeted.
+[*]Votes: [b]once you vote, the window closes and the vote is final[/b]. A small bar shows what you voted and the time left. The target of a vote doesn't vote on it. Staff can [b]cancel the current vote[/b] with the X on the vote itself or with !stopvote.
+[*][b]Permission changes show in the chat[/b]: "X gave the rank Y the permission Z" (also when it is taken back or reset, and for a single player). Choose everyone, only staff or nobody in the settings.
+[*][b]Dupe blocker remade[/b]: works with the Duplicator, AdvDupe2 and Adv Duplicator, counts props and constraints before pasting and warns the player and the staff with a card in every case (also when a superadmin goes over the limit). New option to make the limit count for everyone. The list of props blocked in dupes now starts empty.
+[*][b]Anti-crash remade and on by default[/b]: watches the server tick and acts in steps (freezes stuck props, then the props of who is causing it, then everything moving, and only then removes what is still stuck). Freezes props that spawn inside each other, tunes the physics so collisions can't lock the server, catches broken physics (NaN and props flying off the map) and spawn spam, without blocking dupes being pasted.
+[*][b]Security tab remade[/b]: server health card with a live tick chart and the anti-crash stage, who has the most moving props (go to, clear props, sheet), last actions, unfreeze all and a "clean the whole map" button. The event list has categories, search, severity colours, 24 hour chart, days and a menu on every event.
+[*][b]Restriction badges remade[/b]: a round seal on the icon, items you can't use are dimmed with a lock, and a card follows the mouse with the picture, the rule and the rank needed. When the server refuses an item, the card shows right under the icon you clicked and shakes. The restriction tab shows a 3D preview of the model.
+[*]Chat: "Nearby" and "Staff" tabs, the text box no longer freezes, microphone icon and send arrow fixed.
+[*][b]Forms fixed everywhere[/b]: in announcements, reasons and other windows the boxes no longer jump to the bottom leaving only the labels, and the first box is ready to type.
+[*]Player picker: shows the SteamID (STEAM_0:...) instead of the long ID, and the text no longer hides under the avatar frame.
+[*]Map vote: maps with no thumbnail of their own now show the picture of their Workshop page.
+[*]Many visual fixes in the menus.
+[/list]
+
+[b]Português[/b][list]
+[*][b]Painel da staff[/b] (aba nova): tempo online e em serviço, comandos, kicks, bans, avisos, denúncias fechadas, casos do Blackbox, salas de atendimento e a nota dos jogadores de cada pessoa da staff. Hoje / 7 dias / 30 dias / sempre, gráfico de 14 dias e quem está sumido há muito tempo.
+[*][b]Salas de atendimento[/b] (aba nova): !sit leva os jogadores (e você) para uma sala, !endsit manda todo mundo de volta para onde estava. Salve salas por mapa com !setsit ou pela aba; sem sala salva, uma sala fechada é montada no céu. As denúncias têm o botão "Sala de atendimento", e pegar uma denúncia pode já abrir uma sala. Ninguém leva dano lá dentro.
+[*][b]Promoções automáticas[/b] (aba nova): os jogadores sobem de cargo sozinhos depois das horas de jogo que você marcar (user → regular → VIP...). A aba mostra quem está mais perto de subir, e o jogador vê um cartão grande quando acontece.
+[*][b]Contas ligadas[/b]: contas que entram do mesmo endereço ficam ligadas (o endereço é guardado só como hash com sal). A staff é avisada, e a conta de um banido pode ser só avisada, expulsa ou banida pelo resto do ban. A ficha do jogador mostra as contas ligadas.
+[*][b]Reinício programado[/b] (aba nova): horários do dia para recarregar o mapa ou reiniciar o servidor, avisos no chat e na tela, barra nos últimos 5 minutos e contagem grande nos últimos 10 segundos. Os jogadores podem votar para adiar algumas vezes. Comandos novos !restartin <minutos> e !cancelrestart.
+[*][b]Votações dos jogadores[/b]: !votekick, !voteban, !votemute, !voteclearprops, !votecleanup e !votefreeze. Escolha a porcentagem, o mínimo de votos e de jogadores, o tempo de espera, o tempo do ban e se só funcionam sem staff online. A staff não pode ser alvo.
+[*]Votações: [b]depois de votar a janela fecha e o voto não muda mais[/b]. Uma barrinha mostra o que você votou e o tempo que falta. O alvo da votação não vota nela. A staff pode [b]cancelar a votação atual[/b] no X da própria votação ou com !stopvote.
+[*][b]Mudanças de permissão aparecem no chat[/b]: "X deu ao cargo Y a permissão Z" (também quando tira ou volta ao herdado, e para um jogador só). Escolha todo mundo, só a staff ou ninguém nas configurações.
+[*][b]Bloqueador de dupes refeito[/b]: funciona com o Duplicator, AdvDupe2 e Adv Duplicator, conta props e constraints antes de colar e avisa o jogador e a staff com um cartão em todo caso (também quando um superadmin passa do limite). Opção nova para o limite valer para todo mundo. A lista de props bloqueados em dupes agora começa vazia.
+[*][b]Anti-crash refeito e ligado de fábrica[/b]: acompanha o tick do servidor e age em etapas (congela props presos, depois os props de quem está causando, depois tudo que se mexe, e só então remove o que continua preso). Congela props que nascem um dentro do outro, ajusta a física para colisões não travarem o servidor, pega física quebrada (NaN e props voando para fora do mapa) e spam de spawn, sem bloquear dupe sendo colado.
+[*][b]Aba de segurança refeita[/b]: cartão de saúde do servidor com gráfico do tick ao vivo e a etapa do anti-crash, quem tem mais props se mexendo (ir até, limpar props, ficha), últimas ações, descongelar tudo e botão "limpar o mapa inteiro". A lista de eventos tem categorias, busca, cores de gravidade, gráfico de 24 horas, dias e um menu em cada evento.
+[*][b]Selos de restrição refeitos[/b]: um selo redondo no ícone, o que você não pode usar fica escurecido com um cadeado, e um cartão segue o mouse com a foto, a regra e o cargo necessário. Quando o servidor recusa um item, o cartão aparece logo embaixo do ícone que você clicou e treme. A aba de restrições mostra uma prévia 3D do modelo.
+[*]Chat: abas "Perto" e "Staff", a caixa de texto não trava mais, ícone do microfone e seta de enviar corrigidos.
+[*][b]Formulários corrigidos em todo lugar[/b]: nos anúncios, motivos e outras janelas as caixas não descem mais para baixo deixando só a legenda, e a primeira caixa já fica pronta para digitar.
+[*]Seletor de jogador: mostra o SteamID (STEAM_0:...) em vez do ID comprido, e o texto não fica mais escondido embaixo da moldura do avatar.
+[*]Votação de mapa: mapas sem miniatura própria agora mostram a foto da página deles na Oficina.
+[*]Várias correções visuais nos menus.
+[/list]
+
+[h2]1.2.0[/h2]
+[b]English[/b][list]
+[*][b]Custom commands made with blocks[/b]: drag blocks from the palette into the script, move them around and drop them back to delete. New control blocks: if / else (alive, dead, staff, rank, health, armor, money, job, chance, argument filled), for each target, repeat and stop. Each command gets its own icon, and you pick from which rank up it can be used with one click.
+[*][b]Permissions with one click[/b]: in ranks and in the player sheet each permission is a green tick or a red cross. Right click goes back to the inherited value. Search box and "all / none" per category.
+[*][b]Rank groups[/b] (Staff, VIP...): ranks are grouped in the menu and on the scoreboard, and a group can count as staff.
+[*][b]Every command has its own icon[/b] (ban and slay no longer share the skull), with a bigger and clearer size in the commands tab, the player actions and the scoreboard.
+[*]New player picker: search, avatar, rank and SteamID of every player online.
+[*]Player actions are tiles with a coloured section header, and the command window shows the icon, the usage and the help.
+[*]New player sheet: framed avatar, online status, play time, warning points, bans and notes in tiles, SteamID copy buttons, and history grouped by day.
+[*]Chat: framed profile picture on every message (also the ones from other addons), Send and microphone buttons, right click menu (reply, mention, copy, open link, hide player, report, delete for everyone), team tab and a "new messages" button.
+[*]Scoreboard: organised by rank group, full body model, long names cut with "..." and no loose crown.
+[*]Tag above heads: avatar fixed, long names fit, microphone and green edge while talking, AFK icon.
+[*]Security: backdoor scan, rank lock for other addons, and bans that follow Family Sharing accounts (or block them all).
+[*][b]AutoMod checks everyone now[/b], staff included (the option "Check staff too" comes on; turn it off to let owners and "Not checked by the AutoMod" ranks skip it). It also runs before every other chat addon, so a chat or tag addon can no longer let a blocked word through.
+[*][b]Workshop skin blocker works with any system[/b]: Outfitter, Wardrobe, PAC3 and any addon that downloads models from the Workshop. Nothing is downloaded before Steam's title, tags and description are checked.
+[*][b]Half of the name is enough[/b] in commands: "!kick jo" finds "João" (accents and symbols ignored). If it matches more than one player, it says who instead of hitting all of them. The chat suggests the online players with their picture as you type, and TAB completes.
+[*]Every player field (commands, logs, tags, reports) shows the framed picture, name and rank of the chosen player, and the player list opens with Enter on the first result.
+[*][b]Restrictions[/b] (new tab): blacklist any weapon, entity, NPC, vehicle, prop or tool, keep it for admins, or open it from a rank up. Right click an item in the Q menu to restrict it, and restricted items get a badge there (dimmed with a lock for who can't use it). The tab lists every item of the server with search, picture or 3D preview, and buttons to take a weapon from everyone, give it or remove the spawned copies.
+[*][b]Votes[/b] (new tab): a poll with your own question and up to 8 options, live bars, change your vote with 1-9 or a click, and the last results.
+[*][b]Map vote[/b]: full screen cards with the picture of each map, a "keep current map" card, who voted on each, countdown and automatic map change (it can be cancelled). Pick which maps go in the draw, how many cards, the time and the delay. New commands !mapvote and !stopvote.
+[*][b]Announcements and pop-ups[/b] (new tab): saved messages that show every X minutes, when a player joins, or only by hand. Pick where (pop-up in any corner, chat line, top bar or big text in the middle), the colour, an icon (or draw your own), a link, the time on screen or in the chat, and who sees it (everyone, players or staff). Live preview and a "test only for me" button.
+[*][b]Links in the chat are blue[/b] and open with a click. Workshop links show a card with the picture, name, part of the description, author and size.
+[*]Superadmin always has every permission (including the ones from other addons that ask for a rank that does not exist here, like "owner"). Default ranks: moderator moderates (kick, mute, jail, freeze, warn, teleport, spectate), admin adds bans, slay, god, noclip, DarkRP jobs, announcements and votes, superadmin manages ranks, money, maps and the server.
+[/list]
+
+[b]Português[/b][list]
+[*][b]Comandos personalizados com blocos[/b]: arraste blocos da paleta para o script, mude de lugar e solte de volta na paleta para excluir. Blocos de controle novos: se / senão (vivo, morto, staff, cargo, vida, colete, dinheiro, profissão, chance, argumento preenchido), para cada alvo, repetir e parar. Cada comando ganha seu próprio ícone, e você escolhe com um clique a partir de qual cargo dá para usar.
+[*][b]Permissões com um clique[/b]: nos cargos e na ficha do jogador cada permissão é um certo verde ou um X vermelho. Botão direito volta ao valor herdado. Tem busca e "todos / nenhum" em cada categoria.
+[*][b]Grupos de cargos[/b] (Staff, VIP...): os cargos ficam agrupados no menu e no TAB, e um grupo pode contar como staff.
+[*][b]Cada comando tem seu próprio ícone[/b] (banir e matar não dividem mais a caveira), maiores e mais visíveis na aba de comandos, nas ações do jogador e no TAB.
+[*]Seletor de jogador novo: busca, avatar, cargo e SteamID de todo mundo online.
+[*]As ações do jogador viraram blocos com cabeçalho colorido por seção, e a janela do comando mostra o ícone, o uso e a ajuda.
+[*]Ficha do jogador nova: avatar com moldura, status online, tempo de jogo, pontos de aviso, bans e notas em blocos, botões para copiar o SteamID e histórico separado por dia.
+[*]Chat: foto de perfil com moldura em toda mensagem (também nas de outros addons), botões de Enviar e microfone, menu do botão direito (responder, mencionar, copiar, abrir link, esconder jogador, denunciar, apagar para todos), aba de equipe e botão de "mensagens novas".
+[*]TAB: organizado por grupo de cargo, modelo de corpo inteiro, nome comprido cortado com "..." e sem coroa solta.
+[*]Tag em cima da cabeça: avatar corrigido, nome comprido cabe, microfone e borda verde enquanto fala, ícone de AFK.
+[*]Segurança: verificação de backdoor, trava de cargo para outros addons e bans que seguem contas de Family Sharing (ou bloqueiam todas).
+[*][b]O AutoMod agora verifica todo mundo[/b], staff inclusa (a opção "Verificar a staff também" vem ligada; desligue para donos e cargos com "Não passa pelo AutoMod" passarem direto). Ele também roda antes de qualquer outro addon de chat, então um addon de chat ou de tag não deixa mais passar uma palavra bloqueada.
+[*][b]O bloqueador de skins da Oficina funciona com qualquer sistema[/b]: Outfitter, Wardrobe, PAC3 e qualquer addon que baixa modelos da Oficina. Nada é baixado antes de o título, as tags e a descrição da Steam serem checados.
+[*][b]Metade do nome basta[/b] nos comandos: "!kick jo" acha o "João" (acento e símbolo são ignorados). Se servir para mais de um jogador, ele avisa quem são em vez de pegar todos. O chat sugere os jogadores online com foto enquanto você digita, e o TAB completa.
+[*]Todo campo de jogador (comandos, logs, tags, denúncia) mostra a foto com moldura, o nome e o cargo do jogador escolhido, e na lista de jogadores o Enter escolhe o primeiro resultado.
+[*][b]Restrições[/b] (aba nova): coloque qualquer arma, entidade, NPC, veículo, prop ou ferramenta na blacklist, deixe só para admin ou libere a partir de um cargo. Botão direito num item do menu Q para restringir, e os itens restringidos ganham um selo lá (escurecidos com cadeado para quem não pode usar). A aba lista todos os itens do servidor com busca, foto ou preview 3D, e botões para tirar a arma de todo mundo, dar para alguém ou remover as cópias que estão no mapa.
+[*][b]Votações[/b] (aba nova): enquete com sua pergunta e até 8 opções, barras ao vivo, trocar o voto com 1-9 ou um clique, e os últimos resultados.
+[*][b]Votação de mapa[/b]: cards em tela cheia com a foto de cada mapa, card "Manter mapa atual", quem votou em cada um, contagem e troca de mapa automática (dá para cancelar). Escolha quais mapas entram no sorteio, quantos cards, o tempo e a espera. Comandos novos !mapvote e !stopvote.
+[*][b]Anúncios e pop-ups[/b] (aba nova): mensagens salvas que aparecem a cada X minutos, quando o jogador entra ou só na mão. Escolha onde (pop-up em qualquer canto, linha no chat, faixa no topo ou texto grande no centro), a cor, um ícone (ou desenhe o seu), um link, o tempo na tela ou no chat e quem vê (todos, jogadores ou staff). Prévia ao vivo e botão "testar só para mim".
+[*][b]Links no chat ficam azuis[/b] e abrem com um clique. Links da Oficina mostram um card com a foto, o nome, um pedaço da descrição, o autor e o tamanho.
+[*]O superadmin sempre tem todas as permissões (inclusive as de outros addons que pedem um cargo que não existe aqui, como "owner"). Cargos padrão: moderador modera (kick, mute, prisão, congelar, aviso, teleporte, espectar), admin ganha ban, matar, god, noclip, profissões do DarkRP, anúncios e votações, superadmin gerencia cargos, dinheiro, mapas e o servidor.
+[/list]
+
+[h2]1.1.1[/h2]
+[b]English[/b][list]
+[*]Fixed a load error in the icon editor (cl_icons.lua) that left the icon picker for ranks and tags broken.
+[/list]
+
+[b]Português[/b][list]
+[*]Corrigido um erro ao carregar o editor de ícone (cl_icons.lua) que deixava quebrada a escolha de ícone dos cargos e tags.
+[/list]
+
+[h2]1.1.0[/h2]
+[b]English[/b][list]
+[*]Fixed: with SAM / ULX removed, the bridge broke other addons (Blackbox, Doodle Arsenal, Spawn Sanctuary, Truco Night...). They now find Praetor's permissions normally.
+[*]Fixed: the chat box froze the game when opened. Typing, Enter and Esc work again.
+[*]Owners always get at least the superadmin rank, so the player list, the scoreboard and other addons see them as staff. The listen server host shows up in Security > Owners.
+[*]New, cleaner look: dark panels with rounded corners, a single blue accent and sans-serif titles in the menu, chat, scoreboard and pop-ups.
+[*]New tag above heads: one compact card with avatar, name, rank and tag. Bots get their initial instead of a blank picture, and "0m" played is no longer shown.
+[*]Player actions are split in sections (move, state, health, punish, manage) and update on their own: god, freeze, mute, gag and jail light up while active.
+[*]New icon editor: draw your own 16x16 pixel icons (pencil, fill, mirror, eyedropper, undo, copy an existing icon) and use them on ranks and tags.
+[*]Fixed cut-off texts in Shortcuts and in the tag gradient button, and the empty gap in the player panel.
+[/list]
+
+[b]Português[/b][list]
+[*]Corrigido: sem o SAM / ULX, a ponte quebrava outros addons (Blackbox, Doodle Arsenal, Spawn Sanctuary, Truco Night...). Agora eles acham as permissões do Praetor normalmente.
+[*]Corrigido: o chat travava o jogo ao abrir. Digitar, Enter e Esc voltaram a funcionar.
+[*]Dono sempre fica pelo menos com o cargo superadmin, então a lista de jogadores, o TAB e os outros addons enxergam ele como staff. O host do servidor aparece em Segurança > Donos.
+[*]Visual novo e mais limpo: painéis escuros com cantos arredondados, um destaque azul e títulos sem serifa no menu, no chat, no TAB e nas janelas.
+[*]Tag nova em cima da cabeça: um cartão compacto com avatar, nome, cargo e tag. Bot mostra a inicial em vez da foto em branco, e "0m" jogado não aparece mais.
+[*]As ações do jogador ficam em seções (mover, estado, vida, punir, gerenciar) e atualizam sozinhas: god, congelar, mutar, gag e prisão acendem enquanto estão ativos.
+[*]Editor de ícone novo: desenhe seus próprios ícones 16x16 em pixel art (lápis, balde, espelhar, conta-gotas, desfazer, copiar um ícone pronto) e use em cargos e tags.
+[*]Corrigidos textos cortados em Atalhos e no botão de gradiente da tag, e o espaço vazio no painel do jogador.
+[/list]
+
+[h2]1.0.0[/h2]
+[b]English[/b][list]
+[*]First release.
+[*]Ranks with authority 0-100, inheritance, icons, gradients and permissions; SAM / ULX / CAMI bridge and importer.
+[*]79 commands plus custom commands made in the menu, silent mode with ~, keybinds and quick actions.
+[*]Own chat box with GIFs, command suggestions (DarkRP included), tags, titles and overhead tags.
+[*]Scoreboard for Sandbox, DarkRP (jobs, salary, wanted) and TTT (groups, karma, no role leaks).
+[*]Reports, warnings, bans, player sheet, DarkRP job bans and whitelists, dupe limits, anti-crash and security.
+[*]Full logs for Sandbox, DarkRP and TTT, prop kill / prop push with a 3D model preview, and logs from before a crash.
+[*]Chat AutoMod with wildcards and letter tricks, GIF link checks and Workshop player model checks (Outfitter).
+[*]Discord webhook with one switch per category.
+[/list]
+
+[b]Português[/b][list]
+[*]Primeira versão.
+[*]Cargos com autoridade 0-100, herança, ícones, degradê e permissões; ponte e importador de SAM / ULX / CAMI.
+[*]79 comandos e comandos próprios criados no menu, modo silencioso com ~, atalhos de tecla e ações rápidas.
+[*]Chat próprio com GIFs, sugestão de comandos (DarkRP incluído), tags, títulos e tag em cima da cabeça.
+[*]TAB para Sandbox, DarkRP (profissão, salário, procurado) e TTT (grupos, karma, sem vazar papel).
+[*]Denúncias, avisos, bans, ficha do jogador, ban e whitelist de profissão no DarkRP, limite de dupes, anti-crash e segurança.
+[*]Logs completos de Sandbox, DarkRP e TTT, prop kill / prop push com prévia 3D do modelo, e logs de antes de um crash.
+[*]AutoMod do chat com curinga e truque de letra, checagem de links de GIF e de playermodels da Oficina (Outfitter).
+[*]Webhook do Discord com um botão por categoria.
+[/list]

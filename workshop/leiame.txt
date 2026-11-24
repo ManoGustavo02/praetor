@@ -1,0 +1,22 @@
+Praetor Admin System - Admin Mod, Logs, Scoreboard & AutoMod (ULX / SAM Alternative)
+Versão / Version: 1.4.2
+Autor / Author: Mano Gustavo
+
+Instalação / Install
+1. Coloque a pasta "praetor" (a de dentro, com addon.json) em garrysmod/addons, ou assine na Oficina.
+   Put the inner "praetor" folder (the one with addon.json) in garrysmod/addons, or subscribe on the Workshop.
+2. No console do servidor / In the server console:
+   praetor_owner add <SteamID>
+3. No jogo, digite !menu ou use o comando praetor_menu.
+   In game, type !menu or use the praetor_menu command.
+4. Vindo do SAM ou ULX: Configurações > Importar. Depois remova o admin mod antigo.
+   Coming from SAM or ULX: Settings > Import. Then remove the old admin mod.
+
+Servidores com a versão da Oficina podem adicionar resource.AddWorkshop("<id do addon>") para os jogadores baixarem ícones, sons e fontes mais rápido.
+Servers using the Workshop version can add resource.AddWorkshop("<addon id>") so players download icons, sounds and fonts faster.
+
+Webhook do Discord: se o host bloquear o HTTP do jogo, instale o módulo CHTTP (gmsv_chttp) e o Praetor usa ele sozinho.
+Discord webhook: if your host gets the game HTTP blocked, install the CHTTP module (gmsv_chttp) and Praetor uses it on its own.
+
+Sons: Openverse, domínio público (CC0). Ver _fontes/CREDITOS_SONS.md.
+Fontes: Barlow Semi Condensed, SIL Open Font License.

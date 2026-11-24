@@ -1,0 +1,2 @@
+Praetor Display = Bagel Fat One (subset, renamed). Praetor Body / Heavy / Black = Nunito 700 / 800 / 900 (renamed).
+Both under the SIL Open Font License 1.1, see the OFL files next to this one.

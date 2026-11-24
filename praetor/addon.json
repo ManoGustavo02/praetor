@@ -1,0 +1,16 @@
+{
+    "title": "Praetor Admin System - Admin Mod, Logs, Scoreboard & AutoMod (ULX / SAM Alternative)",
+    "type": "servercontent",
+    "tags": ["roleplay", "fun"],
+    "description": "Complete admin system: ranks with authority, custom commands, tags and titles, its own chat box, scoreboard for Sandbox, DarkRP and TTT, reports, full logs with crash recovery, chat AutoMod, Discord webhooks, DarkRP job lists, security and ULX/SAM import. English and Portuguese.",
+    "version": "1.4.2",
+    "author": "Mano Gustavo",
+    "ignore": [
+        "*.psd",
+        "*.vcproj",
+        "*.svn*",
+        "*.md",
+        "*.txt",
+        "*.py"
+    ]
+}

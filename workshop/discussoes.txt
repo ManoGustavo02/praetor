@@ -1,0 +1,45 @@
+========================================
+DISCUSSÃO 1
+========================================
+Título:
+Feedback & suggestions / Feedback e sugestões
+
+Texto:
+Using Praetor on your server and missing something? Post it here. A command you need, a log you'd like to see, a gamemode that deserves its own scoreboard, an AutoMod rule, another language, anything goes. I read everything and the good ideas end up in updates.
+
+[hr][/hr]
+
+Usa o Praetor no seu servidor e sente falta de alguma coisa? Manda aqui. Um comando que você precisa, um log que queria ver, um gamemode que merece um TAB próprio, uma regra do AutoMod, outra língua, vale tudo. Eu leio tudo e as boas ideias viram atualização.
+
+========================================
+DISCUSSÃO 2
+========================================
+Título:
+Bug reports / Reportar bugs
+
+Texto:
+Found a bug? Post it here with as much of this as you can:
+[list]
+[*]Addon version (the server console prints "[Praetor] vX.X.X loaded" on start)
+[*]Map and gamemode (DarkRP, TTT, Sandbox...)
+[*]Whether you imported from SAM or ULX, and if the old admin mod is still installed
+[*]Other addons that might be related (chat boxes, scoreboards, Outfitter...)
+[*]Errors from the server and client console (copy the red/yellow text)
+[*]Where it happened: a command, the menu, the chat, the scoreboard, logs, AutoMod or the webhook
+[*]What you did, what you expected and what happened
+[/list]
+Screenshots or a short clip help a lot. Never post your webhook URL.
+
+[hr][/hr]
+
+Achou um bug? Poste aqui com o máximo disso que conseguir:
+[list]
+[*]Versão do addon (o console do servidor mostra "[Praetor] vX.X.X loaded" ao iniciar)
+[*]Mapa e gamemode (DarkRP, TTT, Sandbox...)
+[*]Se você importou do SAM ou ULX, e se o admin mod antigo ainda está instalado
+[*]Outros addons que possam ter relação (chats, TABs, Outfitter...)
+[*]Erros do console do servidor e do cliente (copie o texto vermelho/amarelo)
+[*]Onde aconteceu: um comando, o menu, o chat, o TAB, os logs, o AutoMod ou o webhook
+[*]O que você fez, o que esperava e o que aconteceu
+[/list]
+Prints ou um vídeo curto ajudam muito. Nunca poste o link do seu webhook.

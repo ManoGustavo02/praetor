@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Praetor Loading</title>
+<!--
+	Praetor loading screen. Garry's Mod opens this page while a player joins
+	(sv_loadingurl). Praetor builds the link from its settings, for example:
+	index.html?name=My%20Server&sub=Have%20fun&accent=8e62ff&tips=Tip%20one|Tip%20two&music=1&vol=40
+	Parameters: name, sub, accent (hex), tips (split by |), music (1 = default, 0 = off, or a link
+	to an .mp3/.ogg), vol (0-100), bg (link to a picture), logo (link to a picture), discord (text),
+	map (%m) and sid (%s), which Garry's Mod fills in.
+	Written for old and new GMod browsers: no flexbox, no modern JS.
+-->
+<style>
+@font-face { font-family: "Praetor Display"; src: url("fonts/praetor_display.ttf") format("truetype"); }
+@font-face { font-family: "Praetor Body"; src: url("fonts/praetor_body_heavy.ttf") format("truetype"); font-weight: 800; }
+@font-face { font-family: "Praetor Body"; src: url("fonts/praetor_body_black.ttf") format("truetype"); font-weight: 900; }
+
+* { margin: 0; padding: 0; -webkit-box-sizing: border-box; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0b16; color: #f4f1ff;
+	font-family: "Praetor Body", "Nunito", "Segoe UI", sans-serif; font-weight: 800; -webkit-user-select: none; user-select: none; }
+
+/* ------------------------------------------------------------ background */
+#bg { position: absolute; left: -3%; top: -3%; width: 106%; height: 106%; background-size: cover; background-position: center;
+	-webkit-filter: blur(3px) saturate(1.1); filter: blur(3px) saturate(1.1); -webkit-animation: drift 40s ease-in-out infinite alternate; animation: drift 40s ease-in-out infinite alternate; }
+#blobs { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; }
+.blob { position: absolute; border-radius: 50%; opacity: .55; -webkit-filter: blur(60px); filter: blur(60px); }
+#b1 { width: 46vw; height: 46vw; left: -10vw; top: -14vw; background: var(--acc, #8e62ff); -webkit-animation: float1 18s ease-in-out infinite alternate; animation: float1 18s ease-in-out infinite alternate; }
+#b2 { width: 38vw; height: 38vw; right: -8vw; bottom: -14vw; background: #ff5fa8; opacity: .28; -webkit-animation: float2 22s ease-in-out infinite alternate; animation: float2 22s ease-in-out infinite alternate; }
+#b3 { width: 30vw; height: 30vw; right: 20vw; top: -12vw; background: #3fd1ff; opacity: .18; -webkit-animation: float1 26s ease-in-out infinite alternate-reverse; animation: float1 26s ease-in-out infinite alternate-reverse; }
+#shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+	background: -webkit-radial-gradient(center, ellipse, rgba(13,11,22,.35) 0%, rgba(13,11,22,.92) 100%);
+	background: radial-gradient(ellipse at center, rgba(13,11,22,.35) 0%, rgba(13,11,22,.92) 100%); }
+#dots { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: .10;
+	background-image: -webkit-radial-gradient(#fff 1.2px, transparent 1.3px); background-image: radial-gradient(#fff 1.2px, transparent 1.3px);
+	background-size: 26px 26px; -webkit-animation: dots 30s linear infinite; animation: dots 30s linear infinite; }
+.spark { position: absolute; color: #ffd36b; font-family: "Praetor Display"; opacity: 0; -webkit-animation: spark 4s ease-in-out infinite; animation: spark 4s ease-in-out infinite; }
+
+/* ------------------------------------------------------------ comic card */
+.card { position: absolute; background: rgba(20,16,34,.78); border: 3px solid #f4f1ff; border-radius: 22px;
+	box-shadow: 6px 6px 0 rgba(0,0,0,.65); }
+.card.acc { box-shadow: 6px 6px 0 var(--acc, #8e62ff); }
+.pop { opacity: 0; -webkit-animation: pop .7s cubic-bezier(.2,1.6,.4,1) forwards; animation: pop .7s cubic-bezier(.2,1.6,.4,1) forwards; }
+.label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: rgba(244,241,255,.55); font-weight: 900; }
+.val { font-family: "Praetor Display"; font-size: 22px; line-height: 26px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* top chips */
+#top { position: absolute; left: 4vw; right: 4vw; top: 4vh; height: 74px; }
+#brand { left: 0; top: 0; height: 74px; padding: 0 26px 0 12px; white-space: nowrap; }
+#logo { position: absolute; left: 10px; top: 9px; width: 50px; height: 50px; border-radius: 14px; background: var(--acc, #8e62ff);
+	border: 3px solid #fff; overflow: hidden; text-align: center; font-family: "Praetor Display"; font-size: 30px; line-height: 44px; color: #fff;
+	-webkit-animation: wobble 5s ease-in-out infinite; animation: wobble 5s ease-in-out infinite; }
+#logo img { width: 100%; height: 100%; }
+#brandtxt { margin-left: 62px; padding-top: 12px; }
+#brandtxt .val { font-size: 20px; max-width: 30vw; }
+.chip { top: 0; height: 74px; width: 250px; padding: 14px 18px 0 64px; }
+.chip .ico { position: absolute; left: 14px; top: 16px; width: 38px; height: 38px; }
+#c1 { right: 540px; } #c2 { right: 270px; } #c3 { right: 0; }
+.chip .val { font-size: 19px; }
+
+/* hero */
+#hero { position: absolute; left: 4vw; top: 22vh; width: 60vw; }
+#title { font-family: "Praetor Display"; font-size: 9vw; line-height: 1; color: #fff; white-space: nowrap; }
+#title span { display: inline-block; opacity: 0; text-shadow: -3px -3px 0 #120e20, 3px -3px 0 #120e20, -3px 3px 0 #120e20, 3px 3px 0 #120e20, 0 3px 0 #120e20, 0 -3px 0 #120e20, 3px 0 0 #120e20, -3px 0 0 #120e20, 8px 9px 0 var(--acc, #8e62ff);
+	-webkit-animation: letter .8s cubic-bezier(.2,1.8,.4,1) forwards, bob 3.2s ease-in-out infinite; animation: letter .8s cubic-bezier(.2,1.8,.4,1) forwards, bob 3.2s ease-in-out infinite; }
+#sticker { display: inline-block; margin-top: 3vh; margin-left: 1vw; padding: 10px 22px; background: var(--acc, #8e62ff); color: #fff;
+	border: 3px solid #fff; border-radius: 14px; box-shadow: 5px 5px 0 #120e20; font-size: 2vw; font-weight: 900;
+	-webkit-transform: rotate(-3deg); transform: rotate(-3deg); }
+
+/* tips + discord (right column) */
+#tips { right: 4vw; top: 24vh; width: 30vw; min-height: 170px; padding: 22px 24px 64px 24px; }
+#tipHead { font-family: "Praetor Display"; font-size: 24px; color: #ffd36b; }
+#tipHead i { font-style: normal; color: rgba(244,241,255,.45); font-family: "Praetor Body"; font-size: 13px; margin-left: 8px; letter-spacing: 1px; }
+#tipText { margin-top: 10px; font-size: 19px; line-height: 27px; color: #fff; }
+#tipText.swap { -webkit-animation: tipin .5s ease-out; animation: tipin .5s ease-out; }
+#tipBtn { position: absolute; right: 18px; bottom: 16px; padding: 7px 16px; border: 3px solid #fff; border-radius: 999px; background: #241c3d;
+	font-size: 14px; color: #fff; cursor: pointer; box-shadow: 3px 3px 0 #000; }
+#tipBtn:hover { background: var(--acc, #8e62ff); -webkit-transform: translate(-1px,-1px); transform: translate(-1px,-1px); box-shadow: 5px 5px 0 #000; }
+#tipBtn:active { -webkit-transform: translate(3px,3px); transform: translate(3px,3px); box-shadow: 0 0 0 #000; }
+#tipDots { position: absolute; left: 24px; bottom: 26px; }
+#tipDots b { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: rgba(255,255,255,.25); }
+#tipDots b.on { background: #ffd36b; }
+#disc { right: 4vw; width: 30vw; height: 74px; padding: 14px 18px 0 72px; display: none; }
+#disc .ico { position: absolute; left: 16px; top: 15px; width: 42px; height: 42px; }
+
+/* progress */
+#prog { position: absolute; left: 4vw; right: 4vw; bottom: 15vh; height: 120px; }
+#status { position: absolute; left: 4px; top: 0; right: 230px; font-family: "Praetor Display"; font-size: 30px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	text-shadow: 3px 3px 0 #120e20; }
+#file { position: absolute; left: 6px; top: 42px; right: 230px; font-size: 15px; color: rgba(244,241,255,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#bar { position: absolute; left: 0; right: 0; bottom: 0; height: 42px; border: 4px solid #fff; border-radius: 999px; background: rgba(10,8,18,.85);
+	box-shadow: 6px 6px 0 rgba(0,0,0,.6); overflow: hidden; }
+#fill { position: absolute; left: 4px; top: 4px; bottom: 4px; width: 0; border-radius: 999px; background-color: var(--acc, #8e62ff);
+	background-image: -webkit-linear-gradient(135deg, rgba(255,255,255,.22) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.22) 75%, transparent 75%, transparent);
+	background-image: linear-gradient(135deg, rgba(255,255,255,.22) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.22) 75%, transparent 75%, transparent);
+	background-size: 34px 34px; -webkit-transition: width .6s cubic-bezier(.3,1.3,.5,1); transition: width .6s cubic-bezier(.3,1.3,.5,1);
+	-webkit-animation: stripes 1s linear infinite; animation: stripes 1s linear infinite; }
+#fill:after { content: ""; position: absolute; left: 10px; right: 10px; top: 4px; height: 6px; border-radius: 6px; background: rgba(255,255,255,.35); }
+#pct { position: absolute; right: 10px; bottom: 54px; font-family: "Praetor Display"; font-size: 64px; line-height: 64px; color: #fff;
+	text-shadow: -3px -3px 0 #120e20, 3px -3px 0 #120e20, -3px 3px 0 #120e20, 3px 3px 0 #120e20, 6px 7px 0 var(--acc, #8e62ff);
+	-webkit-animation: bob 2.4s ease-in-out infinite; animation: bob 2.4s ease-in-out infinite; }
+
+/* music */
+#music { left: 4vw; bottom: 3.5vh; height: 66px; width: 330px; padding: 11px 0 0 74px; cursor: pointer; }
+#music:hover { -webkit-transform: translate(-1px,-1px); transform: translate(-1px,-1px); }
+#vinyl { position: absolute; left: 12px; top: 8px; width: 46px; height: 46px; border-radius: 50%; border: 3px solid #fff;
+	background: -webkit-radial-gradient(center, circle, var(--acc, #8e62ff) 0, var(--acc, #8e62ff) 6px, #120e20 7px, #120e20 100%);
+	background: radial-gradient(circle at center, var(--acc, #8e62ff) 0, var(--acc, #8e62ff) 6px, #120e20 7px, #120e20 100%);
+	-webkit-animation: spin 3s linear infinite; animation: spin 3s linear infinite; }
+#vinyl:after { content: ""; position: absolute; left: 6px; top: 6px; right: 6px; bottom: 6px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); }
+#eq { position: absolute; right: 20px; top: 16px; height: 30px; width: 58px; }
+#eq b { position: absolute; bottom: 0; width: 7px; border-radius: 3px; background: #ffd36b; height: 30%; -webkit-animation: eq 1s ease-in-out infinite; animation: eq 1s ease-in-out infinite; }
+.muted #vinyl, .muted #eq b { -webkit-animation-play-state: paused; animation-play-state: paused; }
+.muted #eq b { background: rgba(255,255,255,.3); }
+#hint { position: absolute; right: 4vw; bottom: 4.5vh; font-size: 14px; color: rgba(244,241,255,.55); }
+#hint kbd { display: inline-block; padding: 3px 9px; margin-right: 6px; border: 2px solid rgba(255,255,255,.7); border-radius: 8px; color: #fff; font-family: "Praetor Body"; font-weight: 900; }
+#credit { position: absolute; left: 50%; bottom: 4.5vh; width: 300px; margin-left: -150px; text-align: center; font-size: 12px; letter-spacing: 2px; color: rgba(244,241,255,.3); }
+
+/* ------------------------------------------------------------ animations */
+@-webkit-keyframes pop { 0% { opacity: 0; -webkit-transform: scale(.6) translateY(20px); } 100% { opacity: 1; -webkit-transform: scale(1) translateY(0); } }
+@keyframes pop { 0% { opacity: 0; transform: scale(.6) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+@-webkit-keyframes letter { 0% { opacity: 0; -webkit-transform: translateY(-60px) scale(.4) rotate(-12deg); } 100% { opacity: 1; -webkit-transform: none; } }
+@keyframes letter { 0% { opacity: 0; transform: translateY(-60px) scale(.4) rotate(-12deg); } 100% { opacity: 1; transform: none; } }
+@-webkit-keyframes bob { 0%,100% { margin-top: 0; } 50% { margin-top: -6px; } }
+@keyframes bob { 0%,100% { margin-top: 0; } 50% { margin-top: -6px; } }
+@-webkit-keyframes wobble { 0%,100% { -webkit-transform: rotate(-4deg); } 50% { -webkit-transform: rotate(4deg); } }
+@keyframes wobble { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+@-webkit-keyframes stripes { from { background-position: 0 0; } to { background-position: 34px 0; } }
+@keyframes stripes { from { background-position: 0 0; } to { background-position: 34px 0; } }
+@-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@-webkit-keyframes eq { 0%,100% { height: 25%; } 50% { height: 100%; } }
+@keyframes eq { 0%,100% { height: 25%; } 50% { height: 100%; } }
+@-webkit-keyframes tipin { 0% { opacity: 0; -webkit-transform: translateX(30px); } 100% { opacity: 1; -webkit-transform: none; } }
+@keyframes tipin { 0% { opacity: 0; transform: translateX(30px); } 100% { opacity: 1; transform: none; } }
+@-webkit-keyframes spark { 0%,100% { opacity: 0; -webkit-transform: scale(.3) rotate(0); } 50% { opacity: .9; -webkit-transform: scale(1) rotate(90deg); } }
+@keyframes spark { 0%,100% { opacity: 0; transform: scale(.3) rotate(0); } 50% { opacity: .9; transform: scale(1) rotate(90deg); } }
+@-webkit-keyframes drift { from { -webkit-transform: scale(1); } to { -webkit-transform: scale(1.08) translate(-1%, 1%); } }
+@keyframes drift { from { transform: scale(1); } to { transform: scale(1.08) translate(-1%, 1%); } }
+@-webkit-keyframes float1 { to { -webkit-transform: translate(8vw, 6vh); } }
+@keyframes float1 { to { transform: translate(8vw, 6vh); } }
+@-webkit-keyframes float2 { to { -webkit-transform: translate(-6vw, -8vh); } }
+@keyframes float2 { to { transform: translate(-6vw, -8vh); } }
+@-webkit-keyframes dots { to { background-position: 26px 26px; } }
+@keyframes dots { to { background-position: 26px 26px; } }
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div id="blobs"><div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div></div>
+<div id="shade"></div>
+<div id="dots"></div>
+<div id="sparks"></div>
+
+<div id="top">
+	<div class="card pop" id="brand" style="-webkit-animation-delay:.05s;animation-delay:.05s">
+		<div id="logo">P</div>
+		<div id="brandtxt"><div class="label" id="lServer">Servidor</div><div class="val" id="brandName">Garry's Mod</div></div>
+	</div>
+	<div class="card chip pop" id="c1" style="-webkit-animation-delay:.15s;animation-delay:.15s">
+		<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#ffd36b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+		<div class="label" id="lMap">Mapa</div><div class="val" id="vMap">...</div>
+	</div>
+	<div class="card chip pop" id="c2" style="-webkit-animation-delay:.25s;animation-delay:.25s">
+		<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#ffd36b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M16 4a4 4 0 0 1 0 8M22 21c0-3-1.5-5-4-5.7"/></svg>
+		<div class="label" id="lSlots">Vagas</div><div class="val" id="vSlots">...</div>
+	</div>
+	<div class="card chip pop" id="c3" style="-webkit-animation-delay:.35s;animation-delay:.35s">
+		<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#ffd36b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="16" cy="11.5" r="1"/><circle cx="18" cy="13.5" r="1"/></svg>
+		<div class="label" id="lMode">Modo</div><div class="val" id="vMode">...</div>
+	</div>
+</div>
+
+<div id="hero"><div id="title"></div><div id="sticker" class="pop" style="-webkit-animation-delay:.9s;animation-delay:.9s"></div></div>
+
+<div class="card acc pop" id="tips" style="-webkit-animation-delay:.5s;animation-delay:.5s">
+	<div id="tipHead"><span id="lTip">Dica</span><i id="tipNum"></i></div>
+	<div id="tipText"></div>
+	<div id="tipDots"></div>
+	<div id="tipBtn"><span id="lNext">Próxima</span> &#8594;</div>
+</div>
+<div class="card pop" id="disc" style="-webkit-animation-delay:.6s;animation-delay:.6s">
+	<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#9fb0ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5C6 6 4.6 6.6 3.5 7.6 2 10.5 1.6 13.5 2 17c1.5 1.1 3 1.8 4.6 2.3l1-1.8M16 5.5c2 .5 3.4 1.1 4.5 2.1 1.5 2.9 1.9 5.9 1.5 9.4-1.5 1.1-3 1.8-4.6 2.3l-1-1.8M7 16.8c3.3 1.4 6.7 1.4 10 0M8 5.5c2.7-.7 5.3-.7 8 0"/><circle cx="9" cy="12.5" r="1.3"/><circle cx="15" cy="12.5" r="1.3"/></svg>
+	<div class="label">Discord</div><div class="val" id="vDisc"></div>
+</div>
+
+<div id="prog">
+	<div id="status">...</div>
+	<div id="file"></div>
+	<div id="pct">0%</div>
+	<div id="bar"><div id="fill"></div></div>
+</div>
+
+<div class="card pop" id="music" style="-webkit-animation-delay:.7s;animation-delay:.7s">
+	<div id="vinyl"></div>
+	<div class="label" id="lMusic">Música</div><div class="val" id="vMusic" style="font-size:17px">Tocando</div>
+	<div id="eq"><b style="left:0;-webkit-animation-delay:-.2s;animation-delay:-.2s"></b><b style="left:10px;-webkit-animation-delay:-.6s;animation-delay:-.6s"></b><b style="left:20px;-webkit-animation-delay:-.1s;animation-delay:-.1s"></b><b style="left:30px;-webkit-animation-delay:-.8s;animation-delay:-.8s"></b><b style="left:40px;-webkit-animation-delay:-.4s;animation-delay:-.4s"></b><b style="left:50px;-webkit-animation-delay:-.7s;animation-delay:-.7s"></b></div>
+</div>
+<div id="hint"><kbd>M</kbd><span id="lHint">liga / desliga a música</span></div>
+<div id="credit">PRAETOR</div>
+
+<audio id="audio" loop preload="auto"></audio>
+
+<script>
+(function () {
+	// ---------------------------------------------------------------- settings from the link
+	function param(k) {
+		var m = new RegExp("[?&]" + k + "=([^&#]*)").exec(location.search);
+		if (!m) return null;
+		try { return decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { return m[1]; }
+	}
+	function $(id) { return document.getElementById(id); }
+	function text(id, t) { var e = $(id); if (e) { e.textContent !== undefined ? e.textContent = t : e.innerText = t; } }
+
+	var acc = (param("accent") || "8e62ff").replace(/[^0-9a-fA-F]/g, "");
+	if (acc.length !== 6) acc = "8e62ff";
+	acc = "#" + acc;
+	document.documentElement.style.setProperty && document.documentElement.style.setProperty("--acc", acc);
+	// old browsers without CSS variables: paint the accent by hand
+	var accEls = ["b1", "logo", "sticker", "fill"];
+	for (var i = 0; i < accEls.length; i++) { var el = $(accEls[i]); if (el) el.style.backgroundColor = acc; }
+
+	var name = param("name") || "Garry's Mod";
+	var sub = param("sub") || "";
+	var lang = "pt";
+	var gameVol = 1;
+
+	var T = {
+		pt: { server: "Servidor", map: "Mapa", slots: "Vagas", mode: "Modo", tip: "Dica", next: "Próxima", music: "Música", playing: "Tocando",
+			off: "Desligada", hint: "liga / desliga a música", players: "jogadores", files: "arquivos", start: "Conectando...",
+			tips: ["Digite !menu para abrir o menu do servidor.", "Leia as regras antes de jogar.", "Viu alguém quebrando as regras? Use !report.", "Respeite os outros jogadores e as construções deles."] },
+		en: { server: "Server", map: "Map", slots: "Slots", mode: "Mode", tip: "Tip", next: "Next", music: "Music", playing: "Playing",
+			off: "Off", hint: "turns the music on / off", players: "players", files: "files", start: "Connecting...",
+			tips: ["Type !menu to open the server menu.", "Read the rules before you play.", "Saw someone breaking the rules? Use !report.", "Respect other players and their builds."] }
+	};
+	function L(k) { return (T[lang] || T.en)[k]; }
+
+	function applyLang() {
+		text("lServer", L("server")); text("lMap", L("map")); text("lSlots", L("slots")); text("lMode", L("mode"));
+		text("lTip", L("tip")); text("lNext", L("next")); text("lMusic", L("music")); text("lHint", L("hint"));
+		if (!customTips) { tips = L("tips"); showTip(tipIdx, true); }
+		setMusicLabel();
+	}
+
+	// ---------------------------------------------------------------- title (letters pop one by one)
+	function buildTitle(t) {
+		var box = $("title"); box.innerHTML = "";
+		var size = Math.max(4, Math.min(9, 72 / Math.max(t.length, 1)));
+		box.style.fontSize = size + "vw";
+		for (var i = 0; i < t.length; i++) {
+			var s = document.createElement("span");
+			var ch = t.charAt(i);
+			s.innerHTML = ch === " " ? "&nbsp;" : ch.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+			var d = (0.25 + i * 0.05) + "s";
+			s.style.webkitAnimationDelay = d + ", " + (1.2 + i * 0.12) + "s";
+			s.style.animationDelay = d + ", " + (1.2 + i * 0.12) + "s";
+			box.appendChild(s);
+		}
+	}
+	buildTitle(name);
+	text("brandName", name);
+	if (sub) text("sticker", sub); else $("sticker").style.display = "none";
+
+	var logo = param("logo");
+	if (logo) $("logo").innerHTML = '<img src="' + logo.replace(/"/g, "") + '">';
+	else text("logo", name.charAt(0).toUpperCase());
+
+	var bg = param("bg");
+	if (bg) $("bg").style.backgroundImage = 'url("' + bg.replace(/"/g, "") + '")';
+
+	var discord = param("discord");
+	if (discord) {
+		text("vDisc", discord);
+		$("disc").style.display = "block";
+		$("disc").style.top = "calc(24vh + 230px)";
+		$("disc").style.top = ($("tips").offsetTop + $("tips").offsetHeight + 24) + "px";
+	}
+	var map = param("map");
+	if (map && map.indexOf("%") < 0) text("vMap", map);
+
+	// ---------------------------------------------------------------- sparkles
+	var sparkBox = $("sparks");
+	for (var k = 0; k < 14; k++) {
+		var sp = document.createElement("div");
+		sp.className = "spark";
+		sp.innerHTML = k % 3 === 0 ? "&#10022;" : "&#10023;";
+		sp.style.left = (Math.random() * 96 + 2) + "%";
+		sp.style.top = (Math.random() * 90 + 4) + "%";
+		sp.style.fontSize = (12 + Math.random() * 22) + "px";
+		var dl = (Math.random() * 4).toFixed(2) + "s";
+		sp.style.webkitAnimationDelay = dl; sp.style.animationDelay = dl;
+		sparkBox.appendChild(sp);
+	}
+
+	// ---------------------------------------------------------------- tips
+	var customTips = false;
+	var tips = L("tips");
+	var tp = param("tips");
+	if (tp) {
+		var list = tp.split("|"), clean = [];
+		for (var j = 0; j < list.length; j++) if (list[j].replace(/\s/g, "") !== "") clean.push(list[j]);
+		if (clean.length) { tips = clean; customTips = true; }
+	}
+	var tipIdx = 0;
+	function showTip(i, quiet) {
+		if (!tips.length) return;
+		tipIdx = (i + tips.length) % tips.length;
+		var el = $("tipText");
+		text("tipText", tips[tipIdx]);
+		text("tipNum", (tipIdx + 1) + " / " + tips.length);
+		if (!quiet) { el.className = ""; void el.offsetWidth; el.className = "swap"; }
+		var dots = "";
+		for (var d = 0; d < Math.min(tips.length, 12); d++) dots += '<b class="' + (d === tipIdx ? "on" : "") + '"></b>';
+		$("tipDots").innerHTML = dots;
+	}
+	showTip(0, true);
+	var tipTimer = setInterval(function () { showTip(tipIdx + 1); }, 8000);
+	$("tipBtn").onclick = function () { clearInterval(tipTimer); showTip(tipIdx + 1); tipTimer = setInterval(function () { showTip(tipIdx + 1); }, 8000); };
+
+	// ---------------------------------------------------------------- music
+	var audio = $("audio");
+	var mus = param("music");
+	var vol = parseFloat(param("vol"));
+	if (isNaN(vol)) vol = 40;
+	vol = Math.max(0, Math.min(100, vol)) / 100;
+	var musicOn = mus !== "0";
+	var src = (!mus || mus === "1") ? "music.mp3" : mus;
+	function setMusicLabel() { text("vMusic", musicOn ? L("playing") : L("off")); $("music").className = "card" + (musicOn ? "" : " muted"); }
+	function applyVol() { try { audio.volume = Math.max(0, Math.min(1, vol * gameVol)); } catch (e) {} }
+	if (musicOn) {
+		audio.src = src;
+		applyVol();
+		var tryPlay = function () { try { var p = audio.play(); if (p && p["catch"]) p["catch"](function () {}); } catch (e) {} };
+		tryPlay(); setTimeout(tryPlay, 800);
+	}
+	function toggleMusic() {
+		musicOn = !musicOn;
+		if (musicOn) { if (!audio.src) audio.src = src; applyVol(); try { audio.play(); } catch (e) {} } else { try { audio.pause(); } catch (e) {} }
+		setMusicLabel();
+	}
+	$("music").onclick = toggleMusic;
+	document.onkeydown = function (e) { e = e || window.event; if ((e.keyCode || e.which) === 77) toggleMusic(); };
+	setMusicLabel();
+
+	// ---------------------------------------------------------------- progress (Garry's Mod calls these)
+	var total = 0, needed = 0, shown = 0, target = 0, stage = 0;
+	function setTarget(p) { if (p > target) target = Math.min(100, p); }
+	function tick() {
+		if (shown < target) shown += Math.max(0.4, (target - shown) * 0.12);
+		if (shown > target) shown = target;
+		// slow crawl so it never looks stuck when there is nothing to download
+		if (target < 92 && total === 0) target += 0.04;
+		$("fill").style.width = "calc(" + shown + "% - 8px)";
+		if (shown < 1) $("fill").style.width = "0";
+		text("pct", Math.floor(shown) + "%");
+	}
+	setInterval(tick, 50);
+	text("status", L("start"));
+
+	window.GameDetails = function (servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, language) {
+		if (language) lang = String(language).toLowerCase().indexOf("pt") === 0 ? "pt" : "en";
+		if (!param("name") && servername) { name = servername; buildTitle(name); text("brandName", name); }
+		if (mapname) text("vMap", mapname);
+		if (maxplayers) text("vSlots", maxplayers + " " + L("players"));
+		if (gamemode) text("vMode", gamemode);
+		if (volume !== undefined && volume !== null && !isNaN(parseFloat(volume))) { gameVol = parseFloat(volume); applyVol(); }
+		applyLang();
+		setTarget(4);
+	};
+	window.SetFilesTotal = function (n) { total = Math.max(total, n || 0); };
+	window.SetFilesNeeded = function (n) {
+		needed = n || 0;
+		if (total > 0) { setTarget(8 + (total - needed) / total * 80); text("file", (total - needed) + " / " + total + " " + L("files")); }
+	};
+	window.DownloadingFile = function (f) { text("file", String(f || "").replace(/^.*[\\\/]/, "")); };
+	var stages = [["retrieving", 6], ["sending client", 10], ["workshop", 14], ["lua", 90], ["client info", 92], ["parsing", 93], ["starting", 95], ["precach", 97]];
+	window.SetStatusChanged = function (s) {
+		s = String(s || "");
+		text("status", s);
+		var low = s.toLowerCase();
+		for (var i = 0; i < stages.length; i++) if (low.indexOf(stages[i][0]) >= 0) setTarget(stages[i][1]);
+	};
+	applyLang();
+})();
+</script>
+</body>
+</html>
