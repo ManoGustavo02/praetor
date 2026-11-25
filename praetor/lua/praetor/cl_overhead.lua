@@ -12,6 +12,7 @@ local enabled = CreateClientConVar("praetor_overhead", "1", true, false, "Show P
 local SCALE = 0.055
 local visible = {}
 local nextVis = {}
+local seenAt, lastDrawn = {}, {}
 
 -- Steam avatars over the head. An AvatarImage can't be painted inside 3D2D (its
 -- clipping is worked out in screen space, so it was cut away and the card had
@@ -107,6 +108,7 @@ hook.Add("EntityRemoved", "Praetor.Overhead", function(ent)
 		avs[avatarKey(ent)] = nil
 	end
 	visible[ent], nextVis[ent] = nil, nil
+	seenAt[ent], lastDrawn[ent] = nil, nil
 end)
 
 local function jobInfo(ply)
@@ -150,7 +152,7 @@ end
 
 -- One compact card: avatar on the left; name, badges and a small info line on
 -- the right; title and the "on duty" pill above it; health as a thin bar inside.
-local NAME_H, BADGE_H, INFO_H, AV, PAD, GAP = 66, 50, 42, 112, 18, 20
+local NAME_H, BADGE_H, INFO_H, AV, PAD, GAP = 66, 50, 44, 112, 22, 20
 local SEP = "  " .. utf8.char(183) .. "  "
 local NAME_MAX = 760
 
@@ -175,7 +177,7 @@ local function drawPlayer(ply, alpha)
 	local info = {}
 	if s("overhead_job") then
 		local job, jobCol = jobInfo(ply)
-		if job and job ~= "" then info[#info + 1] = { job, jobCol } end
+		if job and job ~= "" then info[#info + 1] = { job, jobCol, pill = true } end
 	end
 	if s("overhead_hours") then
 		local secs = P.PlayTime(ply)
@@ -198,7 +200,7 @@ local function drawPlayer(ply, alpha)
 	surface.SetFont("Praetor.OH.Small")
 	local sepW = surface.GetTextSize(SEP)
 	local infoW = 0
-	for i, it in ipairs(info) do infoW = infoW + surface.GetTextSize(it[1]) + (i > 1 and sepW or 0) end
+	for i, it in ipairs(info) do infoW = infoW + surface.GetTextSize(it[1]) + (it.pill and 28 or 0) + (i > 1 and sepW or 0) end
 
 	local contentH = NAME_H + (#parts > 0 and (BADGE_H + 10) or 0) + (#info > 0 and INFO_H or 0)
 	local showAv = s("overhead_avatar")
@@ -214,7 +216,7 @@ local function drawPlayer(ply, alpha)
 	-- pills above the card: "on duty" and "AFK 5m", side by side
 	local pills = {}
 	if s("overhead_staff") and P.OnDuty(ply) then pills[#pills + 1] = { P.L("on_duty"), "shield", Color(C.bronze.r, C.bronze.g, C.bronze.b, 230 * alpha), Color(255, 255, 255, A) } end
-	if P.IsAFK(ply) then pills[#pills + 1] = { P.AFKLabel(ply), "afk", Color(60, 46, 18, 235 * alpha), Color(C.amber.r, C.amber.g, C.amber.b, A) } end
+	if P.IsAFK(ply) then pills[#pills + 1] = { P.AFKLabel(ply), "afk", Color(C.amber.r, C.amber.g, C.amber.b, 235 * alpha), Color(C.ink.r, C.ink.g, C.ink.b, A) } end
 	if #pills > 0 then
 		surface.SetFont("Praetor.OH.Small")
 		local ph, gap = 48, 12
@@ -227,7 +229,8 @@ local function drawPlayer(ply, alpha)
 		local px = -total / 2
 		for i, pl in ipairs(pills) do
 			local pw = widths[i]
-			UI.Round(px, above, pw, ph, 24, pl[3])
+			UI.Round(px + 6, above + 6, pw, ph, 24, Color(C.ink.r, C.ink.g, C.ink.b, 200 * alpha))
+			UI.Round(px, above, pw, ph, 24, pl[3], Color(C.ink.r, C.ink.g, C.ink.b, A), 5)
 			UI.Icon(pl[2], px + 16, above + (ph - 32) / 2, 32, Color(255, 255, 255, A))
 			draw.SimpleText(pl[1], "Praetor.OH.Small", px + 56, above + ph / 2, pl[4], TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			px = px + pw + gap
@@ -241,8 +244,9 @@ local function drawPlayer(ply, alpha)
 	-- card (green edge while the player talks)
 	local talking = s("overhead_voice") and ply:IsSpeaking()
 	local vol = talking and math.Clamp(ply:VoiceVolume() * 3, 0, 1) or 0
-	local edge = talking and Color(C.laurel.r, C.laurel.g, C.laurel.b, (90 + 140 * vol) * alpha) or Color(255, 255, 255, 22 * alpha)
-	UI.Round(x0, y0, w, h, 18, Color(15, 16, 20, 205 * alpha), edge)
+	local edge = talking and Color(C.laurel.r, C.laurel.g, C.laurel.b, (150 + 105 * vol) * alpha) or Color(C.lineL.r, C.lineL.g, C.lineL.b, 230 * alpha)
+	UI.Round(x0 + 12, y0 + 12, w, h, 26, Color(C.ink.r, C.ink.g, C.ink.b, 170 * alpha))
+	UI.Round(x0, y0, w, h, 26, Color(C.panel.r, C.panel.g, C.panel.b, 225 * alpha), edge, 7)
 	if P.IsAFK(ply) then alpha = alpha * 0.6 A = 255 * alpha end
 	if talking then
 		-- microphone bubble on the top right corner, its ring follows the voice volume
@@ -250,7 +254,7 @@ local function drawPlayer(ply, alpha)
 		local cx2, cy2 = x0 + w - 8, y0 + 4
 		local ring = r + 4 + vol * 14
 		UI.Round(cx2 - ring, cy2 - ring, ring * 2, ring * 2, ring, Color(C.laurel.r, C.laurel.g, C.laurel.b, (40 + 60 * vol) * alpha))
-		UI.Round(cx2 - r, cy2 - r, r * 2, r * 2, r, Color(C.laurel.r * 0.55, C.laurel.g * 0.55, C.laurel.b * 0.55, 245 * alpha))
+		UI.Round(cx2 - r, cy2 - r, r * 2, r * 2, r, Color(C.laurel.r, C.laurel.g, C.laurel.b, 245 * alpha), Color(C.ink.r, C.ink.g, C.ink.b, A), 6)
 		UI.Icon("mic", cx2 - 24, cy2 - 24, 48, Color(255, 255, 255, A))
 	end
 
@@ -268,7 +272,7 @@ local function drawPlayer(ply, alpha)
 
 	local cy = y0 + PAD + (innerH - contentH) / 2
 	local nameCol = lighten(ply:GetRankColor(), 40)
-	draw.SimpleText(name, nameFont, cx + 2, cy + NAME_H / 2 + 3, Color(0, 0, 0, 160 * alpha), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	draw.SimpleText(name, nameFont, cx + 5, cy + NAME_H / 2 + 5, Color(C.ink.r, C.ink.g, C.ink.b, 220 * alpha), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	draw.SimpleText(name, nameFont, cx, cy + NAME_H / 2, Color(nameCol.r, nameCol.g, nameCol.b, A), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	cy = cy + NAME_H
 
@@ -291,9 +295,18 @@ local function drawPlayer(ply, alpha)
 				ix = ix + sepW
 			end
 			local c = it[2] or C.text
-			draw.SimpleText(it[1], "Praetor.OH.Small", ix, cy + INFO_H / 2, Color(c.r, c.g, c.b, A), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			surface.SetFont("Praetor.OH.Small")
-			ix = ix + surface.GetTextSize(it[1])
+			local tw = surface.GetTextSize(it[1])
+			if it.pill then
+				UI.Round(ix, cy + 2, tw + 28, INFO_H - 4, (INFO_H - 4) / 2, Color(c.r, c.g, c.b, 235 * alpha), Color(C.ink.r, C.ink.g, C.ink.b, A), 4)
+				local lum = c.r * 0.299 + c.g * 0.587 + c.b * 0.114
+				local tc = lum > 150 and C.ink or color_white
+				draw.SimpleText(it[1], "Praetor.OH.Small", ix + 14, cy + INFO_H / 2, Color(tc.r, tc.g, tc.b, A), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				ix = ix + tw + 28
+			else
+				draw.SimpleText(it[1], "Praetor.OH.Small", ix, cy + INFO_H / 2, Color(c.r, c.g, c.b, A), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				ix = ix + tw
+			end
 		end
 	end
 
@@ -301,10 +314,10 @@ local function drawPlayer(ply, alpha)
 		local frac = math.Clamp(ply:Health() / math.max(1, ply:GetMaxHealth()), 0, 1)
 		local bw = w - PAD * 2
 		local by = y0 + h - PAD - 6
-		UI.Round(x0 + PAD, by, bw, 8, 4, Color(255, 255, 255, 20 * alpha))
+		UI.Round(x0 + PAD, by - 4, bw, 14, 7, Color(C.bg.r, C.bg.g, C.bg.b, 230 * alpha), Color(C.ink.r, C.ink.g, C.ink.b, A), 3)
 		if frac > 0 then
 			local hc = frac > 0.5 and C.laurel or (frac > 0.25 and C.amber or C.crimson)
-			UI.Round(x0 + PAD, by, math.max(8, bw * frac), 8, 4, Color(hc.r, hc.g, hc.b, A))
+			UI.Round(x0 + PAD + 3, by - 1, math.max(8, (bw - 6) * frac), 8, 4, Color(hc.r, hc.g, hc.b, A))
 		end
 	end
 end
@@ -323,6 +336,7 @@ hook.Add("PostDrawTranslucentRenderables", "Praetor.Overhead", function(depth, s
 	local maxDist = math.max(100, P.Setting("overhead_dist") or 700)
 	local maxSqr = maxDist * maxDist
 	local ang = Angle(0, EyeAngles().y - 90, 90)
+	local now = RealTime()
 	for _, ply in ipairs(player.GetAll()) do
 		if ply ~= me or me:ShouldDrawLocalPlayer() then
 			if ply:Alive() and not ply:GetNoDraw() and not ply:GetNW2Bool("pr_cloak") and ply:GetColor().a > 30 then
@@ -331,7 +345,15 @@ hook.Add("PostDrawTranslucentRenderables", "Praetor.Overhead", function(depth, s
 				if d < maxSqr and (ply == me or canSee(ply, eye)) then
 					local frac = math.sqrt(d) / maxDist
 					local alpha = frac > 0.75 and (1 - (frac - 0.75) / 0.25) or 1
-					cam.Start3D2D(pos, ang, SCALE)
+					-- not drawn for a moment = it pops in again
+					if now - (lastDrawn[ply] or 0) > 0.4 then seenAt[ply] = now end
+					lastDrawn[ply] = now
+					local k = math.min(1, (now - (seenAt[ply] or now)) / 0.32)
+					local pop = 0.55 + 0.45 * UI.EaseBack(k)
+					alpha = alpha * math.min(1, k * 3)
+					-- a slow float, each player at its own pace
+					pos = pos + Vector(0, 0, math.sin(now * 1.6 + ply:EntIndex()) * 0.7)
+					cam.Start3D2D(pos, ang, SCALE * pop)
 						drawPlayer(ply, alpha)
 					cam.End3D2D()
 				end

@@ -268,6 +268,7 @@ local function clientSection(sc)
 	cv("praetor_chatbox", P.L("cl_chatbox"), P.L("cl_chatbox_d"))
 	cv("praetor_chat_images", P.L("cl_chat_images"), nil)
 	cv("praetor_tab_music", P.L("cl_tab_music"), nil)
+	if P.IsDarkRP() then cv("praetor_hud", P.L("cl_hud"), nil) end
 	local row = vgui.Create("DPanel", sc)
 	row:Dock(TOP)
 	row:SetTall(S(44))

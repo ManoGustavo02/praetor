@@ -80,6 +80,8 @@ local client = {
 	"cl_chatbox.lua",
 	"cl_overhead.lua",
 	"cl_scoreboard.lua",
+	"cl_hud.lua",
+	"cl_f4.lua",
 	"cl_spectate.lua",
 	"cl_report.lua",
 	"cl_staff.lua",
