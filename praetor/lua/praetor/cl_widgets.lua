@@ -171,14 +171,15 @@ do
 	end
 
 	function PANEL:Paint(w, h)
-		self.focus = UI.Lerp(self.focus, self:HasFocus() and 1 or 0, 14)
+		self.focus = UI.Lerp(self.focus, (self:HasFocus() or self.forceFocus) and 1 or 0, 14)
 		-- comic field: thick outline, turns purple and glows when typing
 		local r = self:IsMultiline() and S(10) or math.min(h / 2, S(12))
 		if self.focus > 0.01 then UI.Round(0, 0, w, h, r, Color(C.bronze.r, C.bronze.g, C.bronze.b, 60 * self.focus)) end
 		UI.Round(0, 0, w, h, r, P.LerpColor(self.focus, C.bg, Color(18, 13, 32)), P.LerpColor(self.focus, self:IsHovered() and C.lineL or C.line, C.bronze))
 		self:DrawTextEntryText(C.ivory, Color(142, 98, 255, 110), C.bronzeL)
-		if self:GetText() == "" and self:GetPlaceholderText() and self:GetPlaceholderText() ~= "" and not self:HasFocus() then
-			local x = S(10)
+		-- keepPlaceholder: the hint stays while the box is focused and empty (the chat)
+		if self:GetText() == "" and self:GetPlaceholderText() and self:GetPlaceholderText() ~= "" and (self.keepPlaceholder or not self:HasFocus()) then
+			local x = self.phX or S(10)
 			draw.SimpleText(self:GetPlaceholderText(), self:GetFont(), x, self:IsMultiline() and S(6) or h / 2, C.dim, TEXT_ALIGN_LEFT, self:IsMultiline() and TEXT_ALIGN_TOP or TEXT_ALIGN_CENTER)
 		end
 	end

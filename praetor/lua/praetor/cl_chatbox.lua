@@ -86,8 +86,8 @@ local function drawWs(id, x, y, w, alpha)
 	local e = wsInfo(id)
 	local h = S(WS_H) - S(8)
 	local a = alpha
-	UI.Round(x, y, w, h, S(8), Color(18, 21, 28, 238 * a), Color(LINK_COL.r * 0.6, LINK_COL.g * 0.6, LINK_COL.b * 0.6, 220 * a))
-	UI.Round(x + 1, y + S(8), S(3), h - S(16), S(1), Color(LINK_COL.r, LINK_COL.g, LINK_COL.b, 255 * a))
+	UI.Round(x, y, w, h, S(10), Color(C.panel.r, C.panel.g, C.panel.b, 240 * a), Color(LINK_COL.r * 0.6, LINK_COL.g * 0.6, LINK_COL.b * 0.6, 220 * a))
+	UI.Round(x + S(4), y + S(8), S(4), h - S(16), S(2), Color(LINK_COL.r, LINK_COL.g, LINK_COL.b, 255 * a))
 	local ps = h - S(12)
 	local px, py = x + S(10), y + S(6)
 	if e.mat then
@@ -96,7 +96,7 @@ local function drawWs(id, x, y, w, alpha)
 		surface.DrawTexturedRect(px, py, ps, ps)
 		UI.Outline(px, py, ps, ps, Color(0, 0, 0, 120 * a))
 	else
-		UI.Round(px, py, ps, ps, S(6), Color(30, 34, 44, 255 * a))
+		UI.Round(px, py, ps, ps, S(8), Color(C.panel2.r, C.panel2.g, C.panel2.b, 255 * a))
 		local bob = e.state == "loading" and (math.floor(RealTime() * 4) % 4) or 0
 		UI.Icon(e.state == "fail" and "box_no" or "box", px + (ps - 32) / 2, py + (ps - 32) / 2 - bob, 32, Color(255, 255, 255, 160 * a))
 	end
@@ -105,13 +105,13 @@ local function drawWs(id, x, y, w, alpha)
 	UI.Icon("gear", tx, y + S(7), 16, Color(255, 255, 255, 170 * a))
 	draw.SimpleText(P.L("chat_ws"), "Praetor.Tiny", tx + 20, y + S(15), Color(LINK_COL.r, LINK_COL.g, LINK_COL.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	if e.state == "loading" then
-		draw.SimpleText(P.L("chat_ws_loading"), "Praetor.Small", tx, y + S(40), Color(150, 156, 170, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		draw.SimpleText(P.L("chat_ws_loading"), "Praetor.Small", tx, y + S(40), Color(C.muted.r, C.muted.g, C.muted.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		return
 	elseif e.state == "fail" then
-		draw.SimpleText(P.L("chat_ws_item", { V = id }), "Praetor.ChatB", tx, y + S(40), Color(236, 238, 244, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		draw.SimpleText(P.L("chat_ws_item", { V = id }), "Praetor.ChatB", tx, y + S(40), Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		return
 	end
-	draw.SimpleText(UI.Fit(e.title, "Praetor.ChatB", tw), "Praetor.ChatB", tx, y + S(34), Color(240, 242, 248, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	draw.SimpleText(UI.Fit(e.title, "Praetor.ChatB", tw), "Praetor.ChatB", tx, y + S(34), Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	if e.linesW ~= tw then
 		e.lines = UI.Wrap(e.desc ~= "" and e.desc or "-", "Praetor.Tiny", tw)
 		e.linesW = tw
@@ -119,13 +119,13 @@ local function drawWs(id, x, y, w, alpha)
 	for i = 1, math.min(2, #e.lines) do
 		local l = e.lines[i]
 		if i == 2 and #e.lines > 2 then l = UI.Fit(l .. " ...", "Praetor.Tiny", tw) end
-		draw.SimpleText(l, "Praetor.Tiny", tx, y + S(50) + (i - 1) * S(13), Color(160, 166, 180, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		draw.SimpleText(l, "Praetor.Tiny", tx, y + S(50) + (i - 1) * S(13), Color(C.muted.r, C.muted.g, C.muted.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	end
 	local info = {}
 	if e.owner then info[#info + 1] = P.L("chat_ws_by", { S = e.owner }) end
 	if sizeText(e.size) then info[#info + 1] = sizeText(e.size) end
 	if e.tags then info[#info + 1] = (e.tags:gsub(",", ", ")) end
-	draw.SimpleText(UI.Fit(table.concat(info, "  ·  "), "Praetor.Tiny", tw), "Praetor.Tiny", tx, y + h - S(10), Color(115, 120, 134, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	draw.SimpleText(UI.Fit(table.concat(info, "  ·  "), "Praetor.Tiny", tw), "Praetor.Tiny", tx, y + h - S(10), Color(C.dim.r, C.dim.g, C.dim.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 end
 
 local function textSegs(out, text, col, font)
@@ -172,7 +172,7 @@ local function makeImage(line, url)
 	html:SetMouseInputEnabled(false)
 	html:SetVisible(false)
 	html:SetHTML(string.format([[<html><body style="margin:0;padding:0;overflow:hidden;background:transparent">
-<img src="%s" style="max-height:%dpx;max-width:%dpx;display:block;border-radius:3px"></body></html>]], url, size, size * 2))
+<img src="%s" style="max-height:%dpx;max-width:%dpx;display:block;border-radius:10px;border:2px solid #3c345c"></body></html>]], url, size, size * 2))
 	line.html = html
 	imagePanels[#imagePanels + 1] = html
 end
@@ -566,6 +566,10 @@ function LINES:Paint(w, h)
 			if age > life + 1 or shown >= 9 then break end
 			if age > life then alpha = 1 - (age - life) end
 		end
+		-- a new message slides in from the left with a little spring
+		local born = math.min(1, (now - line.t) / 0.32)
+		local dx = born < 1 and math.floor((1 - UI.EaseBack(born)) * -S(26)) or 0
+		alpha = alpha * math.min(1, born * 2.5)
 		if self.dirty or not line.layout or line.layout.width ~= width then layoutLine(line, width) end
 		local L = line.layout
 		y = y - L.h - S(3)
@@ -574,15 +578,21 @@ function LINES:Paint(w, h)
 		if y < h then
 			rects[#rects + 1] = { y = y, h = L.h, line = line }
 			local a = 255 * alpha
+			local pushed = dx ~= 0
+			if pushed then
+				local m = Matrix()
+				m:Translate(Vector(dx, 0, 0))
+				cam.PushModelMatrix(m, true)
+			end
 			-- mention: soft amber band; hover: soft light band
 			if line.mention then
-				UI.Round(S(2), y - S(1), w - S(4), L.h + S(2), S(4), Color(C.amber.r, C.amber.g, C.amber.b, 26 * alpha))
-				UI.Rect(S(2), y, S(2), L.h, Color(C.amber.r, C.amber.g, C.amber.b, a))
+				UI.Round(S(2), y - S(1), w - S(4), L.h + S(2), S(8), Color(C.amber.r, C.amber.g, C.amber.b, 30 * alpha))
+				UI.Round(S(2), y + S(2), S(4), L.h - S(4), S(2), Color(C.amber.r, C.amber.g, C.amber.b, a))
 			elseif line.staff then
-				UI.Round(S(2), y - S(1), w - S(4), L.h + S(2), S(4), Color(C.crimson.r, C.crimson.g, C.crimson.b, 22 * alpha))
-				UI.Rect(S(2), y, S(2), L.h, Color(C.crimsonL.r, C.crimsonL.g, C.crimsonL.b, a))
+				UI.Round(S(2), y - S(1), w - S(4), L.h + S(2), S(8), Color(C.crimson.r, C.crimson.g, C.crimson.b, 26 * alpha))
+				UI.Round(S(2), y + S(2), S(4), L.h - S(4), S(2), Color(C.crimsonL.r, C.crimsonL.g, C.crimsonL.b, a))
 			elseif hovering and my >= y and my < y + L.h then
-				UI.Round(S(2), y - S(1), w - S(4), L.h + S(2), S(4), Color(255, 255, 255, 10))
+				UI.Round(S(2), y - S(1), w - S(4), L.h + S(2), S(8), Color(255, 255, 255, 12))
 			end
 			local by = y + L.top
 			if line.reply then
@@ -594,14 +604,14 @@ function LINES:Paint(w, h)
 				draw.SimpleText(UI.Fit(rtext, rf, w - rx - S(26)), rf, rx + S(16), ry, Color(C.muted.r, C.muted.g, C.muted.b, a * 0.9), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			end
 			if L.stampW > 0 then
-				draw.SimpleText(line.stamp, "Praetor.ChatSmall", S(6), by + L.rowH / 2, Color(102, 106, 119, a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				draw.SimpleText(line.stamp, "Praetor.ChatSmall", S(6), by + L.rowH / 2, Color(C.dim.r, C.dim.g, C.dim.b, a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			end
 			if L.avW > 0 and line.annIcon and not line.sid then
 				-- announcement: its icon in the place of the avatar
 				local sz = L.rowH - S(6)
 				local ax = S(6) + L.stampW + S(2)
 				local ac = line.annCol or C.bronze
-				UI.Round(ax, by + S(3), sz, sz, S(4), Color(ac.r, ac.g, ac.b, 70 * alpha), Color(ac.r, ac.g, ac.b, a))
+				UI.Round(ax, by + S(3), sz, sz, sz / 2, Color(ac.r, ac.g, ac.b, 80 * alpha), Color(ac.r, ac.g, ac.b, a))
 				UI.Icon(line.annIcon, ax + (sz - 16) / 2, by + S(3) + (sz - 16) / 2, 16, Color(255, 255, 255, a))
 			elseif L.avW > 0 then
 				-- framed picture (rank colour) on every message, not only the first
@@ -626,7 +636,7 @@ function LINES:Paint(w, h)
 							surface.SetDrawColor(col.r, col.g, col.b, a * (hov and 1 or 0.55))
 							surface.DrawRect(ix, ry + L.rowH / 2 + fontH(it.font) / 2 - S(2), lw, 1)
 						end
-						draw.SimpleText(it.text, it.font, ix + 1, ry + L.rowH / 2 + 1, Color(0, 0, 0, a * 0.8), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+						draw.SimpleText(it.text, it.font, ix + 1, ry + L.rowH / 2 + 1, Color(C.ink.r, C.ink.g, C.ink.b, a * 0.9), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 						draw.SimpleText(it.text, it.font, ix, ry + L.rowH / 2, Color(col.r, col.g, col.b, a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 					end
 				end
@@ -647,6 +657,7 @@ function LINES:Paint(w, h)
 				line.html:SetAlpha(a)
 				line.html.wantVisible = y >= 0 and y + L.h <= h
 			end
+			if pushed then cam.PopModelMatrix() end
 		end
 	end
 	self.dirty = false
@@ -669,8 +680,10 @@ function LINES:Paint(w, h)
 		local t = P.L("chat_new", { V = self.unseen })
 		surface.SetFont("Praetor.Tiny")
 		local tw = surface.GetTextSize(t) + S(24)
-		UI.Round(w / 2 - tw / 2, h - S(26), tw, S(22), S(11), C.bronze)
-		UI.Text(t, "Praetor.Tiny", w / 2, h - S(15), color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		local bob = math.floor(math.abs(math.sin(RealTime() * 4)) * S(3))
+		UI.Comic(w / 2 - tw / 2, h - S(30) - bob, tw, S(22), S(11), C.bronze, C.ink, S(3))
+		UI.Icon("chevdown", w / 2 - tw / 2 + S(4), h - S(30) - bob + S(3), 16)
+		UI.Text(t, "Praetor.Tiny", w / 2 + S(6), h - S(19) - bob, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	elseif self.scroll == 0 then
 		self.unseen = 0
 	end
@@ -882,19 +895,35 @@ local function build()
 		f:SetPos(S(22), ScrH() - h - math.floor(ScrH() * 0.17))
 	end
 	size()
+	local OFF = S(5)
 	f.Paint = function(s, w, h)
 		if not CB.open then return end
-		UI.Round(0, 0, w, h, S(10), Color(13, 14, 18, 222), Color(255, 255, 255, 18))
-		-- header: tabs All / Team on the left, players online on the right
-		local online = #player.GetAll()
-		UI.Text(online .. " " .. P.L("online"), "Praetor.Tiny", w - S(14), S(18), C.muted, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
-		UI.Rect(S(10), S(35), w - S(20), 1, Color(255, 255, 255, 14))
+		-- fades and grows in quickly when the chat opens
+		local k = math.min(1, (RealTime() - (CB.openAt or 0)) / 0.16)
+		w, h = w - OFF, h - OFF
+		local bw = UI.BW()
+		UI.Shadow(0, 0, w, h, S(14), OFF, 190 * k)
+		UI.Round(0, 0, w, h, S(14), Color(C.bg.r, C.bg.g, C.bg.b, 232 * k), Color(C.lineL.r, C.lineL.g, C.lineL.b, 255 * k))
+		-- header strip with the channel tabs on the left
+		draw.RoundedBoxEx(S(12), bw, bw, w - bw * 2, S(40) - bw, Color(C.panel.r, C.panel.g, C.panel.b, 245 * k), true, true, false, false)
+		UI.Rect(bw, S(40), w - bw * 2, bw, Color(C.line.r, C.line.g, C.line.b, 255 * k))
+		-- players online: a chip with a breathing green dot
+		local txt = #player.GetAll() .. " " .. P.L("online")
+		surface.SetFont("Praetor.Tiny")
+		local tw = surface.GetTextSize(txt) + S(30)
+		local cx = w - S(10) - tw
+		UI.Round(cx, S(9), tw, S(22), S(11), Color(C.panel2.r, C.panel2.g, C.panel2.b, 255 * k), Color(C.line.r, C.line.g, C.line.b, 255 * k))
+		local pulse = (math.sin(RealTime() * 3) + 1) / 2
+		local d = S(8)
+		UI.Round(cx + S(10) - S(3) * pulse, S(20) - d / 2 - S(3) * pulse, d + S(6) * pulse, d + S(6) * pulse, (d + S(6) * pulse) / 2, Color(C.laurel.r, C.laurel.g, C.laurel.b, 70 * (1 - pulse) * k))
+		UI.Round(cx + S(10), S(20) - d / 2, d, d, d / 2, Color(C.laurel.r, C.laurel.g, C.laurel.b, 255 * k))
+		UI.Text(txt, "Praetor.Tiny", cx + S(22), S(20), Color(C.text.r, C.text.g, C.text.b, 255 * k), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	end
 
 	-- channel tabs: All / Team / Nearby / Staff (the last two only when they can be used)
 	local tabs = vgui.Create("DPanel", f)
-	tabs:SetPos(S(10), S(7))
-	tabs:SetSize(S(430), S(24))
+	tabs:SetPos(S(9), S(8))
+	tabs:SetSize(S(440), S(26))
 	tabs.Paint = nil
 	tabs.btns = {}
 	for _, def in ipairs(CHANNELS) do
@@ -903,18 +932,24 @@ local function build()
 		b:Dock(LEFT)
 		b:DockMargin(0, 0, S(4), 0)
 		surface.SetFont("Praetor.SmallB")
-		b:SetWide(S(40) + surface.GetTextSize(P.L(def.key)))
+		b:SetWide(S(42) + surface.GetTextSize(P.L(def.key)))
 		if def.tip then b:SetTooltip(P.L(def.tip, { V = P.Setting("chat_local_dist") or 0 })) end
+		b.anim = 0
+		b.OnCursorEntered = function() UI.Sound("hover") end
 		b.Paint = function(s, w, h)
 			local on = (CB.chan or "all") == def.id
 			local col = def.col()
-			if on then
-				UI.Round(0, 0, w, h, h / 2, Color(col.r, col.g, col.b, 40), Color(col.r, col.g, col.b, 90))
+			s.anim = UI.Lerp(s.anim, on and 1 or 0, 14)
+			local bw, bh = w - S(2), h - S(2)
+			if s.anim > 0.02 then
+				local grow = math.floor((1 - s.anim) * S(8))
+				UI.Round(grow + S(2), S(2), bw - grow * 2, bh, bh / 2, Color(C.ink.r, C.ink.g, C.ink.b, 210 * s.anim))
+				UI.Round(grow, 0, bw - grow * 2, bh, bh / 2, Color(col.r, col.g, col.b, 255 * s.anim), Color(C.ink.r, C.ink.g, C.ink.b, 255 * s.anim))
 			elseif s:IsHovered() then
-				UI.Round(0, 0, w, h, h / 2, Color(255, 255, 255, 12))
+				UI.Round(0, 0, bw, bh, bh / 2, Color(255, 255, 255, 14))
 			end
-			UI.Icon(def.icon, S(9), (h - 16) / 2, 16, on and color_white or Color(255, 255, 255, 150))
-			UI.Text(P.L(def.key), "Praetor.SmallB", S(30), h / 2, on and col or C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			UI.Icon(def.icon, S(9), (bh - 16) / 2, 16, (on or s:IsHovered()) and color_white or Color(255, 255, 255, 160))
+			UI.Text(P.L(def.key), "Praetor.SmallB", S(30), bh / 2, on and C.ink or C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		end
 		b.DoClick = function()
 			CB.SetChannel(def.id)
@@ -935,12 +970,12 @@ local function build()
 
 	f.lines = vgui.Create("PraetorChatLines", f)
 	f.lines:Dock(FILL)
-	f.lines:DockMargin(S(4), S(40), S(4), S(4))
+	f.lines:DockMargin(S(4), S(46), S(4) + OFF, S(4))
 
 	local bottom = vgui.Create("DPanel", f)
 	bottom:Dock(BOTTOM)
-	bottom:SetTall(S(36))
-	bottom:DockMargin(S(8), 0, S(8), S(8))
+	bottom:SetTall(S(40))
+	bottom:DockMargin(S(8), 0, S(8) + OFF, S(8) + OFF)
 	bottom.Paint = nil
 	f.bottom = bottom
 
@@ -948,12 +983,11 @@ local function build()
 	local replyBar = vgui.Create("DPanel", f)
 	replyBar:Dock(BOTTOM)
 	replyBar:SetTall(S(26))
-	replyBar:DockMargin(S(8), 0, S(8), S(4))
+	replyBar:DockMargin(S(8), 0, S(8) + OFF, S(4))
 	replyBar.Paint = function(_, w, h)
 		local r = CB.reply
 		if not r then return end
-		UI.Round(0, 0, w, h, S(6), Color(C.bronze.r, C.bronze.g, C.bronze.b, 30))
-		UI.Rect(0, S(4), S(3), h - S(8), C.bronze)
+		UI.Round(0, 0, w, h, h / 2, Color(C.bronze.r, C.bronze.g, C.bronze.b, 40), C.bronze)
 		UI.Icon("reply", S(10), (h - 16) / 2, 16)
 		local t = P.L("chat_replying", { S = r.name }) .. "  " .. r.q
 		local rf = UI.FontFor(t, "Praetor.Small")
@@ -981,12 +1015,16 @@ local function build()
 	sendB.Paint = function(s, w, h)
 		local col = chanDef(CB.chan).col()
 		if s:IsHovered() then col = Color(math.min(255, col.r + 25), math.min(255, col.g + 25), math.min(255, col.b + 25)) end
-		UI.Round(0, 0, w, h, S(6), col)
+		local off = S(3)
+		local press = s:IsDown() and off or (s:IsHovered() and -1 or 0)
+		w, h = w - off, h - off
+		UI.Round(off, off, w, h, S(12), C.ink)
+		UI.Round(press, press, w, h, S(12), col, C.ink)
 		local sz = math.floor(h * 0.44)
 		-- the eye sees the middle of an arrow 1/3 from its back, so it moves forward a little
-		local cx, cy = w / 2 + sz * 0.1, h / 2
+		local cx, cy = w / 2 + sz * 0.1 + press, h / 2 + press
 		draw.NoTexture()
-		surface.SetDrawColor(255, 255, 255, 255)
+		surface.SetDrawColor(C.ink)
 		surface.DrawPoly({
 			{ x = cx - sz * 0.5, y = cy - sz * 0.5 },
 			{ x = cx + sz * 0.55, y = cy },
@@ -999,7 +1037,7 @@ local function build()
 		})
 	end
 	sendB:Dock(RIGHT)
-	sendB:SetWide(S(40))
+	sendB:SetWide(S(46))
 	sendB:DockMargin(S(6), 0, 0, 0)
 	sendB:SetTooltip(P.L("chat_send"))
 
@@ -1007,17 +1045,23 @@ local function build()
 	local mic = vgui.Create("DButton", bottom)
 	mic:SetText("")
 	mic:Dock(RIGHT)
-	mic:SetWide(S(40))
+	mic:SetWide(S(46))
 	mic:DockMargin(S(6), 0, 0, 0)
 	mic:SetTooltip(P.L("chat_mic_tip"))
 	mic.Paint = function(s, w, h)
 		local talking = IsValid(LocalPlayer()) and LocalPlayer():IsSpeaking()
 		local on = voiceOn or talking
 		local vol = talking and math.Clamp(LocalPlayer():VoiceVolume() * 3, 0, 1) or 0
-		local fill = on and Color(C.laurel.r, C.laurel.g, C.laurel.b, 60 + 120 * vol) or (s:IsHovered() and C.hover or C.panel2)
-		UI.Round(0, 0, w, h, S(6), fill, on and C.laurel or (s:IsHovered() and C.lineL or C.line))
+		local fill = on and P.LerpColor(vol, Color(C.laurel.r * 0.6, C.laurel.g * 0.6, C.laurel.b * 0.6), C.laurel) or (s:IsHovered() and C.hover or C.panel2)
+		local off = S(3)
+		local press = s:IsDown() and off or 0
+		w, h = w - off, h - off
+		UI.Round(off, off, w, h, S(12), C.ink)
+		UI.Round(press, press, w, h, S(12), fill, on and C.ink or (s:IsHovered() and C.lineL or C.line))
+		-- the mic grows with the voice while talking
+		w, h = w + press * 2, h + press * 2
 		-- microphone drawn by hand in a light colour, so it reads on the dark button
-		local ic = (on or s:IsHovered()) and color_white or Color(214, 220, 232)
+		local ic = on and C.ink or ((s:IsHovered()) and color_white or Color(214, 220, 232))
 		local u = math.max(1, math.floor(h / 18))
 		local cx = math.floor(w / 2)
 		local capW, capH = u * 6, u * 9
@@ -1060,14 +1104,20 @@ local function build()
 	local entry = UI.Entry(bottom, P.L("chat_ph_all"), "")
 	entry:Dock(FILL)
 	local basePaint = entry.Paint
-	-- the channel colour is a thin line under the text (a bar on the left looked
-	-- like a text cursor that never went away)
+	-- the hint stays while typing nothing (it used to blink when the mouse was held
+	-- on the chat) and the box always looks active while the chat is open
+	entry.keepPlaceholder = true
+	entry.forceFocus = true
+	entry.phX = S(36)
+	-- the channel icon sits inside the box, on a small disc of its colour
 	entry.Paint = function(s, w, h)
 		basePaint(s, w, h)
 		local col = chanDef(CB.chan).col()
-		UI.Rect(S(8), h - S(3), w - S(16), S(1), Color(col.r, col.g, col.b, 120))
+		local d = h - S(14)
+		UI.Round(S(7), S(7), d, d, d / 2, Color(col.r, col.g, col.b, 255), C.ink)
+		UI.Icon(chanDef(CB.chan).icon, S(7) + (d - 16) / 2, S(7) + (d - 16) / 2, 16)
 	end
-	entry.PerformLayout = function(s) s:SetTextInset(S(10), 0) end
+	entry.PerformLayout = function(s) s:SetTextInset(S(36), 0) end
 	entry:SetFont("Praetor.Chat")
 	entry:SetHistoryEnabled(false)
 	f.entry = entry
@@ -1148,18 +1198,18 @@ local function build()
 	f.sug = sug
 	sug.Paint = function(s, w, h)
 		if not CB.open then return end
-		local rowH = S(24)
+		local rowH = S(26)
 		local m = CB.mentions
 		if m and #m > 0 then
 			-- players: framed picture, name and rank badge
 			local pH = S(32)
 			local total = #m * pH + S(8)
 			local y0 = h - total
-			UI.Round(0, y0, w, total, S(8), Color(15, 16, 20, 248), C.line)
+			UI.Comic(0, y0, w - S(3), total - S(3), S(10), Color(C.panel.r, C.panel.g, C.panel.b, 250), C.lineL, S(3))
 			for i, it in ipairs(m) do
 				if IsValid(it.ply) then
 					local y = y0 + S(4) + (i - 1) * pH
-					if i == 1 then UI.Round(S(4), y, w - S(8), pH, S(5), Color(C.bronze.r, C.bronze.g, C.bronze.b, 30)) end
+					if i == 1 then UI.Round(S(4), y, w - S(11), pH, pH / 2, Color(C.bronze.r, C.bronze.g, C.bronze.b, 50), C.bronze) end
 					local sz = pH - S(8)
 					UI.DrawAvatar(it.ply:SteamID64(), it.ply, S(10), y + S(4), sz, 255, UI.AvatarFrame(it.ply), it.ply:Nick())
 					local style, icon = UI.PlayerRankStyle(it.ply)
@@ -1176,11 +1226,11 @@ local function build()
 		if #list == 0 then return end
 		local total = #list * rowH + S(8)
 		local y0 = h - total
-		UI.Round(0, y0, w, total, S(8), Color(15, 16, 20, 248), C.line)
+		UI.Comic(0, y0, w - S(3), total - S(3), S(10), Color(C.panel.r, C.panel.g, C.panel.b, 250), C.lineL, S(3))
 		for i, it in ipairs(list) do
 			local c = P.ServerCmds[it.id]
 			local y = y0 + S(4) + (i - 1) * rowH
-			if i == 1 then UI.Round(S(4), y, w - S(8), rowH, S(5), Color(C.bronze.r, C.bronze.g, C.bronze.b, 30)) end
+			if i == 1 then UI.Round(S(4), y, w - S(11), rowH, rowH / 2, Color(C.bronze.r, C.bronze.g, C.bronze.b, 50), C.bronze) end
 			local label = (it.rp or it.extra) and it.id or usage(it.id)
 			UI.Text(label, "Praetor.Small", S(10), y + rowH / 2, i == 1 and C.bronzeL or (it.rp and C.laurel or C.text), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			local help = ""
@@ -1191,8 +1241,8 @@ local function build()
 		end
 	end
 	f.PerformLayout = function(s, w, h)
-		sug:SetPos(S(8), S(36))
-		sug:SetSize(w - S(16), h - S(36) - S(50) - (CB.reply and S(30) or 0))
+		sug:SetPos(S(8), S(42))
+		sug:SetSize(w - S(16) - OFF, h - S(42) - S(54) - OFF - (CB.reply and S(30) or 0))
 	end
 	f.Think = function(s)
 		-- the reply bar shows up / hides with CB.reply
@@ -1207,9 +1257,17 @@ local function build()
 			if not chanUsable(chanDef(CB.chan)) then CB.SetChannel("all") end
 			-- the text box keeps the keyboard: a click on the messages, the
 			-- background or a tab gives it back (menus and other windows keep theirs)
+			-- (right away: waiting for the mouse button to be released made the box
+			-- lose and get back the focus while the click was held)
 			local kf = vgui.GetKeyboardFocus()
-			if kf ~= s.entry and (not IsValid(kf) or CB.Inside(kf)) and not input.IsMouseDown(MOUSE_LEFT) and not input.IsMouseDown(MOUSE_RIGHT) then
+			if kf ~= s.entry and (not IsValid(kf) or CB.Inside(kf)) then
 				s.entry:RequestFocus()
+			end
+			-- the tabs and the input bar fade in with the window
+			local k = math.min(1, (RealTime() - (CB.openAt or 0)) / 0.2)
+			if k < 1 or s.bottom:GetAlpha() < 255 then
+				s.bottom:SetAlpha(255 * k)
+				tabs:SetAlpha(255 * k)
 			end
 		end
 	end
@@ -1238,6 +1296,7 @@ function CB.Open(isTeam)
 	if not active() then return end
 	if not IsValid(CB.frame) then build() end
 	local f = CB.frame
+	if not CB.open then CB.openAt = RealTime() end
 	CB.open = true
 	-- the key picks the channel (say_team = Team); someone talking in the staff
 	-- or nearby tab stays there when the chat is opened with the normal key
@@ -1253,6 +1312,10 @@ function CB.Open(isTeam)
 	-- the buttons get the mouse back one by one (closing the chat turns it off
 	-- for the whole box; before, the tabs, send and mic stayed dead after that)
 	for _, c in ipairs(f.clickables or {}) do if IsValid(c) then c:SetMouseInputEnabled(true) end end
+	-- only the text box takes the keyboard: a click (or a held click) on the
+	-- messages, a tab or a button no longer steals its focus
+	for _, c in ipairs(f.clickables or {}) do if IsValid(c) and c ~= f.entry and c ~= f.bottom then c:SetKeyboardInputEnabled(false) end end
+	f.entry:SetKeyboardInputEnabled(true)
 	-- SetMouseInputEnabled reaches every child. The suggestion layer (on top of
 	-- the messages) and the GIF pictures must stay click-through: before, a click
 	-- on the messages landed on them and the text box lost the keyboard for good
