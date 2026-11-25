@@ -2,8 +2,9 @@
 -- the icon editor (Ranks / Tags > icon > Create icon) and they can be used on
 -- ranks and tags like the built-in ones.
 --
--- An icon is 16x16: `px` has 256 characters, "." for an empty pixel or a hex
--- digit (0-f) pointing into `pal`, a list of up to 16 colours ("rrggbb").
+-- An icon is 16x16 (pixel mode) or 32x32 (paint mode, `s` = 32): `px` has
+-- s * s characters, "." for an empty pixel or a hex digit (0-f) pointing into
+-- `pal`, a list of up to 16 colours ("rrggbb").
 -- Names are "c_<number>", so they pass the normal icon name check.
 local P = Praetor
 
@@ -19,7 +20,8 @@ local function broadcast() P.Send(nil, "icons", P.CustomIcons) end
 local function clean(d)
 	if not istable(d) then return nil end
 	local px = d.px
-	if not isstring(px) or #px ~= SIZE * SIZE or not px:match("^[%.0-9a-f]+$") then return nil end
+	local size = tonumber(d.s) == 32 and 32 or SIZE
+	if not isstring(px) or #px ~= size * size or not px:match("^[%.0-9a-f]+$") then return nil end
 	if not px:find("[0-9a-f]") then return nil end -- nothing drawn
 	if not istable(d.pal) or #d.pal < 1 or #d.pal > 16 then return nil end
 	local pal = {}
@@ -31,7 +33,7 @@ local function clean(d)
 	for ch in px:gmatch("[0-9a-f]") do
 		if tonumber(ch, 16) + 1 > #pal then return nil end
 	end
-	return { n = P.Trim(P.Str(d.n or "", 24)), px = px, pal = pal }
+	return { n = P.Trim(P.Str(d.n or "", 24)), px = px, pal = pal, s = size ~= SIZE and size or nil }
 end
 
 P.Receive("icon_save", { perm = { "manage_ranks", "manage_tags", "manage_announce" }, rate = 1, max = 16384 }, function(ply, data)

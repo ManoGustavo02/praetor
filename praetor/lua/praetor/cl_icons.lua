@@ -1,5 +1,7 @@
--- Praetor: custom pixel-art icons on the client. Draws them (UI.Icon knows the
--- "c_" names), the icon picker with the "Create icon" tile, and the editor.
+-- Praetor: custom icons on the client. Draws them (UI.Icon knows the "c_"
+-- names), the icon picker with the "Create icon" tile, and the editor.
+-- The editor has two modes: pixel (16x16, one pixel at a time) and paint
+-- (32x32, round brushes of several sizes, smooth strokes).
 local P = Praetor
 local UI = P.UI
 local C = UI.C
@@ -14,17 +16,20 @@ local function hexColor(h)
 	return tonumber(h:sub(1, 2), 16) or 255, tonumber(h:sub(3, 4), 16) or 255, tonumber(h:sub(5, 6), 16) or 255
 end
 
+local function sizeOf(icon) return (icon and tonumber(icon.s) == 32) and 32 or 16 end
+
 local function buildRuns(icon)
 	local out = {}
 	local pal = {}
+	local n = sizeOf(icon)
 	for i, h in ipairs(icon.pal or {}) do pal[i - 1] = { hexColor(h) } end
-	for y = 0, N - 1 do
+	for y = 0, n - 1 do
 		local x = 0
-		while x < N do
-			local ch = icon.px:sub(y * N + x + 1, y * N + x + 1)
+		while x < n do
+			local ch = icon.px:sub(y * n + x + 1, y * n + x + 1)
 			if ch ~= "." then
 				local len = 1
-				while x + len < N and icon.px:sub(y * N + x + len + 1, y * N + x + len + 1) == ch do len = len + 1 end
+				while x + len < n and icon.px:sub(y * n + x + len + 1, y * n + x + len + 1) == ch do len = len + 1 end
 				local c = pal[tonumber(ch, 16)]
 				if c then out[#out + 1] = { x, y, len, c[1], c[2], c[3] } end
 				x = x + len
@@ -62,7 +67,7 @@ local function drawCustom(name, x, y, size, col)
 		runs[name] = r
 	end
 	x, y = math.floor(x), math.floor(y)
-	local k = size / N
+	local k = size / sizeOf(icon)
 	local tr, tg, tb, ta = 255, 255, 255, 255
 	if col then tr, tg, tb, ta = col.r, col.g, col.b, col.a or 255 end
 	for _, run in ipairs(r) do
@@ -70,8 +75,10 @@ local function drawCustom(name, x, y, size, col)
 		local x1 = x + math.floor((run[1] + run[3]) * k)
 		local y0 = y + math.floor(run[2] * k)
 		local y1 = y + math.floor((run[2] + 1) * k)
-		surface.SetDrawColor(run[4] * tr / 255, run[5] * tg / 255, run[6] * tb / 255, ta)
-		surface.DrawRect(x0, y0, x1 - x0, y1 - y0)
+		if x1 > x0 and y1 > y0 then
+			surface.SetDrawColor(run[4] * tr / 255, run[5] * tg / 255, run[6] * tb / 255, ta)
+			surface.DrawRect(x0, y0, x1 - x0, y1 - y0)
+		end
 	end
 end
 
@@ -87,32 +94,50 @@ local function canCreate() return P.MyHas("manage_ranks") or P.MyHas("manage_tag
 
 -- ------------------------------------------------------------------ reading pixels
 
--- 16x16 grid (index y * 16 + x + 1 -> Color or nil) from any icon
-local function readIcon(name)
+-- n x n grid (index y * n + x + 1 -> Color or nil) from any icon
+local function readIcon(name, n)
+	n = n or N
 	local grid = {}
 	if name:sub(1, 2) == "c_" then
 		local icon = P.CustomIcons[name]
 		if not icon then return grid end
-		for i = 1, N * N do
-			local ch = icon.px:sub(i, i)
-			local h = ch ~= "." and icon.pal[(tonumber(ch, 16) or 0) + 1]
-			if h then grid[i] = Color(hexColor(h)) end
+		local src = sizeOf(icon)
+		for y = 0, n - 1 do
+			for x = 0, n - 1 do
+				local sx, sy = math.floor(x * src / n), math.floor(y * src / n)
+				local i = sy * src + sx + 1
+				local ch = icon.px:sub(i, i)
+				local h = ch ~= "." and icon.pal[(tonumber(ch, 16) or 0) + 1]
+				if h then grid[y * n + x + 1] = Color(hexColor(h)) end
+			end
 		end
 		return grid
 	end
-	-- built-in PNG (16x16 art scaled up): sample the middle of every big pixel
+	-- built-in PNG: sample the middle of every cell
 	local mat = UI.Mat("praetor/icons/" .. name .. ".png")
 	if mat:IsError() then return grid end
 	local tex = mat:GetTexture("$basetexture")
 	if not tex then return grid end
-	local step = tex:Width() / N
-	for y = 0, N - 1 do
-		for x = 0, N - 1 do
+	local step = tex:Width() / n
+	for y = 0, n - 1 do
+		for x = 0, n - 1 do
 			local ok, c = pcall(tex.GetColor, tex, math.floor(x * step + step / 2), math.floor(y * step + step / 2))
-			if ok and c and c.a > 127 then grid[y * N + x + 1] = Color(c.r, c.g, c.b) end
+			if ok and c and c.a > 127 then grid[y * n + x + 1] = Color(c.r, c.g, c.b) end
 		end
 	end
 	return grid
+end
+
+-- the same drawing at another size (16 <-> 32)
+local function resample(grid, from, to)
+	local out = {}
+	for y = 0, to - 1 do
+		for x = 0, to - 1 do
+			local sx, sy = math.floor(x * from / to), math.floor(y * from / to)
+			out[y * to + x + 1] = grid[sy * from + sx + 1]
+		end
+	end
+	return out
 end
 
 -- ------------------------------------------------------------------ editor
@@ -127,55 +152,188 @@ local PALETTE = {
 
 local function hexOf(c) return string.format("%02x%02x%02x", c.r, c.g, c.b) end
 
+-- an icon keeps at most 16 colours: the closest ones are merged until it fits
+local function reduceColours(grid, total)
+	local count = {}
+	for i = 1, total do
+		local c = grid[i]
+		if c then local h = hexOf(c) count[h] = (count[h] or 0) + 1 end
+	end
+	local keys = table.GetKeys(count)
+	local merged = 0
+	while #keys > 16 do
+		local best, ba, bb = math.huge
+		for i = 1, #keys do
+			local r1, g1, b1 = hexColor(keys[i])
+			for j = i + 1, #keys do
+				local r2, g2, b2 = hexColor(keys[j])
+				local d = (r1 - r2) ^ 2 + (g1 - g2) ^ 2 + (b1 - b2) ^ 2
+				if d < best then best, ba, bb = d, i, j end
+			end
+		end
+		-- the less used colour takes the other one
+		local keep, drop = keys[ba], keys[bb]
+		if count[drop] > count[keep] then keep, drop = drop, keep end
+		local kc = Color(hexColor(keep))
+		for i = 1, total do
+			if grid[i] and hexOf(grid[i]) == drop then grid[i] = kc end
+		end
+		count[keep] = count[keep] + count[drop]
+		count[drop] = nil
+		keys = table.GetKeys(count)
+		merged = merged + 1
+	end
+	return merged
+end
+
 function UI.IconEditor(editId, onSaved)
 	if not canCreate() then return end
-	local m = UI.Modal(P.L("ic_editor"), S(640), S(520))
-	local grid = editId and readIcon(editId) or {}
-	local undo = {}
-	local tool = "pencil"
+	local m = UI.Modal(P.L("ic_editor"), S(760), S(600))
+	local startIcon = editId and P.CustomIcons[editId]
+	local n = sizeOf(startIcon)
+	local mode = n == 32 and "paint" or "pixel"
+	local grid = editId and readIcon(editId, n) or {}
+	local undo, redo = {}, {}
+	local tool = mode == "paint" and "brush" or "pencil"
+	local brush = 2
 	local mirror = false
 	local color = Color(hexColor("e8763a"))
 	local recent = {}
 
+	local function copyGrid()
+		local c = {}
+		for i = 1, n * n do c[i] = grid[i] end
+		return c
+	end
 	local function snapshot()
-		local copy = {}
-		for i = 1, N * N do copy[i] = grid[i] end
-		undo[#undo + 1] = copy
-		if #undo > 40 then table.remove(undo, 1) end
+		undo[#undo + 1] = { n = n, g = copyGrid() }
+		if #undo > 60 then table.remove(undo, 1) end
+		redo = {}
+	end
+	local function restore(st)
+		n = st.n
+		grid = st.g
+		mode = n == 32 and "paint" or "pixel"
 	end
 
-	-- canvas
-	local cell = math.floor(math.min(S(22), (m:GetTall() - S(120)) / N))
-	local canvas = vgui.Create("DPanel", m.body)
-	canvas:SetSize(cell * N + 2, cell * N + 2)
-	canvas:Dock(LEFT)
+	-- ---------------------------------------------------------------- canvas
+	local CANVAS = math.min(S(448), m:GetTall() - S(150))
+	local left = vgui.Create("DPanel", m.body)
+	left:Dock(LEFT)
+	left:SetWide(CANVAS + S(8))
+	left.Paint = nil
+
+	-- mode switch above the canvas: Pixel 16x16 / Paint 32x32
+	local modes = vgui.Create("DPanel", left)
+	modes:Dock(TOP)
+	modes:SetTall(S(40))
+	modes:DockMargin(0, 0, 0, S(8))
+	modes.Paint = nil
+	local function modeBtn(id, label, icon)
+		local b = UI.Button(modes, label, "ghost", icon, function()
+			if mode == id then return end
+			snapshot()
+			local to = id == "paint" and 32 or 16
+			grid = resample(grid, n, to)
+			n = to
+			mode = id
+			if mode == "paint" and tool == "pencil" then tool = "brush" end
+			if mode == "pixel" and tool == "brush" then tool = "pencil" end
+			UI.Sound("toggle")
+		end)
+		b:Dock(LEFT)
+		b:SetWide(math.floor(CANVAS / 2) - S(4))
+		b:DockMargin(0, 0, S(8), 0)
+		b.Think = function(s) s.kind = mode == id and "active" or "ghost" end
+		return b
+	end
+	modeBtn("pixel", P.L("ic_mode_pixel"), "image")
+	modeBtn("paint", P.L("ic_mode_paint"), "pen")
+
+	local canvas = vgui.Create("DPanel", left)
+	canvas:SetSize(CANVAS + S(8), CANVAS + S(8))
+	canvas:Dock(TOP)
 	canvas:SetCursor("crosshair")
+
+	local function cellSize() return math.floor(CANVAS / n) end
+	local function cellAt(mx, my)
+		local cs = cellSize()
+		return math.floor((mx - S(4)) / cs), math.floor((my - S(4)) / cs)
+	end
+
 	canvas.Paint = function(s, w, h)
+		local cs = cellSize()
+		local size = cs * n
+		UI.Round(S(4), S(4), size + S(4), size + S(4), S(10), C.ink)
+		UI.Round(0, 0, size + S(4), size + S(4), S(10), C.panel3, C.ink)
+		local ox, oy = S(2), S(2)
 		-- checkerboard so empty pixels are visible
-		for y = 0, N - 1 do
-			for x = 0, N - 1 do
-				local dark = (x + y) % 2 == 0
-				UI.Rect(1 + x * cell, 1 + y * cell, cell, cell, dark and Color(34, 36, 43) or Color(42, 44, 52))
-				local c = grid[y * N + x + 1]
-				if c then UI.Rect(1 + x * cell, 1 + y * cell, cell, cell, c) end
+		local check = mode == "paint" and 2 or 1
+		for y = 0, n - 1 do
+			for x = 0, n - 1 do
+				local c = grid[y * n + x + 1]
+				if c then
+					UI.Rect(ox + x * cs, oy + y * cs, cs, cs, c)
+				else
+					local dark = (math.floor(x / check) + math.floor(y / check)) % 2 == 0
+					UI.Rect(ox + x * cs, oy + y * cs, cs, cs, dark and Color(34, 30, 52) or Color(44, 38, 66))
+				end
 			end
 		end
-		if mirror then UI.Rect(1 + N / 2 * cell, 1, 1, h - 2, Color(255, 255, 255, 60)) end
-		local mx, my = s:CursorPos()
-		local cx, cy = math.floor((mx - 1) / cell), math.floor((my - 1) / cell)
-		if s:IsHovered() and cx >= 0 and cy >= 0 and cx < N and cy < N then
-			UI.Outline(1 + cx * cell, 1 + cy * cell, cell, cell, Color(255, 255, 255, 160))
+		-- a faint grid in pixel mode
+		if mode == "pixel" then
+			surface.SetDrawColor(255, 255, 255, 10)
+			for i = 1, n - 1 do
+				surface.DrawRect(ox + i * cs, oy, 1, size)
+				surface.DrawRect(ox, oy + i * cs, size, 1)
+			end
 		end
-		UI.Outline(0, 0, w, h, C.line)
+		if mirror then UI.Rect(ox + n / 2 * cs, oy, 2, size, Color(C.bronzeL.r, C.bronzeL.g, C.bronzeL.b, 120)) end
+		-- the brush under the cursor
+		if s:IsHovered() then
+			local cx, cy = cellAt(s:CursorPos())
+			if cx >= 0 and cy >= 0 and cx < n and cy < n then
+				local r = (mode == "paint" and (tool == "brush" or tool == "eraser")) and brush or 0
+				local col = tool == "eraser" and C.crimsonL or color_white
+				for yy = cy - r, cy + r do
+					for xx = cx - r, cx + r do
+						if xx >= 0 and yy >= 0 and xx < n and yy < n and (xx - cx) ^ 2 + (yy - cy) ^ 2 <= r * r + r * 0.8 then
+							surface.SetDrawColor(col.r, col.g, col.b, 70)
+							surface.DrawRect(ox + xx * cs, oy + yy * cs, cs, cs)
+						end
+					end
+				end
+			end
+		end
 	end
 
-	local function set(x, y, c)
-		grid[y * N + x + 1] = c
-		if mirror then grid[y * N + (N - 1 - x) + 1] = c end
+	local function put(x, y, c)
+		if x < 0 or y < 0 or x >= n or y >= n then return end
+		grid[y * n + x + 1] = c
+		if mirror then grid[y * n + (n - 1 - x) + 1] = c end
+	end
+
+	-- a round stamp of radius r (0 = one pixel)
+	local function stamp(x, y, c, r)
+		if r <= 0 then put(x, y, c) return end
+		for yy = y - r, y + r do
+			for xx = x - r, x + r do
+				if (xx - x) ^ 2 + (yy - y) ^ 2 <= r * r + r * 0.8 then put(xx, yy, c) end
+			end
+		end
+	end
+
+	-- stamps along the way from the last point, so fast strokes have no holes
+	local function stroke(x0, y0, x1, y1, c, r)
+		local steps = math.max(math.abs(x1 - x0), math.abs(y1 - y0), 1)
+		for i = 0, steps do
+			local t = i / steps
+			stamp(math.Round(x0 + (x1 - x0) * t), math.Round(y0 + (y1 - y0) * t), c, r)
+		end
 	end
 
 	local function fill(x, y, c)
-		local target = grid[y * N + x + 1]
+		local target = grid[y * n + x + 1]
 		local key = function(v) return v and hexOf(v) or "" end
 		local tk = key(target)
 		if tk == key(c) then return end
@@ -183,8 +341,8 @@ function UI.IconEditor(editId, onSaved)
 		while #stack > 0 do
 			local p = table.remove(stack)
 			local px, py = p[1], p[2]
-			if px >= 0 and py >= 0 and px < N and py < N and key(grid[py * N + px + 1]) == tk then
-				grid[py * N + px + 1] = c
+			if px >= 0 and py >= 0 and px < n and py < n and key(grid[py * n + px + 1]) == tk then
+				grid[py * n + px + 1] = c
 				stack[#stack + 1] = { px + 1, py }
 				stack[#stack + 1] = { px - 1, py }
 				stack[#stack + 1] = { px, py + 1 }
@@ -193,7 +351,6 @@ function UI.IconEditor(editId, onSaved)
 		end
 	end
 
-	local pickSwatch
 	local function useColor(c)
 		color = Color(c.r, c.g, c.b)
 		local h = hexOf(color)
@@ -202,183 +359,286 @@ function UI.IconEditor(editId, onSaved)
 		while #recent > 8 do table.remove(recent) end
 	end
 
-	local function apply(btn)
-		local mx, my = canvas:CursorPos()
-		local x, y = math.floor((mx - 1) / cell), math.floor((my - 1) / cell)
-		if x < 0 or y < 0 or x >= N or y >= N then return end
+	local function apply(btn, first)
+		local x, y = cellAt(canvas:CursorPos())
 		local t = btn == MOUSE_RIGHT and "eraser" or tool
-		if t == "pencil" then set(x, y, Color(color.r, color.g, color.b))
-		elseif t == "eraser" then set(x, y, nil)
-		elseif t == "fill" then fill(x, y, Color(color.r, color.g, color.b))
-		elseif t == "picker" then
-			local c = grid[y * N + x + 1]
+		local r = mode == "paint" and brush or 0
+		if t == "pencil" then r = 0 end
+		local px, py = canvas.lastX or x, canvas.lastY or y
+		if first then px, py = x, y end
+		if t == "pencil" or t == "brush" then
+			stroke(px, py, x, y, Color(color.r, color.g, color.b), r)
+		elseif t == "eraser" then
+			stroke(px, py, x, y, nil, r)
+		elseif first and t == "fill" then
+			if x >= 0 and y >= 0 and x < n and y < n then fill(x, y, Color(color.r, color.g, color.b)) end
+		elseif first and t == "picker" then
+			local c = x >= 0 and y >= 0 and x < n and y < n and grid[y * n + x + 1]
 			if c then useColor(c) end
-			tool = "pencil"
+			tool = mode == "paint" and "brush" or "pencil"
 		end
+		canvas.lastX, canvas.lastY = x, y
 	end
 
 	canvas.OnMousePressed = function(s, btn)
 		snapshot()
 		s.down = btn
+		s.lastX, s.lastY = nil, nil
 		s:MouseCapture(true)
-		apply(btn)
+		apply(btn, true)
 	end
 	canvas.OnMouseReleased = function(s)
 		s.down = nil
 		s:MouseCapture(false)
 	end
 	canvas.Think = function(s)
-		if s.down and (s.down == MOUSE_RIGHT or tool == "pencil" or tool == "eraser") then
+		if s.down and (s.down == MOUSE_RIGHT or tool == "pencil" or tool == "brush" or tool == "eraser") then
 			if not input.IsMouseDown(s.down) then s.down = nil s:MouseCapture(false) return end
 			apply(s.down)
 		end
 	end
+	canvas.OnMouseWheeled = function(_, d)
+		if mode ~= "paint" then return end
+		brush = math.Clamp(brush + (d > 0 and 1 or -1), 0, 5)
+		return true
+	end
 
-	-- right column
-	local side = vgui.Create("DPanel", m.body)
+	-- ---------------------------------------------------------------- right column
+	local side = UI.Scroll(m.body)
 	side:Dock(FILL)
-	side:DockMargin(S(14), 0, 0, 0)
-	side.Paint = nil
+	side:DockMargin(S(16), 0, 0, 0)
 
 	local function sectionLabel(text)
 		local l = vgui.Create("DPanel", side)
 		l:Dock(TOP)
-		l:SetTall(S(18))
-		l:DockMargin(0, S(4), 0, S(4))
-		l.Paint = function(_, w, h) UI.Text(P.Upper(text), "Praetor.Tiny", 0, h / 2, C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
+		l:SetTall(S(20))
+		l:DockMargin(0, S(6), S(6), S(4))
+		l.Paint = function(_, w, h)
+			UI.Text(P.Upper(text), "Praetor.Tiny", 0, h / 2, C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			surface.SetFont("Praetor.Tiny")
+			local tw = surface.GetTextSize(P.Upper(text)) + S(8)
+			UI.Rect(tw, h / 2, w - tw, 2, Color(C.line.r, C.line.g, C.line.b, 140))
+		end
 	end
 
 	-- tools
 	sectionLabel(P.L("ic_tools"))
 	local tools = vgui.Create("DIconLayout", side)
 	tools:Dock(TOP)
-	tools:SetSpaceX(S(4))
-	tools:SetSpaceY(S(4))
+	tools:DockMargin(0, 0, S(6), 0)
+	tools:SetSpaceX(S(6))
+	tools:SetSpaceY(S(6))
 	local toolList = {
-		{ "pencil", "ic_pencil", "wrench" }, { "eraser", "ic_eraser", "leaf" },
-		{ "fill", "ic_fill", "scroll" }, { "picker", "ic_picker", "eye" },
+		{ "brush", "ic_brush", "broom", paint = true }, { "pencil", "ic_pencil", "pen" },
+		{ "eraser", "ic_eraser", "eraser" }, { "fill", "ic_fill", "drop" }, { "picker", "ic_picker", "eye" },
 	}
 	for _, t in ipairs(toolList) do
 		local b = tools:Add("PraetorButton")
-		b:Setup(P.L(t[2]), "ghost")
+		b:Setup(P.L(t[2]), "ghost", t[3])
 		b:SetFont("Praetor.Small")
-		b:SetSize(S(84), S(30))
-		b.Think = function(s) s.kind = tool == t[1] and "active" or "ghost" end
+		b:SetSize(S(118), S(34))
+		b.Think = function(s)
+			s.kind = tool == t[1] and "active" or "ghost"
+			local want = not t.paint or mode == "paint"
+			if s:IsVisible() ~= want then s:SetVisible(want) tools:InvalidateLayout() end
+		end
 		b.DoClick = function() tool = t[1] end
 	end
-	local mir = tools:Add("PraetorButton")
-	mir:Setup(P.L("ic_mirror"), "ghost")
+
+	-- brush size (paint mode): little dots of growing size
+	local sizes = vgui.Create("DPanel", side)
+	sizes:Dock(TOP)
+	sizes:SetTall(S(46))
+	sizes:DockMargin(0, S(8), S(6), 0)
+	sizes.Paint = function(s, w, h)
+		if mode ~= "paint" then
+			UI.Text(P.L("ic_size_hint"), "Praetor.Tiny", 0, h / 2, C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			return
+		end
+		UI.Text(P.L("ic_size"), "Praetor.SmallB", 0, h / 2, C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	end
+	for i = 0, 5 do
+		local b = vgui.Create("DButton", sizes)
+		b:SetText("")
+		b:SetSize(S(36), S(36))
+		b:SetPos(S(64) + i * S(40), S(5))
+		b:SetTooltip(P.L("ic_size") .. " " .. (i * 2 + 1))
+		b.Paint = function(s, w, h)
+			if mode ~= "paint" then return end
+			local on = brush == i
+			UI.Round(0, 0, w, h, h / 2, on and C.bronze or (s:IsHovered() and C.hover or C.panel2), on and C.ink or C.line)
+			local d = math.max(S(3), math.floor(S(4) + i * S(3.4)))
+			UI.Round(w / 2 - d / 2, h / 2 - d / 2, d, d, d / 2, on and color_white or C.text)
+		end
+		b.DoClick = function() if mode == "paint" then brush = i UI.Sound("click") end end
+	end
+
+	-- mirror, undo, redo
+	local acts = vgui.Create("DPanel", side)
+	acts:Dock(TOP)
+	acts:SetTall(S(34))
+	acts:DockMargin(0, S(8), S(6), 0)
+	acts.Paint = nil
+	local mir = UI.Button(acts, P.L("ic_mirror"), "ghost", "reply", function() mirror = not mirror end)
 	mir:SetFont("Praetor.Small")
-	mir:SetSize(S(84), S(30))
+	mir:Dock(LEFT)
+	mir:SetWide(S(118))
 	mir.Think = function(s) s.kind = mirror and "active" or "ghost" end
-	mir.DoClick = function() mirror = not mirror end
-	local und = tools:Add("PraetorButton")
-	und:Setup(P.L("ic_undo"), "ghost")
-	und:SetFont("Praetor.Small")
-	und:SetSize(S(84), S(30))
-	und.DoClick = function()
+	local und = UI.Button(acts, P.L("ic_undo"), "ghost", "undo", function()
 		local last = table.remove(undo)
-		if last then grid = last end
+		if last then
+			redo[#redo + 1] = { n = n, g = copyGrid() }
+			restore(last)
+		end
+	end)
+	und:SetFont("Praetor.Small")
+	und:Dock(LEFT)
+	und:SetWide(S(96))
+	und:DockMargin(S(6), 0, 0, 0)
+	local red = UI.Button(acts, P.L("ic_redo"), "ghost", "reload", function()
+		local nxt = table.remove(redo)
+		if nxt then
+			undo[#undo + 1] = { n = n, g = copyGrid() }
+			restore(nxt)
+		end
+	end)
+	red:SetFont("Praetor.Small")
+	red:Dock(FILL)
+	red:DockMargin(S(6), 0, 0, 0)
+
+	-- Ctrl+Z / Ctrl+Y
+	local bg = m:GetParent()
+	local oldKey = bg.OnKeyCodePressed
+	bg.OnKeyCodePressed = function(s, key)
+		if input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL) then
+			if key == KEY_Z then und:DoClick() return end
+			if key == KEY_Y then red:DoClick() return end
+		end
+		if oldKey then return oldKey(s, key) end
 	end
 
 	-- colours
 	sectionLabel(P.L("ic_color"))
 	local pal = vgui.Create("DIconLayout", side)
 	pal:Dock(TOP)
-	pal:SetSpaceX(S(4))
-	pal:SetSpaceY(S(4))
-	local sw = S(26)
+	pal:DockMargin(0, 0, S(6), 0)
+	pal:SetSpaceX(S(5))
+	pal:SetSpaceY(S(5))
+	local sw = S(28)
 	local function swatch(parent, getHex)
 		local b = parent:Add("DButton")
 		b:SetText("")
 		b:SetSize(sw, sw)
 		b.Paint = function(s, w, h)
 			local hx = getHex()
-			if not hx then UI.Round(0, 0, w, h, S(4), C.panel2, C.line) return end
+			if not hx then UI.Round(0, 0, w, h, h / 2, C.panel2, C.line) return end
 			local r, g, bl = hexColor(hx)
 			local cur = hexOf(color) == hx
-			UI.Round(0, 0, w, h, S(4), Color(r, g, bl), (cur or s:IsHovered()) and color_white or C.line)
+			local grow = (cur or s:IsHovered()) and 0 or S(2)
+			UI.Round(grow, grow, w - grow * 2, h - grow * 2, (h - grow * 2) / 2, Color(r, g, bl), cur and color_white or C.ink)
 		end
 		b.DoClick = function()
 			local hx = getHex()
-			if hx then useColor(Color(hexColor(hx))) if tool == "eraser" or tool == "picker" then tool = "pencil" end end
+			if hx then
+				useColor(Color(hexColor(hx)))
+				if tool == "eraser" or tool == "picker" then tool = mode == "paint" and "brush" or "pencil" end
+				UI.Sound("click")
+			end
 		end
 		return b
 	end
 	for _, hx in ipairs(PALETTE) do swatch(pal, function() return hx end) end
 
-	-- current colour + custom colour + recent colours
+	-- current colour (opens the colour picker) + recent colours
 	local cur = vgui.Create("DPanel", side)
 	cur:Dock(TOP)
-	cur:SetTall(S(34))
-	cur:DockMargin(0, S(6), 0, 0)
+	cur:SetTall(S(38))
+	cur:DockMargin(0, S(8), S(6), 0)
 	cur.Paint = nil
-	pickSwatch = vgui.Create("DButton", cur)
+	local pickSwatch = vgui.Create("DButton", cur)
 	pickSwatch:SetText("")
 	pickSwatch:Dock(LEFT)
-	pickSwatch:SetWide(S(34))
-	pickSwatch.Paint = function(s, w, h) UI.Round(0, 0, w, h, S(5), color, s:IsHovered() and color_white or C.lineL) end
-	pickSwatch.DoClick = function() UI.PickColor(color, function(c) useColor(c) tool = "pencil" end) end
+	pickSwatch:SetWide(S(38))
+	pickSwatch.Paint = function(s, w, h)
+		UI.Round(S(2), S(2), w - S(2), h - S(2), S(10), C.ink)
+		UI.Round(0, 0, w - S(2), h - S(2), S(10), color, s:IsHovered() and color_white or C.ink)
+	end
+	pickSwatch.DoClick = function() UI.PickColor(color, function(c) useColor(c) tool = mode == "paint" and "brush" or "pencil" end) end
 	pickSwatch:SetTooltip(P.L("ui_pick_color"))
 	local rec = vgui.Create("DIconLayout", cur)
 	rec:Dock(FILL)
-	rec:DockMargin(S(8), S(4), 0, 0)
-	rec:SetSpaceX(S(4))
+	rec:DockMargin(S(8), S(5), 0, 0)
+	rec:SetSpaceX(S(5))
 	for i = 1, 8 do swatch(rec, function() return recent[i] end) end
 
 	-- start from another icon / clear
 	sectionLabel(P.L("ic_start"))
 	local row = vgui.Create("DPanel", side)
 	row:Dock(TOP)
-	row:SetTall(S(30))
+	row:SetTall(S(34))
+	row:DockMargin(0, 0, S(6), 0)
 	row.Paint = nil
-	local imp = UI.Button(row, P.L("ic_import"), "ghost", nil, function()
+	local imp = UI.Button(row, P.L("ic_import"), "ghost", "copy", function()
 		UI.PickIcon(nil, function(name)
 			snapshot()
-			grid = readIcon(name)
+			grid = readIcon(name, n)
 		end, { noCreate = true })
 	end)
 	imp:SetFont("Praetor.Small")
 	imp:Dock(FILL)
-	local clr = UI.Button(row, P.L("ic_clear"), "ghost", nil, function() snapshot() grid = {} end)
+	local clr = UI.Button(row, P.L("ic_clear"), "ghost", "trash", function() snapshot() grid = {} end)
 	clr:SetFont("Praetor.Small")
 	clr:Dock(RIGHT)
-	clr:SetWide(S(80))
-	clr:DockMargin(S(4), 0, 0, 0)
+	clr:SetWide(S(100))
+	clr:DockMargin(S(6), 0, 0, 0)
 
-	-- name + preview
+	-- name
 	sectionLabel(P.L("ic_name"))
-	local name = UI.Entry(side, P.L("ic_name"), editId and P.CustomIcons[editId] and P.CustomIcons[editId].n or "")
+	local name = UI.Entry(side, P.L("ic_name"), startIcon and startIcon.n or "")
 	name:Dock(TOP)
-	name:SetTall(S(30))
+	name:DockMargin(0, 0, S(6), 0)
 
+	-- preview at the sizes it is used, and how many colours it has
 	local prev = vgui.Create("DPanel", side)
-	prev:Dock(FILL)
-	prev:DockMargin(0, S(8), 0, 0)
+	prev:Dock(TOP)
+	prev:SetTall(S(96))
+	prev:DockMargin(0, S(10), S(6), 0)
 	prev.Paint = function(_, w, h)
-		UI.Round(0, 0, w, h, S(6), C.bg, C.line)
-		-- the drawing at the sizes it is used: 16, 32, 64
-		local x = S(10)
+		UI.Round(0, 0, w, h, S(12), C.bg, C.line)
+		local x = S(12)
 		for _, sz in ipairs({ 16, 32, 64 }) do
-			local y = math.floor((h - sz) / 2)
-			local k = sz / N
-			for i = 1, N * N do
+			local y = math.floor((h - S(22) - sz) / 2) + S(2)
+			local k = sz / n
+			for i = 1, n * n do
 				local c = grid[i]
 				if c then
-					local px, py = (i - 1) % N, math.floor((i - 1) / N)
-					UI.Rect(x + math.floor(px * k), y + math.floor(py * k), math.max(1, math.floor((px + 1) * k) - math.floor(px * k)), math.max(1, math.floor((py + 1) * k) - math.floor(py * k)), c)
+					local px, py = (i - 1) % n, math.floor((i - 1) / n)
+					local x0, y0 = x + math.floor(px * k), y + math.floor(py * k)
+					local x1, y1 = x + math.floor((px + 1) * k), y + math.floor((py + 1) * k)
+					if x1 > x0 and y1 > y0 then UI.Rect(x0, y0, x1 - x0, y1 - y0, c) end
 				end
 			end
-			x = x + sz + S(14)
+			x = x + sz + S(16)
 		end
-		UI.Text(P.L("ic_hint"), "Praetor.Tiny", w - S(8), h - S(6), C.dim, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
+		local used = {}
+		local cnt = 0
+		for i = 1, n * n do
+			local c = grid[i]
+			if c then local hx = hexOf(c) if not used[hx] then used[hx] = true cnt = cnt + 1 end end
+		end
+		local over = cnt > 16
+		UI.Text(P.L("ic_colors_used", { V = cnt }), "Praetor.Tiny", S(12), h - S(12), over and C.amber or C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		UI.Text(P.L(mode == "paint" and "ic_hint_paint" or "ic_hint"), "Praetor.Tiny", w - S(12), h - S(12), C.dim, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 	end
 
 	-- footer
-	local saveBtn = UI.Button(m.foot, P.L("ic_save"), "primary", nil, function()
+	local saveBtn = UI.Button(m.foot, P.L("ic_save"), "primary", "check", function()
+		local total = n * n
+		local work = copyGrid()
+		local merged = reduceColours(work, total)
 		local palette, index, px = {}, {}, {}
-		for i = 1, N * N do
-			local c = grid[i]
+		for i = 1, total do
+			local c = work[i]
 			if c then
 				local h = hexOf(c)
 				if not index[h] then
@@ -391,15 +651,15 @@ function UI.IconEditor(editId, onSaved)
 			end
 		end
 		if #palette == 0 then P.Toast(P.L("ic_editor"), P.L("ic_empty"), "warn", 4) return end
-		if #palette > 16 then P.Toast(P.L("ic_editor"), P.L("ic_colors"), "warn", 5) return end
+		if merged > 0 then P.Toast(P.L("ic_editor"), P.L("ic_merged", { V = merged }), "info", 5) end
 		savedCallback = function(id)
 			if onSaved then onSaved(id) end
 		end
-		P.Request("icon_save", { id = editId, n = name:GetValue(), px = table.concat(px), pal = palette })
+		P.Request("icon_save", { id = editId, n = name:GetValue(), px = table.concat(px), pal = palette, s = n })
 		m:Close()
 	end)
 	saveBtn:Dock(RIGHT)
-	saveBtn:SetWide(S(140))
+	saveBtn:SetWide(S(150))
 	local cancel = UI.Button(m.foot, P.L("ui_cancel"), "ghost", nil, function() m:Close() end)
 	cancel:Dock(RIGHT)
 	cancel:SetWide(S(110))
@@ -429,7 +689,7 @@ function UI.PickIcon(cur, onDone, opts)
 		b:SetText("")
 		b:SetSize(S(48), S(48))
 		b.Paint = function(s, w, h)
-			UI.Round(0, 0, w, h, S(6), (s:IsHovered() or name == cur) and C.panel3 or C.panel2, name == cur and C.bronze or C.line)
+			UI.Round(0, 0, w, h, S(12), (s:IsHovered() or name == cur) and C.panel3 or C.panel2, name == cur and C.bronze or (s:IsHovered() and C.lineL or C.line))
 			UI.Icon(name, (w - 32) / 2, (h - 32) / 2, 32)
 		end
 		b.DoClick = function() onDone(name) m:Close() end
@@ -480,7 +740,7 @@ function UI.PickIcon(cur, onDone, opts)
 			b:SetSize(S(48), S(48))
 			b:SetTooltip(P.L("ic_create"))
 			b.Paint = function(s, w, h)
-				UI.Round(0, 0, w, h, S(6), s:IsHovered() and Color(C.bronze.r, C.bronze.g, C.bronze.b, 50) or C.panel2, s:IsHovered() and C.bronze or C.lineL)
+				UI.Round(0, 0, w, h, S(12), s:IsHovered() and Color(C.bronze.r, C.bronze.g, C.bronze.b, 50) or C.panel2, s:IsHovered() and C.bronze or C.lineL)
 				local c = s:IsHovered() and C.bronzeL or C.muted
 				UI.Rect(w / 2 - S(8), h / 2 - 1, S(16), 2, c)
 				UI.Rect(w / 2 - 1, h / 2 - S(8), 2, S(16), c)
