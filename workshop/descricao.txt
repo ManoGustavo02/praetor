@@ -1,5 +1,5 @@
 [h1]Praetor Admin System[/h1]
-A full admin mod that replaces SAM or ULX on its own. Everything is set up in one in-game menu, no files to edit.
+A full admin mod that replaces SAM or ULX on its own, with a cartoon-style interface full of animations. Everything is set up in one in-game menu, no files to edit.
 
 [h2]Getting started[/h2]
 [list]
@@ -11,18 +11,20 @@ A full admin mod that replaces SAM or ULX on its own. Everything is set up in on
 [h2]What it has[/h2]
 [list]
 [*][b]Ranks[/b]: authority 0-100, inheritance, groups, gradient colours, your own pixel icons and one-click permissions.
-[*][b]94 commands[/b] with ! or /, from the player list or the scoreboard (~ runs silently). Build your own commands with drag-and-drop blocks.
+[*][b]94 commands[/b] with ! or /, from the player list or the scoreboard. Build your own with drag-and-drop blocks.
 [*][b]Chat box[/b] with rank tags, avatars, GIFs, clickable links, Workshop previews and command suggestions. [b]Tags and titles[/b] with gradients.
-[*][b]Scoreboard[/b] that changes with the gamemode (DarkRP jobs and wanted, TTT alive/missing/dead without giving roles away).
-[*][b]Reports[/b]: the player picks who and what, can attach a picture of their screen, follows it live and talks with the staff. The staff desk sorts by priority and shows damage, chat and past reports.
+[*][b]Scoreboard[/b] that changes with the gamemode (DarkRP jobs, TTT without giving roles away), with music. [b]Tags over heads[/b].
+[*][b]DarkRP HUD and F4 menu[/b]: job preview (model, weapons, description), shop and RP commands. Each part can be turned off.
+[*][b]Loading screen[/b] with your name, tips, music and the real download progress.
+[*][b]Reports[/b] with a picture of the screen and a live talk with the staff, sorted by priority with damage, chat and past reports.
 [*][b]Warnings, bans with history, player sheet[/b] and a [b]ban screen[/b] with time left, ban code and your Discord link.
 [*][b]Logs[/b] of kills, props, connections, DarkRP and TTT, plus the logs from [b]before a crash[/b].
-[*][b]AutoMod[/b]: blocks words with letter tricks (p.u.t.a, 4ss) and checks GIFs and Workshop skins (Outfitter, PAC3...) before anyone downloads them.
+[*][b]AutoMod[/b]: blocks words with letter tricks (p.u.t.a, 4ss) and checks GIFs and Workshop skins (Outfitter, PAC3) before downloading.
 [*][b]Restrictions[/b] of weapons, entities, NPCs, vehicles, props and tools by rank, with a right click in the Q menu.
 [*][b]Votes[/b]: polls, map vote with pictures, and player votes (votekick, voteban, votemute, clear props...).
 [*][b]Announcements[/b] on a timer, on join or by hand, with your colour, icon and link.
-[*][b]Staff panel[/b] (time on duty, punishments, reports, ratings), [b]support rooms[/b] (!sit), [b]automatic promotions[/b] by time played and a [b]scheduled restart[/b].
-[*][b]Security[/b]: live server health, anti-crash in steps, dupe blocker, linked accounts (alts of banned players) and [b]screenshot of a player's screen[/b] (!screengrab).
+[*][b]Staff panel[/b], [b]support rooms[/b] (!sit), [b]automatic promotions[/b] by time played and a [b]scheduled restart[/b].
+[*][b]Security[/b]: server health, anti-crash, dupe blocker, alts of banned players and [b]screenshot of a player's screen[/b].
 [*][b]Prop protection[/b]: players only touch their own things, the staff touches everything (CPPI, steps aside for FPP).
 [*][b]Discord webhook[/b] per category. [b]DarkRP[/b] job bans and whitelists. [b]Sandbox[/b] physgun on players and limits per rank.
 [/list]
@@ -30,12 +32,12 @@ A full admin mod that replaces SAM or ULX on its own. Everything is set up in on
 [h2]Works with[/h2]
 Sandbox, DarkRP, TTT, Murder, Prop Hunt and more. ULX, SAM and CAMI addons keep working. English and Portuguese.
 
-[b]Works great with Blackbox - Reports & Damage Logs[/b] (also by me): with it installed, !report goes to Blackbox (death replays, damage logs) and its punishments go into Praetor's bans.
+[b]Works great with Blackbox - Reports & Damage Logs[/b] (also mine): !report goes to Blackbox and its punishments land in Praetor's bans.
 
 [hr][/hr]
 
 [h1]Praetor Admin System[/h1]
-Um admin mod completo que substitui o SAM ou o ULX sozinho. Tudo é configurado num menu dentro do jogo, sem editar arquivo.
+Um admin mod completo que substitui o SAM ou o ULX sozinho, com interface em estilo cartoon cheia de animações. Tudo é configurado num menu dentro do jogo, sem editar arquivo.
 
 [h2]Primeiros passos[/h2]
 [list]
@@ -47,18 +49,20 @@ Um admin mod completo que substitui o SAM ou o ULX sozinho. Tudo é configurado 
 [h2]O que ele tem[/h2]
 [list]
 [*][b]Cargos[/b]: autoridade 0-100, herança, grupos, cores em degradê, seus próprios ícones em pixel art e permissões com um clique.
-[*][b]94 comandos[/b] com ! ou /, pela lista de jogadores ou pelo TAB (~ roda em silêncio). Crie seus próprios comandos com blocos de arrastar e soltar.
+[*][b]94 comandos[/b] com ! ou /, pela lista de jogadores ou pelo TAB. Crie os seus com blocos de arrastar e soltar.
 [*][b]Chat[/b] com tag do cargo, avatar, GIFs, links clicáveis, preview da Oficina e sugestão de comandos. [b]Tags e títulos[/b] com degradê.
-[*][b]TAB[/b] que muda com o gamemode (profissão e procurado no DarkRP, vivos/desaparecidos/mortos no TTT sem entregar papéis).
-[*][b]Denúncias[/b]: o jogador escolhe quem e o quê, pode anexar um print da tela, acompanha ao vivo e conversa com a staff. A mesa da staff ordena por prioridade e mostra dano, chat e denúncias antigas.
+[*][b]TAB[/b] que muda com o gamemode (profissões no DarkRP, TTT sem entregar papéis), com música. [b]Tags na cabeça[/b].
+[*][b]HUD e menu F4 do DarkRP[/b]: prévia da profissão (modelo, armas, descrição), loja e comandos de RP. Cada parte pode ser desligada.
+[*][b]Tela de loading[/b] com seu nome, dicas, música e o progresso real dos downloads.
+[*][b]Denúncias[/b] com print da tela e conversa ao vivo com a staff, ordenadas por prioridade com dano, chat e denúncias antigas.
 [*][b]Avisos, bans com histórico, ficha do jogador[/b] e [b]tela de ban[/b] com tempo restante, código do ban e o link do seu Discord.
 [*][b]Logs[/b] de mortes, props, conexões, DarkRP e TTT, e os logs de [b]antes do crash[/b].
-[*][b]AutoMod[/b]: bloqueia palavras com truque de letra (p.u.t.a, 4ss) e checa GIFs e skins da Oficina (Outfitter, PAC3...) antes de alguém baixar.
+[*][b]AutoMod[/b]: bloqueia palavras com truque de letra (p.u.t.a, 4ss) e checa GIFs e skins da Oficina (Outfitter, PAC3) antes de baixar.
 [*][b]Restrições[/b] de armas, entidades, NPCs, veículos, props e ferramentas por cargo, com o botão direito no menu Q.
 [*][b]Votações[/b]: enquetes, votação de mapa com fotos e votações dos jogadores (votekick, voteban, votemute, limpar props...).
 [*][b]Anúncios[/b] por tempo, ao entrar ou na mão, com sua cor, ícone e link.
-[*][b]Painel da staff[/b] (tempo em serviço, punições, denúncias, notas), [b]salas de atendimento[/b] (!sit), [b]promoções automáticas[/b] por tempo de jogo e [b]reinício programado[/b].
-[*][b]Segurança[/b]: saúde do servidor ao vivo, anti-crash em etapas, bloqueador de dupes, contas ligadas (contas de banidos) e [b]print da tela do jogador[/b] (!screengrab).
+[*][b]Painel da staff[/b], [b]salas de atendimento[/b] (!sit), [b]promoções automáticas[/b] por tempo de jogo e [b]reinício programado[/b].
+[*][b]Segurança[/b]: saúde do servidor, anti-crash, bloqueador de dupes, contas de banidos e [b]print da tela do jogador[/b].
 [*][b]Proteção de props[/b]: o jogador só mexe no que é dele, a staff mexe em tudo (CPPI, sai da frente do FPP).
 [*][b]Webhook do Discord[/b] por categoria. [b]DarkRP[/b]: ban e whitelist de profissão. [b]Sandbox[/b]: physgun em jogador e limites por cargo.
 [/list]
@@ -66,7 +70,7 @@ Um admin mod completo que substitui o SAM ou o ULX sozinho. Tudo é configurado 
 [h2]Funciona com[/h2]
 Sandbox, DarkRP, TTT, Murder, Prop Hunt e outros. Addons de ULX, SAM e CAMI continuam funcionando. Inglês e português.
 
-[b]Combina com o Blackbox - Reports & Damage Logs[/b] (também meu): com ele instalado, o !report passa para o Blackbox (replay de morte, log de dano) e as punições dele caem nos bans do Praetor.
+[b]Combina com o Blackbox - Reports & Damage Logs[/b] (também meu): o !report passa para o Blackbox e as punições dele caem nos bans do Praetor.
 
 [i]Feito por / Made by Mano Gustavo[/i]
 [b]Gostou? Deixe seu like e favorite! / Enjoyed it? Like and favorite![/b]

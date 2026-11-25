@@ -1,3 +1,36 @@
+[h2]1.5.0[/h2]
+[b]English[/b]
+A new interface everywhere: a cartoon style with thick outlines, hard shadows, pills and animations on every screen.
+[list]
+[*][b]New look[/b]: Bagel Fat One on titles and numbers, Nunito on the text (both SIL Open Font License), imperial purple, 116 icons redrawn in one style, new interface sounds (CC0, with a volume slider in your options).
+[*][b]Menu[/b]: windows pop in, tabs slide, lists come in one after the other, buttons sink when clicked.
+[*][b]Chat[/b] redrawn. Fixed: holding the click inside the chat made the text box lose and get back the focus ("Message to everyone" blinking).
+[*][b]Scoreboard (TAB)[/b] redrawn, with a [b]DarkRP version[/b]: players grouped by job with the job colour and free slots, salary, wanted (blinking), arrested and gun license, police and wanted counters. Optional music that fades in and out.
+[*][b]Tags over heads[/b]: avatar, name, rank and job (DarkRP), health bar, voice glow. They pop in and float. Each player can turn them off.
+[*][b]DarkRP HUD[/b]: health (with the damage you just took fading away), armor, hunger, money that counts up with "+$" floating, salary, wanted/arrested/license, ammo, agenda and a lockdown banner. DarkRP notices show as Praetor toasts.
+[*][b]DarkRP F4 menu[/b]: every job with a preview you can turn (and pick the model when the job has more than one), description, weapons, salary, slots and why you can't take it yet; become or ask for a vote. Shop with entities, weapons, shipments, ammo, food and vehicles, with search. Laws and a [b]bar of RP commands[/b] (drop and give money, sell doors, demote, advert, job name, gun license; police: wanted, warrant; mayor: lockdown, laws). It reads DarkRP's own tables, nothing to set up.
+[*]The HUD, the F4 menu, the DarkRP TAB and the agenda each have their own switch in Settings > DarkRP.
+[*][b]Loading screen[/b]: a comic page with your server name, a narrator with tips, map, slots and gamemode, your Discord, a "LOADING" sound effect that fills up with the real download progress, the file being downloaded and music on a cassette (M turns it off). English or Portuguese, following the game. Set it all in Settings > Loading screen. A server with its own loading screen keeps it until you turn this one on.
+[*][b]Toasts, announcements, votes, reports and ban screen[/b] in the new style.
+[*][b]Rank icon editor[/b] with two modes: [b]Pixel[/b] (16x16) and the new [b]Paint[/b] (32x32): brush and pencil in 6 sizes (mouse wheel), eraser, fill, eyedropper, mirror, undo and redo (Ctrl+Z / Ctrl+Y).
+[/list]
+
+[b]Português[/b]
+Interface nova em tudo: estilo cartoon com contorno grosso, sombra dura, pílulas e animação em todas as telas.
+[list]
+[*][b]Visual novo[/b]: Bagel Fat One nos títulos e números, Nunito no texto (as duas com licença SIL Open Font License), roxo imperial, 116 ícones redesenhados num estilo só, sons novos na interface (CC0, com controle de volume nas suas opções).
+[*][b]Menu[/b]: as janelas aparecem com pulo, as abas deslizam, as listas entram uma depois da outra, os botões afundam no clique.
+[*][b]Chat[/b] redesenhado. Corrigido: segurar o clique dentro do chat fazia a caixa de texto perder e recuperar o foco ("Mensagem para todos" piscando).
+[*][b]TAB[/b] redesenhado, com [b]versão DarkRP[/b]: jogadores agrupados por profissão com a cor dela e as vagas, salário, procurado (piscando), preso e porte de arma, contador de polícia e de procurados. Música opcional que entra e sai suave.
+[*][b]Tags na cabeça[/b]: avatar, nome, cargo e profissão (DarkRP), barra de vida, brilho quando fala. Aparecem com pulo e flutuam. Cada jogador pode desligar.
+[*][b]HUD do DarkRP[/b]: vida (com o dano que você acabou de levar sumindo devagar), colete, fome, dinheiro que conta com "+$" subindo, salário, procurado/preso/porte, munição, agenda e faixa de toque de recolher. Os avisos do DarkRP aparecem como avisos do Praetor.
+[*][b]Menu F4 do DarkRP[/b]: toda profissão com prévia que dá para girar (e escolher o modelo quando tem mais de um), descrição, armas, salário, vagas e o motivo de ainda não poder pegar; virar ou pedir votação. Loja com entidades, armas, carregamentos, munição, comida e veículos, com busca. Leis e uma [b]barra de comandos de RP[/b] (dropar e dar dinheiro, vender portas, demitir, anúncio, nome da profissão, porte de arma; polícia: procurado, mandado; prefeito: toque de recolher, leis). Lê as tabelas do próprio DarkRP, sem configurar nada.
+[*]HUD, menu F4, TAB do DarkRP e agenda têm cada um seu botão em Configurações > DarkRP.
+[*][b]Tela de loading[/b]: uma página de quadrinho com o nome do servidor, um narrador com as dicas, mapa, vagas e modo, seu Discord, um efeito sonoro "CARREGANDO" que vai enchendo com o progresso real dos downloads, o arquivo que está baixando e a música numa fita cassete (M desliga). Em português ou inglês, conforme o jogo. Configure tudo em Configurações > Tela de loading. Um servidor com tela de loading própria continua com ela até você ligar esta.
+[*][b]Avisos, anúncios, votações, denúncias e tela de ban[/b] no estilo novo.
+[*][b]Editor de ícone do cargo[/b] com dois modos: [b]Pixel[/b] (16x16) e o novo [b]Pintura[/b] (32x32): pincel e lápis em 6 tamanhos (rodinha do mouse), borracha, balde, conta-gotas, espelho, desfazer e refazer (Ctrl+Z / Ctrl+Y).
+[/list]
+
 [h2]1.4.2[/h2]
 [b]English[/b][list]
 [*][b]Physgun freeze[/b]: holding a player and pressing right click freezes them right where they are, in the air too, like a prop. Right click again while holding them unfreezes. It no longer runs the freeze command, so no "you froze X" line in the chat. While frozen by the physgun the player takes no damage and can't move, shoot or use anything. Moving a frozen player keeps them frozen where you drop them.

@@ -303,10 +303,30 @@ UI.Sounds = {
 }
 
 local soundVar = CreateClientConVar("praetor_sounds", "1", true, false, "Praetor interface sounds")
+local soundVol = CreateClientConVar("praetor_sounds_volume", "100", true, false, "Volume of the Praetor interface sounds (0 - 100)", 0, 100)
+-- below 100% the sound goes through a sound channel, which takes a volume;
+-- one channel per sound is kept and replayed so hovering does not open the file every time
+local channels = {}
 function UI.Sound(name)
 	if not soundVar:GetBool() then return end
 	local s = UI.Sounds[name]
-	if s then surface.PlaySound(s) end
+	if not s then return end
+	local vol = math.Clamp(soundVol:GetFloat(), 0, 100) / 100
+	if vol >= 0.99 then surface.PlaySound(s) return end
+	if vol <= 0 then return end
+	local ch = channels[name]
+	if IsValid(ch) then
+		ch:SetVolume(vol)
+		ch:SetTime(0)
+		ch:Play()
+		return
+	end
+	sound.PlayFile("sound/" .. s, "noblock", function(c)
+		if not IsValid(c) then return end
+		channels[name] = c
+		c:SetVolume(vol)
+		c:Play()
+	end)
 end
 
 -- rank badge helpers

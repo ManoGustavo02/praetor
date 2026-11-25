@@ -19,3 +19,13 @@ All sounds come from Openverse (openverse.org) and are public domain (CC0). They
 | tab.ogg | Mouth Pop 2 | michorvath | CC0 | https://freesound.org/people/michorvath/sounds/269500 |
 | toggle.ogg | Toggle Switch | pillwave | CC0 | https://freesound.org/people/pillwave/sounds/423957 |
 | warn.ogg | Percussive Alert 1_2 | Joao_Janz | CC0 | https://freesound.org/people/Joao_Janz/sounds/504779 |
+
+## Músicas / Music
+
+As duas músicas vêm do Pixabay (Pixabay Content License: uso livre, inclusive comercial, sem precisar de crédito; não pode ser revendida sozinha). O crédito fica aqui mesmo assim.
+Both tracks come from Pixabay (Pixabay Content License: free to use, commercial use included, no credit required; can't be resold on its own). Credited here anyway.
+
+| Arquivo | Música | Autor | Onde toca |
+|---|---|---|---|
+| praetor/sound/praetor/music/tab.mp3 | smooth menu | roman_sol (Pixabay) | TAB (placar) |
+| docs/loading/music.mp3 | loading trap | kontraa (Pixabay) | Tela de loading |

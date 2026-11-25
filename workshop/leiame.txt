@@ -1,5 +1,5 @@
 Praetor Admin System - Admin Mod, Logs, Scoreboard & AutoMod (ULX / SAM Alternative)
-Versão / Version: 1.4.2
+Versão / Version: 1.5.0
 Autor / Author: Mano Gustavo
 
 Instalação / Install
@@ -19,4 +19,7 @@ Webhook do Discord: se o host bloquear o HTTP do jogo, instale o módulo CHTTP (
 Discord webhook: if your host gets the game HTTP blocked, install the CHTTP module (gmsv_chttp) and Praetor uses it on its own.
 
 Sons: Openverse, domínio público (CC0). Ver _fontes/CREDITOS_SONS.md.
-Fontes: Barlow Semi Condensed, SIL Open Font License.
+Fontes: Bagel Fat One (títulos) e Nunito (texto), SIL Open Font License.
+Fonts: Bagel Fat One (titles) and Nunito (text), SIL Open Font License.
+Músicas do TAB e da tela de loading: Pixabay (roman_sol, kontraa). Ver _fontes/CREDITOS_SONS.md.
+TAB and loading screen music: Pixabay (roman_sol, kontraa). See _fontes/CREDITOS_SONS.md.

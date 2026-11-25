@@ -2676,6 +2676,8 @@ P.AddPhrases("en", {
 	ic_colors_used = "{V} of 16 colours",
 	ic_hint_paint = "Mouse wheel changes the brush. Right click erases.",
 	ic_merged = "The icon had too many colours: {V} similar ones were joined.",
+	cl_sounds_volume = "Interface sounds volume",
+	setsecd_darkrpui = "Praetor's own HUD and F4 menu for DarkRP. Each part can be turned off.",
 })
 P.AddPhrases("pt", {
 	setsec_loading = "Tela de loading",
@@ -2822,4 +2824,6 @@ P.AddPhrases("pt", {
 	ic_colors_used = "{V} de 16 cores",
 	ic_hint_paint = "A rodinha do mouse muda o pincel. Botão direito apaga.",
 	ic_merged = "O ícone tinha cores demais: {V} parecidas foram juntadas.",
+	cl_sounds_volume = "Volume dos sons da interface",
+	setsecd_darkrpui = "HUD e menu F4 próprios do Praetor para o DarkRP. Cada parte pode ser desligada.",
 })
