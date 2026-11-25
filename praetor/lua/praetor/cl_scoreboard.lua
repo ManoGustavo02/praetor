@@ -21,9 +21,19 @@ P.Scoreboard = SB
 
 function SB.Mode()
 	if engine.ActiveGamemode() == "terrortown" and ScoreGroup then return "ttt" end
-	if P.IsDarkRP() then return "darkrp" end
+	-- the DarkRP TAB (jobs, police, wanted...) can be turned off in Settings
+	if P.IsDarkRP() and P.Setting("scoreboard_darkrp") ~= false then return "darkrp" end
 	return "standard"
 end
+
+-- dark text on light colours, white on dark ones
+local function inkOn(c)
+	return (c.r * 0.299 + c.g * 0.587 + c.b * 0.114) > 150 and C.ink or color_white
+end
+
+-- DarkRP: is this player police? / the job table of a team
+local function isCP(ply) return ply.isCP and ply:isCP() or false end
+local function jobOf(t) return RPExtraTeams and RPExtraTeams[t] or nil end
 
 local function rp(ply, var)
 	return ply.getDarkRPVar and ply:getDarkRPVar(var) or nil
@@ -87,6 +97,7 @@ end
 local function buildGroups()
 	local mode = SB.Mode()
 	local grouping = P.Setting("scoreboard_group") or "group"
+	if mode == "darkrp" then grouping = "job" end
 	local gOrder = {}
 	for i, g in ipairs(P.SortedRankGroups()) do gOrder[g.id] = 1000 - i end
 	local groups, byKey = {}, {}
@@ -106,6 +117,7 @@ local function buildGroups()
 				g.title = team.GetName(ply:Team())
 				g.col = team.GetColor(ply:Team())
 				g.order = -ply:Team()
+				g.team = ply:Team()
 			elseif kind == "g" then
 				local rg = P.RankGroups[rest]
 				if rg then
@@ -158,9 +170,10 @@ local function columns()
 	else
 		cols[#cols + 1] = { "sb_kd", S(76), function(p) return p:Frags() .. " / " .. p:Deaths() end }
 		cols[#cols + 1] = { "sb_hours", S(76), function(p) return P.FormatHours(P.PlayTime(p)), C.muted, "Praetor.Small" end }
-		if mode == "darkrp" and P.Setting("scoreboard_group") ~= "job" then
-			cols[#cols + 1] = { "sb_job", S(130), function(p)
-				return rp(p, "job") or team.GetName(p:Team()), team.GetColor(p:Team()), "Praetor.Small"
+		if mode == "darkrp" then
+			-- the job is the group title, so the column shows the salary
+			cols[#cols + 1] = { "sb_salary_col", S(96), function(p)
+				return money(rp(p, "salary") or 0), C.laurel, "Praetor.SmallB"
 			end }
 		end
 	end
@@ -194,24 +207,29 @@ local function makeRow(parent, ply, onSelect)
 	row:SetText("")
 	row:SetTall(S(ROW_H))
 	row:Dock(TOP)
-	row:DockMargin(0, 0, 0, S(3))
+	row:DockMargin(0, 0, 0, S(4))
 	row.ply = ply
 	row.anim = 0
 	local av = UI.FramedAvatar(row, S(34), ply)
-	av:SetPos(S(8), (S(ROW_H) - S(34)) / 2)
+	av:SetPos(S(14), (S(ROW_H) - S(3) - S(34)) / 2)
 	av:SetMouseInputEnabled(false)
 	row:SetTooltip(ply:Nick())
+	row.OnCursorEntered = function() UI.Sound("hover") end
 	row.Paint = function(s, w, h)
 		if not IsValid(ply) then return end
 		local mode = SB.Mode()
 		local sel = SB.selected == ply
-		s.anim = UI.Lerp(s.anim, s:IsHovered() and 1 or 0, 14)
-		local fill = sel and Color(C.bronze.r, C.bronze.g, C.bronze.b, 34) or P.LerpColor(s.anim, C.panel2, C.hover)
-		UI.Round(0, 0, w, h, S(7), fill, sel and Color(C.bronze.r, C.bronze.g, C.bronze.b, 170) or nil)
+		s.anim = UI.Lerp(s.anim, (s:IsHovered() or sel) and 1 or 0, 14)
+		-- comic row: hard shadow shows on hover / selection, the row lifts a little
+		local off = S(3)
+		w, h = w - off, h - off
+		if s.anim > 0.02 then UI.Round(off, off, w, h, S(12), Color(C.ink.r, C.ink.g, C.ink.b, 210 * s.anim)) end
+		local fill = sel and Color(48, 36, 88) or P.LerpColor(s.anim, C.panel2, C.hover)
+		UI.Round(0, 0, w, h, S(12), fill, sel and C.bronze or P.LerpColor(s.anim, C.line, C.lineL))
 		local roleName, roleCol
 		if mode == "ttt" then roleName, roleCol = tttRole(ply) end
-		if roleCol then UI.Round(0, S(6), S(3), h - S(12), S(1), roleCol)
-		elseif ply == LocalPlayer() then UI.Round(0, S(10), S(3), h - S(20), S(1), C.bronzeL) end
+		local stripe = roleCol or (mode == "darkrp" and team.GetColor(ply:Team())) or (ply == LocalPlayer() and C.bronzeL) or nil
+		if stripe then UI.Round(S(5), S(8), S(4), h - S(16), S(2), stripe) end
 
 		local L = layout(w)
 		-- name and, below it, the title
@@ -251,9 +269,11 @@ local function makeRow(parent, ply, onSelect)
 			ix = ix - isz - S(6)
 		end
 		if mode == "darkrp" then
-			if rp(ply, "Arrested") then icon("hammer", C.amber) end
-			if rp(ply, "wanted") then icon("flag", C.crimsonL) end
-			if rp(ply, "HasGunlicense") then icon("badge", C.laurel) end
+			if rp(ply, "Arrested") then icon("jail") end
+			-- wanted: the flag blinks
+			if rp(ply, "wanted") and math.floor(RealTime() * 3) % 2 == 0 then icon("flag") elseif rp(ply, "wanted") then ix = ix - isz - S(6) end
+			if rp(ply, "HasGunlicense") then icon("license") end
+			if isCP(ply) then icon("helm") end
 		end
 		if P.OnDuty(ply) then icon("shield") end
 		if ply:IsSpeaking() then icon("mic", C.laurel) end
@@ -275,9 +295,10 @@ end
 -- ------------------------------------------------------------------ player card
 
 local function bar(x, y, w, h, frac, col)
-	UI.Round(x, y, w, h, h / 2, Color(255, 255, 255, 14))
+	UI.Round(x, y, w, h, h / 2, C.bg, C.line)
 	frac = math.Clamp(frac, 0, 1)
-	if frac > 0 then UI.Round(x, y, math.max(h, w * frac), h, h / 2, col) end
+	local bw = UI.BW()
+	if frac > 0 then UI.Round(x + bw, y + bw, math.max(h - bw * 2, (w - bw * 2) * frac), h - bw * 2, (h - bw * 2) / 2, col) end
 end
 
 -- 4 small tiles under the name: { label, value, colour }
@@ -344,15 +365,18 @@ local function buildCard(card, ply)
 	card.Think = nil
 	if not IsValid(ply) then
 		card.Paint = function(_, w, h)
-			UI.Round(0, 0, w, h, S(8), C.panel, C.line)
+			UI.Tablet(0, 0, w, h, C.panel, C.line)
 			UI.Text(P.L("sb_pick"), "Praetor.Small", w / 2, h / 2, C.muted, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		end
 		return
 	end
-	card.Paint = function(_, w, h) UI.Round(0, 0, w, h, S(8), C.panel, C.line) end
+	card.Paint = function(_, w, h) UI.Tablet(0, 0, w, h, C.panel, C.line) end
+	-- a new player in the card: it pops in
+	card:SetAlpha(0)
+	card:AlphaTo(255, 0.16)
 
-	local cw, ch = card:GetWide(), card:GetTall()
-	local pad = S(10)
+	local cw, ch = card:GetWide() - S(4), card:GetTall() - S(4)
+	local pad = S(12)
 	local iw = cw - pad * 2
 
 	-- model with a soft floor
@@ -361,10 +385,21 @@ local function buildCard(card, ply)
 	stage:SetPos(pad, pad)
 	stage:SetSize(iw, mdlH)
 	stage.Paint = function(_, w, h)
-		UI.Round(0, 0, w, h, S(7), Color(12, 13, 17))
-		for i = 0, 7 do
-			local rw = w * (0.7 - i * 0.06)
-			UI.Round(w / 2 - rw / 2, h - S(30) + i * 2, rw, S(14), S(7), Color(C.bronze.r, C.bronze.g, C.bronze.b, 6))
+		-- a little comic stage: dark backdrop, halftone dots and a spotlight on the floor
+		local tint = SB.Mode() == "darkrp" and IsValid(ply) and team.GetColor(ply:Team()) or C.bronze
+		UI.Round(0, 0, w, h, S(12), C.bg, C.line)
+		local step = S(12)
+		for gy = S(10), h - S(10), step do
+			for gx = S(10) + ((gy / step) % 2) * step / 2, w - S(10), step do
+				local k = 1 - math.min(1, math.abs(gx - w / 2) / (w * 0.6))
+				local r = math.max(1, math.floor(S(2) * k))
+				surface.SetDrawColor(tint.r, tint.g, tint.b, 22 * k)
+				surface.DrawRect(gx - r / 2, gy - r / 2, r, r)
+			end
+		end
+		for i = 0, 6 do
+			local rw = w * (0.62 - i * 0.07)
+			UI.Round(w / 2 - rw / 2, h - S(34) + i * 2, rw, S(16), S(8), Color(tint.r, tint.g, tint.b, 12))
 		end
 	end
 	local mdl = vgui.Create("DModelPanel", stage)
@@ -426,7 +461,7 @@ local function buildCard(card, ply)
 		for i, t in ipairs(cardTiles(ply)) do
 			local tx = ((i - 1) % 2) * (tw + S(6))
 			local ty = math.floor((i - 1) / 2) * (th + S(6))
-			UI.Round(tx, ty, tw, th, S(6), C.panel2)
+			UI.Round(tx, ty, tw, th, S(10), C.panel2, C.line)
 			UI.Text(P.Upper(t[1]), "Praetor.Tiny", tx + S(10), ty + S(8), C.dim)
 			UI.Text(UI.Fit(tostring(t[2]), "Praetor.BodyB", tw - S(20)), "Praetor.BodyB", tx + S(10), ty + S(22), t[3] or C.ivory)
 		end
@@ -443,10 +478,10 @@ local function buildCard(card, ply)
 			local hp, mhp = ply:Health(), math.max(1, ply:GetMaxHealth())
 			local ar = ply:Armor()
 			UI.Icon("heart", 0, 0, 16, C.crimsonL)
-			bar(S(22), S(5), w - S(84), S(7), hp / mhp, C.crimsonL)
+			bar(S(22), S(3), w - S(84), S(11), hp / mhp, C.crimsonL)
 			UI.Text(hp .. " HP", "Praetor.Tiny", w, S(8), C.text, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 			UI.Icon("shield", 0, S(20), 16, C.sky)
-			bar(S(22), S(25), w - S(84), S(7), ar / math.max(1, ply.GetMaxArmor and ply:GetMaxArmor() or 100), C.sky)
+			bar(S(22), S(23), w - S(84), S(11), ar / math.max(1, ply.GetMaxArmor and ply:GetMaxArmor() or 100), C.sky)
 			UI.Text(ar .. " AR", "Praetor.Tiny", w, S(28), C.text, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		end
 	end
@@ -463,9 +498,9 @@ local function buildCard(card, ply)
 				local iw = c[3] and S(18) or 0
 				local tw = surface.GetTextSize(c[1]) + S(14) + iw
 				if x + tw > w then break end
-				UI.Round(x, 0, tw, h, h / 2, Color(c[2].r, c[2].g, c[2].b, 36))
+				UI.Round(x, 0, tw, h, h / 2, c[2], C.ink)
 				if c[3] then UI.Icon(c[3], x + S(6), (h - 16) / 2, 16) end
-				UI.Text(c[1], "Praetor.Tiny", x + iw + (tw - iw) / 2, h / 2, c[2], TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				UI.Text(c[1], "Praetor.Tiny", x + iw + (tw - iw) / 2, h / 2, inkOn(c[2]), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 				x = x + tw + S(4)
 			end
 		end
@@ -542,44 +577,74 @@ function SB.Open()
 	f:Center()
 	f:MakePopup()
 	f:SetKeyboardInputEnabled(false)
-	f:SetAlpha(0)
-	f:AlphaTo(255, 0.12)
+	UI.PopIn(f, 0.3)
 	SB.cols = columns()
-	local HEAD = S(70)
+	local HEAD = S(76)
+	local OFF = S(6)
 	f.Paint = function(_, pw, ph)
-		UI.Round(0, 0, pw, ph, S(10), Color(14, 15, 19, 244), C.line)
-		-- left: server name and a line with map / players / staff
-		UI.Name(GetHostName(), "Praetor.H1", S(20), S(14), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, pw * 0.55)
+		pw, ph = pw - OFF, ph - OFF
+		local mode = SB.Mode()
+		UI.Window(0, 0, pw, ph, Color(C.bg.r, C.bg.g, C.bg.b, 248))
+		local bw = UI.BW()
+		draw.RoundedBoxEx(S(14), bw, bw, pw - bw * 2, HEAD - bw, C.panel, true, true, false, false)
+		UI.Rect(bw, HEAD, pw - bw * 2, bw, C.line)
+		-- left: server name in the display font with a purple drop
+		local name = UI.Fit(GetHostName(), "Praetor.H1", pw * 0.5)
+		draw.SimpleText(name, "Praetor.H1", S(22) + S(3), S(12) + S(3), C.bronzeD)
+		draw.SimpleText(name, "Praetor.H1", S(22), S(12), C.ivory)
+		-- under it: a "DarkRP" / "TTT" pill and the map or the custom line
 		local sub = P.Setting("scoreboard_title")
 		if not sub or sub == "" then sub = game.GetMap() end
-		UI.Text(UI.Fit(sub, "Praetor.Small", pw * 0.5), "Praetor.Small", S(20), S(44), C.muted)
+		local sx = S(22)
+		if mode ~= "standard" then
+			local tag = mode == "darkrp" and "DarkRP" or "TTT"
+			surface.SetFont("Praetor.Tiny")
+			local tw = surface.GetTextSize(tag) + S(16)
+			UI.Round(sx, S(47), tw, S(20), S(10), C.bronze, C.ink)
+			UI.Text(tag, "Praetor.Tiny", sx + tw / 2, S(57), color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			sx = sx + tw + S(8)
+		end
+		UI.Text(UI.Fit(sub, "Praetor.Small", pw * 0.45), "Praetor.Small", sx, S(57), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		-- right: chips
-		local staff = 0
-		for _, p in ipairs(player.GetAll()) do if P.IsStaff(p) then staff = staff + 1 end end
+		local staff, police, wanted = 0, 0, 0
+		for _, p in ipairs(player.GetAll()) do
+			if P.IsStaff(p) then staff = staff + 1 end
+			if mode == "darkrp" then
+				if isCP(p) then police = police + 1 end
+				if rp(p, "wanted") then wanted = wanted + 1 end
+			end
+		end
 		local chips = {
 			{ "players", #player.GetAll() .. " / " .. game.MaxPlayers() },
 			{ "shield", staff .. " " .. P.L("sb_staff_on") },
-			{ "flag", fmtTime(CurTime()) },
 		}
+		if mode == "darkrp" then
+			chips[#chips + 1] = { "helm", police .. " " .. P.L("sb_police_on") }
+			if wanted > 0 then chips[#chips + 1] = { "flag", wanted .. " " .. P.L("sb_wanted_on"), C.crimson } end
+		else
+			chips[#chips + 1] = { "clock", fmtTime(CurTime()) }
+		end
 		if SB.Mode() == "ttt" and GetGlobalInt then
 			local left = GetGlobalInt("ttt_rounds_left", -1)
 			if left >= 0 then chips[#chips + 1] = { "bolt", P.L("sb_rounds_left", { V = left }) } end
 		end
 		local x = pw - S(20)
 		surface.SetFont("Praetor.SmallB")
-		for _, c in ipairs(chips) do
-			local tw = surface.GetTextSize(c[2]) + S(40)
+		for i, c in ipairs(chips) do
+			local tw = surface.GetTextSize(c[2]) + S(44)
 			x = x - tw
-			UI.Round(x, S(20), tw, S(30), S(15), C.panel2, C.line)
-			UI.Icon(c[1], x + S(10), S(20) + (S(30) - 16) / 2, 16)
-			UI.Text(c[2], "Praetor.SmallB", x + S(30), S(35), C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-			x = x - S(8)
+			-- each chip bobs a little, one after the other
+			local bob = math.floor(math.max(0, math.sin(RealTime() * 2.2 - i * 0.7)) * S(2))
+			local cy = S(22) - bob
+			UI.Comic(x, cy, tw, S(32), S(16), c[3] or C.panel2, c[3] and C.ink or C.line, S(3))
+			UI.Icon(c[1], x + S(10), cy + (S(32) - 20) / 2, 20)
+			UI.Text(c[2], "Praetor.SmallB", x + S(34), cy + S(16), c[3] and color_white or C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			x = x - S(10)
 		end
-		UI.Rect(S(16), HEAD, pw - S(32), 1, C.line)
 	end
 
 	local listX = S(16)
-	local listW = w - cardW - S(16) * 2 - S(12)
+	local listW = w - OFF - cardW - S(16) * 2 - S(12)
 
 	-- column titles, measured like the rows
 	local list
@@ -587,22 +652,22 @@ function SB.Open()
 	colHead:SetPos(listX, HEAD + S(10))
 	colHead:SetSize(listW, S(20))
 	colHead.Paint = function(_, cw2, chh)
-		local rw = IsValid(list) and list:GetCanvas():GetWide() or cw2
+		local rw = (IsValid(list) and list:GetCanvas():GetWide() or cw2) - S(3)
 		local L = layout(rw)
-		UI.Text(P.L("col_name"), "Praetor.Tiny", L.nameX, chh / 2, C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-		UI.Text(P.L("col_rank"), "Praetor.Tiny", L.badgeX, chh / 2, C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		UI.Text(P.Upper(P.L("col_name")), "Praetor.Tiny", L.nameX, chh / 2, C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		UI.Text(P.Upper(P.L("col_rank")), "Praetor.Tiny", L.badgeX, chh / 2, C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		for i, c in ipairs(SB.cols or {}) do
-			UI.Text(P.Upper(P.L(c[1])), "Praetor.Tiny", L.cols[i], chh / 2, C.dim, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+			UI.Text(P.Upper(P.L(c[1])), "Praetor.Tiny", L.cols[i], chh / 2, C.muted, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		end
 	end
 
 	list = UI.Scroll(f)
 	list:SetPos(listX, HEAD + S(34))
-	list:SetSize(listW, h - HEAD - S(34) - S(16))
+	list:SetSize(listW, h - OFF - HEAD - S(34) - S(16))
 
 	local card = vgui.Create("DPanel", f)
-	card:SetPos(w - cardW - S(16), HEAD + S(12))
-	card:SetSize(cardW, h - HEAD - S(28))
+	card:SetPos(w - OFF - cardW - S(16), HEAD + S(12))
+	card:SetSize(cardW, h - OFF - HEAD - S(28))
 
 	local function pick(ply)
 		SB.selected = ply
@@ -610,13 +675,15 @@ function SB.Open()
 	end
 
 	local signature
+	local first = true
 	local function rebuild()
 		SB.cols = columns()
 		list:Clear()
+		local n = 0
 		for gi, g in ipairs(buildGroups()) do
 			local head = vgui.Create("DPanel", list)
 			head:Dock(TOP)
-			head:SetTall(S(26))
+			head:SetTall(S(30))
 			head:DockMargin(0, gi == 1 and 0 or S(10), 0, S(4))
 			head.Paint = function(_, hw, hh)
 				local x = 0
@@ -624,23 +691,37 @@ function SB.Open()
 					x = UI.Badge(g.style, g.icon, "Praetor.Tag", 0, (hh - S(22)) / 2, S(22)) + S(8)
 				else
 					local col = g.col or C.bronzeL
-					UI.Round(0, S(5), S(3), hh - S(10), S(1), col)
-					x = S(10)
-					if g.icon then UI.Icon(g.icon, x, (hh - 16) / 2, 16) x = x + S(22) end
 					local t = P.Upper(g.title or "")
-					UI.Text(t, "Praetor.SmallB", x, hh / 2, col, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 					surface.SetFont("Praetor.SmallB")
-					x = x + surface.GetTextSize(t) + S(8)
+					local pw2 = surface.GetTextSize(t) + S(20) + (g.icon and S(22) or 0)
+					local ph2 = hh - S(4)
+					UI.Comic(0, 0, pw2, ph2, ph2 / 2, col, C.ink, S(2))
+					x = S(10)
+					if g.icon then UI.Icon(g.icon, x, (ph2 - 16) / 2, 16) x = x + S(22) end
+					UI.Text(t, "Praetor.SmallB", x, ph2 / 2, inkOn(col), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+					x = pw2 + S(8)
 				end
+				-- count; DarkRP jobs with a limit show "2 / 4"
 				local n = tostring(#g.players)
+				local job = g.team and jobOf(g.team)
+				if job and (tonumber(job.max) or 0) > 0 then n = n .. " / " .. job.max end
 				surface.SetFont("Praetor.Tiny")
-				local nw = surface.GetTextSize(n) + S(12)
-				UI.Round(x, (hh - S(16)) / 2, nw, S(16), S(8), C.panel3)
-				UI.Text(n, "Praetor.Tiny", x + nw / 2, hh / 2, C.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-				UI.Rect(x + nw + S(8), hh / 2, hw - x - nw - S(8), 1, C.line)
+				local nw = surface.GetTextSize(n) + S(14)
+				UI.Round(x, (hh - S(4) - S(18)) / 2, nw, S(18), S(9), C.panel3, C.line)
+				UI.Text(n, "Praetor.Tiny", x + nw / 2, (hh - S(4)) / 2, C.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				UI.Rect(x + nw + S(8), (hh - S(4)) / 2, hw - x - nw - S(8), 2, Color(C.line.r, C.line.g, C.line.b, 150))
 			end
-			for _, ply in ipairs(g.players) do makeRow(list, ply, pick) end
+			for _, ply in ipairs(g.players) do
+				local r = makeRow(list, ply, pick)
+				-- the first time the TAB opens, the rows drop in one after another
+				n = n + 1
+				if first and n <= 18 then
+					r:SetAlpha(0)
+					r:AlphaTo(255, 0.16, n * 0.025)
+				end
+			end
 		end
+		first = false
 	end
 
 	-- the list is rebuilt when someone joins, leaves, changes rank / job or (TTT) group
@@ -672,7 +753,15 @@ function SB.Open()
 end
 
 function SB.Close()
-	if IsValid(SB.frame) then SB.frame:Remove() end
+	-- quick fade out (the cursor goes away at once)
+	local f = SB.frame
+	SB.frame = nil
+	if IsValid(f) then
+		f:SetMouseInputEnabled(false)
+		f:SetKeyboardInputEnabled(false)
+		f.Think = nil
+		f:AlphaTo(0, 0.1, 0, function() if IsValid(f) then f:Remove() end end)
+	end
 	CloseDermaMenus()
 	SB.MusicPause()
 end

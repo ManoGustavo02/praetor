@@ -42,6 +42,11 @@ local SECTIONS = {
 		{ "tab_music", "bool" }, { "tab_music_url", "text" }, { "tab_music_vol", "number" },
 		{ "scoreboard_group", "choice", { "group", "rank", "job", "none" } },
 		{ "scoreboard_title", "text" },
+		{ "scoreboard_darkrp", "bool" },
+	} },
+	{ "darkrpui", {
+		{ "hud", "bool" }, { "hud_hunger", "bool" }, { "hud_agenda", "bool" },
+		{ "f4", "bool" }, { "f4_commands", "bool" },
 	} },
 	{ "overhead", {
 		{ "overhead", "bool" }, { "overhead_dist", "number" }, { "overhead_avatar", "bool" }, { "overhead_rank", "bool" },

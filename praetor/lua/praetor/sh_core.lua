@@ -41,6 +41,13 @@ P.Defaults = {
 	scoreboard        = true,
 	scoreboard_group  = "group",    -- group / rank / job / none
 	scoreboard_title  = "",
+	scoreboard_darkrp = true,       -- DarkRP: the TAB groups by job and shows police / wanted / salary
+	-- DarkRP HUD and F4 menu (each one can be turned off to keep another addon's)
+	hud               = true,
+	hud_hunger        = true,       -- the hunger bar (only when DarkRP's hunger mod is on)
+	hud_agenda        = true,       -- the agenda / laws box
+	f4                = true,
+	f4_commands       = true,       -- the bar of RP commands in the F4
 	-- overhead tag
 	overhead          = true,
 	overhead_dist     = 700,
