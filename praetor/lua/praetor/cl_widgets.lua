@@ -15,7 +15,7 @@ do
 		self.kind = "ghost"
 		self.hov = 0
 		self.font = "Praetor.BodyB"
-		self:SetTall(S(34))
+		self:SetTall(S(36))
 	end
 
 	function PANEL:Setup(label, kind, icon)
@@ -36,79 +36,98 @@ do
 		return self
 	end
 
-	function PANEL:OnCursorEntered() if self:IsEnabled() then UI.Sound("click") end end
+	function PANEL:OnCursorEntered() if self:IsEnabled() then UI.Sound("hover") end end
+	function PANEL:OnMousePressed(m)
+		if self:IsEnabled() and m == MOUSE_LEFT then UI.Sound((self.kind == "toggle_on" or self.kind == "toggle_off") and "toggle" or "click") end
+		return DButton.OnMousePressed(self, m)
+	end
 
 	-- kinds: primary (accent), danger (red, for confirmations), subtle (no box),
 	-- active (selected), ghost (default box), and for the player quick actions:
 	-- action, action_danger (same box, red text) and action_on (a toggle that is on)
+	-- Comic look: pill with a thick outline and a hard shadow; it lifts on hover and
+	-- sinks into its shadow when pressed.
 	function PANEL:Paint(w, h)
 		local en = self:IsEnabled()
 		self.hov = UI.Lerp(self.hov, (self:IsHovered() and en) and 1 or 0, 14)
-		local down = self:IsDown() and 1 or 0
+		self.prs = UI.Lerp(self.prs or 0, (self:IsDown() and en) and 1 or 0, 30)
 		local k, fill, border, txt = self.kind
 		local iconCol = color_white
+		local flat = k == "subtle"
 		if k == "primary" then
 			fill = P.LerpColor(self.hov, C.bronze, C.bronzeL)
-			border = nil
+			border = C.ink
 			txt = color_white
 		elseif k == "danger" then
 			fill = P.LerpColor(self.hov, C.crimson, C.crimsonL)
-			border = nil
+			border = C.ink
 			txt = color_white
 		elseif k == "subtle" then
 			fill = P.LerpColor(self.hov, Color(0, 0, 0, 0), C.panel3)
 			border = nil
 			txt = P.LerpColor(self.hov, C.muted, C.ivory)
 		elseif k == "active" or k == "action_on" then
-			fill = P.LerpColor(self.hov, Color(C.bronze.r, C.bronze.g, C.bronze.b, 45), Color(C.bronze.r, C.bronze.g, C.bronze.b, 70))
-			border = C.bronze
-			txt = C.bronzeL
+			fill = P.LerpColor(self.hov, Color(C.bronzeD.r, C.bronzeD.g, C.bronzeD.b), Color(C.bronze.r * 0.75, C.bronze.g * 0.75, C.bronze.b * 0.85))
+			border = C.bronzeL
+			txt = color_white
 		elseif k == "action_danger" then
-			fill = P.LerpColor(self.hov, C.panel2, Color(C.crimson.r, C.crimson.g, C.crimson.b, 50))
+			fill = P.LerpColor(self.hov, C.panel2, Color(120, 34, 52))
 			border = P.LerpColor(self.hov, C.line, C.crimson)
 			txt = C.crimsonL
 		else -- ghost / action
-			fill = P.LerpColor(self.hov, C.panel2, C.hover)
+			fill = P.LerpColor(self.hov, C.panel2, C.panel3)
 			border = P.LerpColor(self.hov, C.line, C.lineL)
 			txt = C.ivory
 		end
 		if not en then fill = ColorAlpha(fill, 90) txt = ColorAlpha(txt, 90) iconCol = Color(255, 255, 255, 90) end
+		-- room for the shadow under the button
+		local off = flat and 0 or math.max(2, S(3))
+		local bh = h - off
+		local lift = en and math.floor(self.hov * 1.5 + 0.5) or 0
+		local dy = math.floor(self.prs * off + 0.5) - lift * (1 - self.prs)
+		local r = bh <= S(42) and bh / 2 or S(12)
+		if not flat then UI.Round(0, off, w, bh, r, Color(C.ink.r, C.ink.g, C.ink.b, en and 210 or 90)) end
 		-- on / off buttons: a small switch in front of the label says the state
 		if k == "toggle_on" or k == "toggle_off" then
 			local on = k == "toggle_on"
 			self.tog = UI.Lerp(self.tog or (on and 1 or 0), on and 1 or 0, 14)
 			local t = self.tog
-			UI.Round(0, down, w, h - down, S(5), P.LerpColor(t, P.LerpColor(self.hov, C.panel2, C.hover), Color(C.bronze.r, C.bronze.g, C.bronze.b, 40 + 25 * self.hov)), P.LerpColor(t, C.line, C.bronze))
+			UI.Round(0, dy, w, bh, r, P.LerpColor(t, P.LerpColor(self.hov, C.panel2, C.panel3), Color(C.bronzeD.r, C.bronzeD.g, C.bronzeD.b)), P.LerpColor(t, C.line, C.bronzeL))
 			surface.SetFont(self.font)
-			local sw, sh = S(26), S(14)
+			local sw, sh = S(28), S(16)
 			local iw2 = self.icon and (16 + S(6)) or 0
 			local tw = surface.GetTextSize(self.label)
 			local total = sw + S(8) + iw2 + tw
-			local x = math.max(S(8), math.floor((w - total) / 2))
-			local sy = math.floor((h - sh) / 2) + down
-			UI.Round(x, sy, sw, sh, sh / 2, P.LerpColor(t, C.panel3, C.bronze))
-			UI.Round(x + 2 + (sw - sh) * t, sy + 2, sh - 4, sh - 4, (sh - 4) / 2, P.LerpColor(t, C.muted, color_white))
+			local x = math.max(S(10), math.floor((w - total) / 2))
+			local sy = math.floor((bh - sh) / 2) + dy
+			UI.Round(x, sy, sw, sh, sh / 2, P.LerpColor(t, C.bg, C.bronze), C.ink)
+			local kn = sh - S(6)
+			UI.Round(x + S(3) + (sw - kn - S(6)) * t, sy + S(3), kn, kn, kn / 2, P.LerpColor(t, C.muted, color_white))
 			x = x + sw + S(8)
 			if self.icon then
-				UI.Icon(self.icon, x, math.floor((h - 16) / 2) + down, 16, on and color_white or Color(255, 255, 255, 150))
+				UI.Icon(self.icon, x, math.floor((bh - 16) / 2) + dy, 16, on and color_white or Color(255, 255, 255, 150))
 				x = x + iw2
 			end
-			draw.SimpleText(UI.Fit(self.label, self.font, w - x - S(6)), self.font, x, h / 2 + down, on and C.ivory or C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			draw.SimpleText(UI.Fit(self.label, self.font, w - x - S(8)), self.font, x, bh / 2 + dy, on and C.ivory or C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			return true
 		end
-		UI.Round(0, down, w, h - down, S(5), fill, border)
+		UI.Round(0, dy, w, bh, r, fill, border)
+		-- glossy top line (cartoon highlight) on filled buttons
+		if (k == "primary" or k == "danger") and w > S(30) then
+			UI.Round(math.floor(r * 0.6) + S(2), dy + S(4), w - math.floor(r * 1.2) - S(4), math.max(2, S(3)), S(2), Color(255, 255, 255, 60))
+		end
 		surface.SetFont(self.font)
 		local tw = surface.GetTextSize(self.label)
 		local iw = self.icon and (16 + (self.label ~= "" and S(6) or 0)) or 0
 		local x = math.floor((w - tw - iw) / 2)
 		if self.icon then
-			UI.Icon(self.icon, x, math.floor((h - 16) / 2) + down, 16, iconCol)
+			UI.Icon(self.icon, x, math.floor((bh - 16) / 2) + dy, 16, iconCol)
 			x = x + iw
 		end
-		local label = UI.Fit(self.label, self.font, w - iw - S(10))
-		draw.SimpleText(label, self.font, x, h / 2 + down, txt, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		local label = UI.Fit(self.label, self.font, w - iw - S(14))
+		draw.SimpleText(label, self.font, x, bh / 2 + dy, txt, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		-- small dot on toggles that are on
-		if k == "action_on" then UI.Round(w - S(10), S(5), S(5), S(5), S(2), C.bronzeL) end
+		if k == "action_on" then UI.Round(w - S(13), dy + S(6), S(6), S(6), S(3), C.amber, C.ink, 1) end
 		return true
 	end
 
@@ -153,16 +172,19 @@ do
 
 	function PANEL:Paint(w, h)
 		self.focus = UI.Lerp(self.focus, self:HasFocus() and 1 or 0, 14)
-		UI.Notch(0, 0, w, h, S(4), C.bg, P.LerpColor(self.focus, C.line, C.bronze))
+		-- comic field: thick outline, turns purple and glows when typing
+		local r = self:IsMultiline() and S(10) or math.min(h / 2, S(12))
+		if self.focus > 0.01 then UI.Round(0, 0, w, h, r, Color(C.bronze.r, C.bronze.g, C.bronze.b, 60 * self.focus)) end
+		UI.Round(0, 0, w, h, r, P.LerpColor(self.focus, C.bg, Color(18, 13, 32)), P.LerpColor(self.focus, self:IsHovered() and C.lineL or C.line, C.bronze))
 		self:DrawTextEntryText(C.ivory, Color(142, 98, 255, 110), C.bronzeL)
 		if self:GetText() == "" and self:GetPlaceholderText() and self:GetPlaceholderText() ~= "" and not self:HasFocus() then
-			local x = self:IsMultiline() and S(6) or S(6)
+			local x = S(10)
 			draw.SimpleText(self:GetPlaceholderText(), self:GetFont(), x, self:IsMultiline() and S(6) or h / 2, C.dim, TEXT_ALIGN_LEFT, self:IsMultiline() and TEXT_ALIGN_TOP or TEXT_ALIGN_CENTER)
 		end
 	end
 
 	function PANEL:PerformLayout()
-		self:SetTextInset(S(6), 0)
+		self:SetTextInset(S(10), 0)
 	end
 
 	vgui.Register("PraetorEntry", PANEL, "DTextEntry")
@@ -193,8 +215,9 @@ do
 	function PANEL:Setup(text, sub) self.text = text self.sub = sub self:SetTall(sub and S(48) or S(34)) return self end
 	function PANEL:Paint(w, h)
 		UI.Text(UI.Fit(self.text, "Praetor.H2", w), "Praetor.H2", 0, 0, C.ivory)
-		if self.sub then UI.Text(UI.Fit(self.sub, "Praetor.Small", w), "Praetor.Small", 0, S(22), C.muted) end
-		UI.Rule(0, h - S(5), w, C.line)
+		if self.sub then UI.Text(UI.Fit(self.sub, "Praetor.Small", w), "Praetor.Small", 0, S(23), C.muted) end
+		UI.Rect(0, h - S(5), w, 1, Color(C.line.r, C.line.g, C.line.b, 140))
+		UI.Round(0, h - S(7), S(34), S(4), S(2), C.bronze)
 	end
 	vgui.Register("PraetorHeader", PANEL, "DPanel")
 end
@@ -243,7 +266,7 @@ do
 	function PANEL:Paint(w, h)
 		self.anim = UI.Lerp(self.anim, self.value and 1 or 0, 16)
 		local hov = self:IsHovered()
-		if hov then UI.Rect(0, 0, w, h, Color(255, 255, 255, 6)) end
+		if hov then UI.Round(0, 0, w, h, S(10), Color(255, 255, 255, 7)) end
 		UI.Text(UI.Fit(self.title, "Praetor.BodyB", w - S(70)), "Praetor.BodyB", S(4), S(4), C.ivory)
 		for i, l in ipairs(self.lines) do
 			UI.Text(l, "Praetor.Small", S(4), S(4) + S(20) + (i - 1) * S(17), C.muted)
@@ -252,9 +275,14 @@ do
 		local tw, th = S(44), S(22)
 		local tx, ty = w - tw - S(6), math.floor((h - th) / 2)
 		local on = self.anim
-		UI.Round(tx, ty, tw, th, th / 2, P.LerpColor(on, C.panel3, C.bronze))
-		local kx = tx + 3 + (tw - th) * on
-		UI.Round(kx, ty + 3, th - 6, th - 6, (th - 6) / 2, P.LerpColor(on, C.muted, color_white))
+		UI.Round(tx + S(2), ty + S(2), tw, th, th / 2, Color(C.ink.r, C.ink.g, C.ink.b, 200))
+		UI.Round(tx, ty, tw, th, th / 2, P.LerpColor(on, C.bg, C.bronze), P.LerpColor(on, C.line, C.ink))
+		-- the knob squashes a little while it travels (cartoon)
+		local travel = 1 - math.abs(on - 0.5) * 2
+		local kh = th - S(8)
+		local kw = kh + math.floor(S(6) * travel)
+		local kx = tx + S(4) + (tw - kw - S(8)) * on
+		UI.Round(kx, ty + S(4), kw, kh, kh / 2, P.LerpColor(on, C.muted, color_white), C.ink, 1)
 	end
 
 	vgui.Register("PraetorSwitch", PANEL, "DPanel")
@@ -269,15 +297,14 @@ end
 -- ==================================================================== dropdown
 local function themeMenu(menu)
 	menu.Paint = function(_, w, h)
-		UI.Rect(0, 0, w, h, C.panel)
-		UI.Outline(0, 0, w, h, C.line)
+		UI.Round(0, 0, w, h, S(10), C.panel, C.lineL)
 	end
 	for _, item in ipairs(menu:GetCanvas():GetChildren()) do
 		if item.SetTextColor then
 			item:SetTextColor(C.ivory)
 			item:SetFont("Praetor.Body")
 			item.Paint = function(s, w, h)
-				if s:IsHovered() then UI.Rect(1, 0, w - 2, h, C.hover) end
+				if s:IsHovered() then UI.Round(S(3), 1, w - S(6), h - 2, S(6), C.hover) end
 			end
 		end
 	end
@@ -293,19 +320,19 @@ do
 		self:SetTall(S(34))
 		self.DropButton.Paint = function(_, w, h)
 			local cx, cy = w / 2, h / 2
-			surface.SetDrawColor(C.bronze)
-			for i = 0, 3 do surface.DrawRect(cx - 4 + i, cy - 2 + i, 8 - i * 2, 1) end
+			surface.SetDrawColor(C.bronzeL)
+			for i = 0, 4 do surface.DrawRect(cx - 5 + i, cy - 2 + i, 10 - i * 2, 2) end
 		end
 	end
 
 	function PANEL:Paint(w, h)
-		UI.Notch(0, 0, w, h, S(4), self:IsHovered() and C.panel2 or C.bg, self:IsMenuOpen() and C.bronze or C.line)
+		UI.Round(0, 0, w, h, math.min(h / 2, S(12)), self:IsHovered() and C.panel2 or C.bg, self:IsMenuOpen() and C.bronze or (self:IsHovered() and C.lineL or C.line))
 	end
 
 	function PANEL:PerformLayout(w, h)
 		self.DropButton:SetSize(S(20), h)
 		self.DropButton:AlignRight(S(4))
-		self:SetTextInset(S(8), 0)
+		self:SetTextInset(S(12), 0)
 	end
 
 	function PANEL:OnMenuOpened(menu) themeMenu(menu) end
@@ -520,24 +547,32 @@ function UI.Modal(title, w, h)
 	bg:SetSize(ScrW(), ScrH())
 	bg:MakePopup()
 	bg:SetKeyboardInputEnabled(true)
-	bg.Paint = function(_, pw, ph) UI.Rect(0, 0, pw, ph, Color(5, 6, 8, 170)) end
+	bg.born = RealTime()
+	bg.Paint = function(s, pw, ph)
+		local a = math.min(1, (RealTime() - s.born) / 0.2)
+		UI.Rect(0, 0, pw, ph, Color(6, 4, 12, 180 * a))
+	end
 	bg.OnMousePressed = function(s) end
 
 	local f = vgui.Create("DPanel", bg)
 	f:SetSize(w, h)
 	f:Center()
 	f.Paint = function(_, fw, fh)
-		UI.Tablet(0, 0, fw, fh, C.panel, C.line)
-		UI.Text(UI.Fit(title, "Praetor.H2", fw - S(70)), "Praetor.H2", S(16), S(11), C.ivory)
-		UI.Rule(S(12), S(40), fw - S(24), C.line)
+		local off = S(6)
+		UI.Window(0, 0, fw - off, fh - off, C.panel)
+		UI.Round(S(16), S(16), S(6), S(20), S(3), C.bronze)
+		UI.Text(UI.Fit(title, "Praetor.H1", fw - S(90)), "Praetor.H1", S(30), S(11), C.ivory)
+		UI.Rect(S(14), S(48), fw - off - S(28), 1, Color(C.line.r, C.line.g, C.line.b, 160))
 	end
 	local close = vgui.Create("DButton", f)
 	close:SetText("")
-	close:SetSize(S(28), S(28))
-	close:SetPos(w - S(36), S(8))
+	close:SetSize(S(30), S(30))
+	close:SetPos(w - S(48), S(10))
+	close.OnCursorEntered = function() UI.Sound("hover") end
 	close.Paint = function(s, cw, ch)
-		if s:IsHovered() then UI.Round(0, 0, cw, ch, S(6), Color(C.crimson.r, C.crimson.g, C.crimson.b, 60)) end
-		local col = s:IsHovered() and C.crimsonL or C.muted
+		s.h = UI.Lerp(s.h or 0, s:IsHovered() and 1 or 0, 16)
+		UI.Round(0, 0, cw, ch, ch / 2, P.LerpColor(s.h, C.panel2, C.crimson), P.LerpColor(s.h, C.line, C.ink))
+		local col = s:IsHovered() and color_white or C.muted
 		draw.NoTexture()
 		surface.SetDrawColor(col)
 		surface.DrawTexturedRectRotated(cw / 2, ch / 2, S(12), 2, 45)
@@ -546,21 +581,26 @@ function UI.Modal(title, w, h)
 
 	f.body = UI.PinOrder(vgui.Create("DPanel", f))
 	f.body:Dock(FILL)
-	f.body:DockMargin(S(14), S(50), S(14), S(8))
+	f.body:DockMargin(S(16), S(60), S(22), S(8))
 	f.body.Paint = nil
 	f.foot = vgui.Create("DPanel", f)
 	f.foot:Dock(BOTTOM)
 	f.foot:SetTall(S(34))
-	f.foot:DockMargin(S(14), 0, S(14), S(12))
+	f.foot:SetTall(S(38))
+	f.foot:DockMargin(S(16), 0, S(22), S(18))
 	f.foot.Paint = nil
 	f.foot:SetZPos(-1)
 
 	function f:Close()
-		if IsValid(bg) then bg:Remove() end
+		if not IsValid(bg) or bg.closing then return end
+		bg.closing = true
+		UI.Sound("close")
+		bg:AlphaTo(0, 0.14, 0, function() if IsValid(bg) then bg:Remove() end end)
 	end
 	close.DoClick = function() f:Close() end
 	bg.OnKeyCodePressed = function(_, key) if key == KEY_ESCAPE then f:Close() end end
 	UI.Sound("open")
+	UI.PopIn(f, 0.34)
 	return f
 end
 
@@ -609,14 +649,14 @@ UI.FillMenu = fillMenu
 
 local function themePopup(menu)
 	menu.Paint = function(_, w, h)
-		UI.Round(0, 0, w, h, S(6), C.panel, C.line)
+		UI.Round(0, 0, w, h, S(10), C.panel, C.lineL)
 	end
 	for _, item in ipairs(menu:GetCanvas():GetChildren()) do
 		if item.SetTextColor then
 			item:SetFont(item.praetorTitle and "Praetor.Tiny" or "Praetor.Body")
 			item:SetTextColor(item.praetorTitle and C.dim or (item.praetorDanger and C.crimsonL or C.ivory))
 			item.Paint = function(s, w, h)
-				if s:IsHovered() and not s.praetorTitle then UI.Round(S(3), 1, w - S(6), h - 2, S(4), s.praetorDanger and Color(C.crimson.r, C.crimson.g, C.crimson.b, 50) or C.hover) end
+				if s:IsHovered() and not s.praetorTitle then UI.Round(S(3), 1, w - S(6), h - 2, S(6), s.praetorDanger and Color(C.crimson.r, C.crimson.g, C.crimson.b, 50) or C.hover) end
 				if s.praetorIcon then UI.Icon(s.praetorIcon, S(9), (h - 16) / 2, 16, s.praetorDanger and C.crimsonL or color_white) end
 				if s.SubMenu then
 					surface.SetDrawColor(C.muted)

@@ -54,6 +54,7 @@ end
 function UI.Table(parent, cols)
 	local t = vgui.Create("DPanel", parent)
 	t.cols = cols
+	t.born = RealTime()
 	t.Paint = nil
 	local head = vgui.Create("DPanel", t)
 	head:Dock(TOP)
@@ -81,9 +82,9 @@ function UI.Table(parent, cols)
 		for i, c in ipairs(t.cols) do
 			local a = c[3] or TEXT_ALIGN_LEFT
 			local x = a == TEXT_ALIGN_RIGHT and (xs[i].x + xs[i].w - S(6)) or xs[i].x
-			UI.Text(c[1], "Praetor.Tiny", x, h / 2, C.dim, a, TEXT_ALIGN_CENTER)
+			UI.Text(P.Upper(c[1]), "Praetor.Tiny", x, h / 2, C.muted, a, TEXT_ALIGN_CENTER)
 		end
-		UI.Rect(0, h - 1, w, 1, C.line)
+		UI.Rect(0, h - 2, w, 2, C.line)
 	end
 
 	function t:Clear()
@@ -99,12 +100,21 @@ function UI.Table(parent, cols)
 		row:SetText("")
 		row:Dock(TOP)
 		row:SetTall(opts.h or S(34))
-		row:DockMargin(0, 0, 0, S(2))
+		row:DockMargin(0, 0, 0, S(4))
 		row.data = opts.data
 		local odd = self.count % 2 == 0
+		row.hov = 0
+		-- rows pop in one after another when a list is filled
+		-- (only on the first fill, so lists that refresh by themselves don't blink)
+		if RealTime() - self.born < 1.5 and self.count <= 16 then
+			row:SetAlpha(0)
+			row:AlphaTo(255, 0.18, self.count * 0.022)
+		end
+		row.OnCursorEntered = function() if opts.onClick then UI.Sound("hover") end end
 		row.Paint = function(s, w, h)
-			UI.Round(0, 0, w, h, S(5), s:IsHovered() and C.hover or (odd and C.panel2 or C.panel))
-			if opts.accent then UI.Round(0, S(4), S(3), h - S(8), S(1), opts.accent) end
+			s.hov = UI.Lerp(s.hov, s:IsHovered() and 1 or 0, 16)
+			UI.Round(0, 0, w, h, S(10), P.LerpColor(s.hov, odd and C.panel2 or C.panel, C.panel3), P.LerpColor(s.hov, Color(C.line.r, C.line.g, C.line.b, 90), C.lineL))
+			if opts.accent then UI.Round(S(5), S(7), S(4), h - S(14), S(2), opts.accent) end
 			local xs = t:ColX(w)
 			for i, cell in ipairs(cells) do
 				local col = xs[i]
@@ -134,8 +144,9 @@ function UI.Table(parent, cols)
 		l:SetTall(S(hint and 190 or 170))
 		l.Paint = function(_, w, h)
 			local cy = S(40)
-			UI.Round(w / 2 - S(36), cy - S(10), S(72), S(72), S(36), C.panel2)
-			UI.Icon(icon or "scroll", w / 2 - 24, cy + S(26) - 24, 48, Color(255, 255, 255, 110))
+			local bob = math.sin(RealTime() * 2) * S(3)
+			UI.Comic(w / 2 - S(38), cy - S(12) + bob, S(76), S(76), S(38), C.panel2, C.line, S(4))
+			UI.Icon(icon or "scroll", w / 2 - 24, cy + S(26) - 24 + bob, 48, Color(255, 255, 255, 170))
 			UI.Text(text or P.L("ui_empty"), "Praetor.BodyB", w / 2, cy + S(84), C.muted, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			if hint then UI.Text(UI.Fit(hint, "Praetor.Small", w - S(40)), "Praetor.Small", w / 2, cy + S(106), C.dim, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) end
 		end
@@ -149,31 +160,32 @@ end
 function UI.Pager(parent, onChange)
 	local bar = vgui.Create("DPanel", parent)
 	bar:Dock(BOTTOM)
-	bar:SetTall(S(32))
+	bar:SetTall(S(36))
 	bar:DockMargin(0, S(6), 0, 0)
 	bar.Paint = nil
 	bar.page = 0
 	bar.hasNext = true
 	local mid = vgui.Create("DPanel", bar)
-	mid:SetSize(S(210), S(32))
+	mid:SetSize(S(210), S(36))
 	mid.Paint = function(_, w, h)
-		UI.Round(S(40), 0, w - S(80), h, S(6), C.panel)
-		UI.Text(P.L("ui_page") .. " " .. (bar.page + 1), "Praetor.SmallB", w / 2, h / 2, C.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		local bh = h - S(3)
+		UI.Round(S(40), 0, w - S(80), bh, bh / 2, C.panel, C.line)
+		UI.Text(P.L("ui_page") .. " " .. (bar.page + 1), "Praetor.SmallB", w / 2, bh / 2, C.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	end
 	local prev = UI.Button(mid, "", "ghost", nil, function()
 		if bar.page > 0 then onChange(bar.page - 1) end
 	end)
 	prev:SetPos(0, 0)
-	prev:SetSize(S(36), S(32))
+	prev:SetSize(S(36), S(36))
 	local nxt = UI.Button(mid, "", "ghost", nil, function()
 		if bar.hasNext then onChange(bar.page + 1) end
 	end)
 	nxt:SetPos(S(210) - S(36), 0)
-	nxt:SetSize(S(36), S(32))
+	nxt:SetSize(S(36), S(36))
 	local function arrow(dir)
 		return function(s, w, h)
 			surface.SetDrawColor(s:IsEnabled() and C.ivory or C.dim)
-			local cx, cy = w / 2, h / 2
+			local cx, cy = w / 2, (h - S(3)) / 2
 			for i = 0, 4 do
 				local x = dir < 0 and (cx - 2 + i) or (cx + 2 - i)
 				surface.DrawRect(x, cy - i, 1, i * 2 + 1)
@@ -205,11 +217,12 @@ end
 function UI.Stat(parent, label, valueFn, icon)
 	local p = vgui.Create("DPanel", parent)
 	p.Paint = function(_, w, h)
+		local off = S(4)
 		UI.Tablet(0, 0, w, h, C.panel2, C.line)
-		if icon then UI.Icon(icon, S(12), (h - 32) / 2, 32) end
-		local x = icon and S(54) or S(12)
-		UI.Text(label, "Praetor.Tiny", x, S(10), C.muted)
-		UI.Text(tostring(valueFn()), "Praetor.Big", x, S(26), C.ivory)
+		if icon then UI.Icon(icon, S(14), (h - off - 32) / 2, 32) end
+		local x = icon and S(56) or S(14)
+		UI.Text(P.Upper(label), "Praetor.Tiny", x, S(9), C.muted)
+		UI.Text(tostring(valueFn()), "Praetor.Big", x, S(24), C.ivory)
 	end
 	return p
 end
@@ -249,22 +262,30 @@ function P.BuildMenu()
 	P.Menu = f
 	f:SetSize(w, h)
 	f:Center()
-	f:SetAlpha(0)
-	f:AlphaTo(255, 0.15)
 	UI.Sound("open")
+	UI.PopIn(f, 0.36)
 	local side = w < S(1000) and S(196) or S(232)
 
+	local OFF = S(6)
 	f.Paint = function(_, pw, ph)
-		UI.Tablet(0, 0, pw, ph, C.bg, C.line)
+		pw, ph = pw - OFF, ph - OFF
+		UI.Window(0, 0, pw, ph, Color(C.bg.r, C.bg.g, C.bg.b, 250))
 		-- sidebar
-		draw.RoundedBoxEx(S(7), 1, 1, side, ph - 2, C.panel, true, false, true, false)
-		UI.Rect(side, 0, 1, ph, C.line)
-		UI.Text("PRAETOR", "Praetor.Logo", side / 2, S(12), C.ivory, TEXT_ALIGN_CENTER)
-		UI.Round(side / 2 - S(14), S(46), S(28), S(3), S(1), C.bronze)
-		UI.Text("Admin System  v" .. (P.Version or "1.0.0"), "Praetor.Tiny", side / 2, S(53), C.dim, TEXT_ALIGN_CENTER)
-		UI.Rule(S(12), S(72), side - S(24), C.line)
+		local bw = UI.BW()
+		draw.RoundedBoxEx(S(14), bw, bw, side - bw, ph - bw * 2, C.panel, true, false, true, false)
+		UI.Rect(side, bw, bw, ph - bw * 2, C.line)
+		-- logo: "PRAETOR" in the display font with a purple drop and a wobbling star
+		local lx, ly = side / 2, S(10)
+		draw.SimpleText("PRAETOR", "Praetor.Logo", lx + S(3), ly + S(3), C.bronzeD, TEXT_ALIGN_CENTER)
+		draw.SimpleText("PRAETOR", "Praetor.Logo", lx, ly, C.ivory, TEXT_ALIGN_CENTER)
+		surface.SetFont("Praetor.Logo")
+		local tw = surface.GetTextSize("PRAETOR")
+		UI.IconRot("star", lx + tw / 2 - S(4), ly - S(6), 20, math.sin(RealTime() * 2.4) * 14)
+		UI.Round(lx - S(16), S(48), S(32), S(4), S(2), C.bronze)
+		UI.Text("Admin System  v" .. (P.Version or "1.0.0"), "Praetor.Tiny", side / 2, S(56), C.dim, TEXT_ALIGN_CENTER)
+		UI.Rect(S(14), S(74), side - S(28), 2, Color(C.line.r, C.line.g, C.line.b, 160))
 		-- line under the tab title, all the way to the close button
-		UI.Rect(side + S(18), S(59), pw - side - S(36), 1, C.line)
+		UI.Rect(side + S(18), S(61), pw - side - S(36), 2, Color(C.line.r, C.line.g, C.line.b, 160))
 	end
 	f.OnKeyCodePressed = function(_, key)
 		if key == KEY_ESCAPE then P.CloseMenu() end
@@ -278,16 +299,16 @@ function P.BuildMenu()
 
 	local nav = UI.Scroll(f)
 	nav:SetPos(S(8), S(80))
-	nav:SetSize(side - S(16), h - S(80) - S(70))
+	nav:SetSize(side - S(16), h - OFF - S(80) - S(76))
 
 	-- me, at the bottom of the sidebar
 	local me = vgui.Create("DPanel", f)
-	me:SetPos(S(8), h - S(64))
-	me:SetSize(side - S(16), S(56))
+	me:SetPos(S(10), h - OFF - S(70))
+	me:SetSize(side - S(20), S(60))
 	local av = UI.FramedAvatar(me, S(40), LocalPlayer())
 	av:SetPos(S(6), S(8))
 	me.Paint = function(_, mw, mh)
-		UI.Notch(0, 0, mw, mh, S(4), C.panel2, C.line)
+		UI.Comic(0, 0, mw - S(4), mh - S(4), S(12), C.panel2, C.line, S(4))
 		local lp = LocalPlayer()
 		UI.Text(UI.Fit(lp:Nick(), "Praetor.BodyB", mw - S(60)), "Praetor.BodyB", S(54), S(6), C.ivory)
 		local style, icon = UI.PlayerRankStyle(lp)
@@ -296,28 +317,34 @@ function P.BuildMenu()
 
 	local content = vgui.Create("DPanel", f)
 	content:SetPos(side + S(18), S(66))
-	content:SetSize(w - side - S(36), h - S(80))
+	content:SetSize(w - OFF - side - S(36), h - OFF - S(84))
 	content.Paint = nil
 	f.content = content
 
 	local titleBar = vgui.Create("DPanel", f)
 	titleBar:SetPos(side + S(18), S(12))
-	titleBar:SetSize(w - side - S(64), S(48))
+	titleBar:SetSize(w - OFF - side - S(70), S(48))
 	titleBar.Paint = function(_, tw, th)
 		local t = P.Tabs[f.current or ""]
 		if not t then return end
-		if t.icon then UI.Icon(t.icon, 0, S(6), 32) end
-		UI.Text(tabTitle(t), "Praetor.H1", S(42), S(2), C.ivory)
-		UI.Text(UI.Fit(P.L("tabsub_" .. t.id), "Praetor.Small", tw - S(42)), "Praetor.Small", S(42), S(30), C.muted)
+		-- the tab icon gives a little hop each time the tab changes
+		local k = math.min(1, (RealTime() - (f.tabAt or 0)) / 0.35)
+		local hop = math.floor(math.sin(k * math.pi) * S(6))
+		if t.icon then UI.Icon(t.icon, 0, S(4) - hop, 36) end
+		UI.Text(tabTitle(t), "Praetor.H1", S(46), S(1), C.ivory)
+		UI.Text(UI.Fit(P.L("tabsub_" .. t.id), "Praetor.Small", tw - S(46)), "Praetor.Small", S(46), S(30), C.muted)
 	end
 
 	local close = vgui.Create("DButton", f)
 	close:SetText("")
 	close:SetSize(S(30), S(30))
-	close:SetPos(w - S(42), S(14))
+	close:SetSize(S(32), S(32))
+	close:SetPos(w - OFF - S(48), S(14))
+	close.OnCursorEntered = function() UI.Sound("hover") end
 	close.Paint = function(s, cw, ch)
-		if s:IsHovered() then UI.Round(0, 0, cw, ch, S(6), Color(C.crimson.r, C.crimson.g, C.crimson.b, 60)) end
-		local col = s:IsHovered() and C.crimsonL or C.muted
+		s.h = UI.Lerp(s.h or 0, s:IsHovered() and 1 or 0, 16)
+		UI.Round(0, 0, cw, ch, ch / 2, P.LerpColor(s.h, C.panel2, C.crimson), P.LerpColor(s.h, C.line, C.ink))
+		local col = s:IsHovered() and color_white or C.muted
 		draw.NoTexture()
 		surface.SetDrawColor(col)
 		surface.DrawTexturedRectRotated(cw / 2, ch / 2, S(14), 2, 45)
@@ -335,32 +362,41 @@ function P.BuildMenu()
 				head:SetTall(S(26))
 				head:DockMargin(0, S(6), 0, S(2))
 				head.Paint = function(_, hw, hh)
-					UI.Text(P.Upper(P.L(cat.label)), "Praetor.Tiny", S(6), hh - S(4), C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+					UI.Text(P.Upper(P.L(cat.label)), "Praetor.Tiny", S(10), hh - S(4), C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 				end
 				for _, t in ipairs(tabs) do
 					local b = vgui.Create("DButton", nav)
 					b:SetText("")
 					b:Dock(TOP)
-					b:SetTall(S(36))
+					b:SetTall(S(40))
 					b:DockMargin(0, 0, 0, S(2))
-					b.anim = 0
+					b.anim, b.sel = 0, 0
+					b.OnCursorEntered = function() UI.Sound("hover") end
 					b.Paint = function(s, bw, bh)
 						local on = f.current == t.id
 						s.anim = UI.Lerp(s.anim, s:IsHovered() and 1 or 0, 14)
-						if on then
-							UI.Round(0, 0, bw, bh, S(6), Color(C.bronze.r, C.bronze.g, C.bronze.b, 38))
-							UI.Round(0, S(8), S(3), bh - S(16), S(1), C.bronze)
-						elseif s.anim > 0.01 then
-							UI.Round(0, 0, bw, bh, S(6), Color(255, 255, 255, 10 * s.anim))
+						s.sel = UI.Lerp(s.sel, on and 1 or 0, 12)
+						bw, bh = bw - S(4), bh - S(3)
+						if s.sel > 0.02 then
+							-- selected: a purple pill with outline and hard shadow that grows in
+							local grow = math.floor((1 - s.sel) * S(14))
+							local a = 255 * s.sel
+							UI.Round(grow + S(3), S(3), bw - grow * 2, bh, bh / 2, Color(C.ink.r, C.ink.g, C.ink.b, 200 * s.sel))
+							UI.Round(grow, 0, bw - grow * 2, bh, bh / 2, Color(C.bronze.r, C.bronze.g, C.bronze.b, a), Color(C.ink.r, C.ink.g, C.ink.b, a))
 						end
-						UI.Icon(t.icon, S(12), (bh - 16) / 2, 16, on and color_white or Color(255, 255, 255, 170))
-						UI.Text(tabTitle(t), on and "Praetor.BodyB" or "Praetor.Body", S(36), bh / 2, on and C.ivory or C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+						if s.anim > 0.01 and not on then
+							UI.Round(0, 0, bw, bh, bh / 2, Color(255, 255, 255, 14 * s.anim))
+						end
+						local nudge = math.floor(s.anim * S(3))
+						UI.Icon(t.icon, S(12) + nudge, (bh - 20) / 2, 20, on and color_white or Color(255, 255, 255, 200))
+						UI.Text(tabTitle(t), on and "Praetor.BodyB" or "Praetor.Body", S(40) + nudge, bh / 2, on and color_white or C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 						local badge = t.badge and t.badge()
 						if badge and badge > 0 then
 							local txt = tostring(badge)
 							surface.SetFont("Praetor.Tiny")
 							local tw2 = surface.GetTextSize(txt) + S(12)
-							UI.Round(bw - tw2 - S(8), (bh - S(20)) / 2, tw2, S(20), S(10), C.crimson)
+							local bh2 = math.floor(S(20) * (1 + math.abs(math.sin(RealTime() * 3)) * 0.1))
+							UI.Round(bw - tw2 - S(8), (bh - bh2) / 2, tw2, bh2, bh2 / 2, C.crimson, C.ink)
 							UI.Text(txt, "Praetor.Tiny", bw - S(8) - tw2 / 2, bh / 2, C.ivory, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 						end
 					end
@@ -376,6 +412,7 @@ function P.BuildMenu()
 		local t = P.Tabs[id]
 		if not t then return end
 		if self.current == "logs" and id ~= "logs" then P.Request("logs_watch", { on = false }) end
+		if self.current ~= id then self.tabAt = RealTime() end
 		self.current = id
 		content:Clear()
 		local panel = vgui.Create("DPanel", content)
@@ -383,6 +420,20 @@ function P.BuildMenu()
 		panel.Paint = nil
 		self.tab = panel
 		local ok, err = pcall(t.build, panel, data or {})
+		-- the new tab slides in from the right and fades in
+		panel:SetAlpha(0)
+		local born = RealTime()
+		local oldThink = panel.Think
+		panel.Think = function(s2, ...)
+			local k = math.min(1, (RealTime() - born) / 0.24)
+			s2:SetAlpha(255 * math.min(1, k * 1.6))
+			s2:DockMargin(math.floor((1 - UI.EaseBack(k)) * S(28)), 0, 0, 0)
+			if k >= 1 then
+				s2:DockMargin(0, 0, 0, 0)
+				s2.Think = oldThink
+			end
+			if oldThink then return oldThink(s2, ...) end
+		end
 		if not ok then
 			ErrorNoHalt("[Praetor] tab '" .. id .. "': " .. tostring(err) .. "\n")
 			local l = UI.Label(panel, "Error: " .. tostring(err), "Praetor.Small", C.crimsonL)

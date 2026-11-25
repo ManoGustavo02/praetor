@@ -466,7 +466,7 @@ P.AddTab("reports", {
 			bb:SetTall(S(64))
 			bb:DockMargin(0, 0, 0, S(10))
 			bb.Paint = function(_, w, h)
-				UI.Tablet(0, 0, w, h, Color(40, 30, 24), C.bronze)
+				UI.Tablet(0, 0, w, h, Color(44, 34, 76), C.bronze)
 				UI.Icon("scroll", S(14), (h - 32) / 2, 32)
 				UI.Text(P.L("rep_bbx_title"), "Praetor.BodyB", S(58), S(12), C.bronzeL)
 				UI.Text(UI.Fit(P.L("rep_bbx_text"), "Praetor.Small", w - S(250)), "Praetor.Small", S(58), S(36), C.text)

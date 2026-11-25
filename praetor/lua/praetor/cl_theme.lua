@@ -1,30 +1,32 @@
--- Praetor: look & feel. Clean dark panels with soft rounded corners, one blue
--- accent and pixel-art icons. (The colour keys keep their old names - bronze is
--- the accent - so every file keeps working.)
+-- Praetor: look & feel (1.5.0 "comic"). Dark purple panels, thick outlines, hard
+-- offset shadows, round pills, a purple accent and sticker icons. (The colour keys
+-- keep their old names - bronze is the accent - so every file keeps working.)
 local P = Praetor
 local UI = P.UI
 
 UI.C = {
-	bg      = Color(15, 16, 20),
-	panel   = Color(22, 23, 29),
-	panel2  = Color(30, 32, 39),
-	panel3  = Color(40, 42, 51),
-	hover   = Color(48, 51, 61),
-	line    = Color(50, 53, 63),
-	lineL   = Color(72, 76, 89),
+	bg      = Color(13, 10, 22),
+	panel   = Color(21, 17, 35),
+	panel2  = Color(30, 25, 48),
+	panel3  = Color(42, 35, 66),
+	hover   = Color(53, 45, 82),
+	line    = Color(60, 52, 92),
+	lineL   = Color(104, 94, 150),
 	bronze  = Color(142, 98, 255),
 	bronzeL = Color(188, 160, 255),
 	bronzeD = Color(86, 54, 180),
-	ivory   = Color(238, 240, 245),
-	text    = Color(214, 217, 225),
-	muted   = Color(142, 147, 160),
-	dim     = Color(102, 106, 119),
-	crimson = Color(222, 72, 86),
-	crimsonL = Color(242, 112, 120),
-	laurel  = Color(76, 196, 122),
-	sky     = Color(88, 170, 240),
-	amber   = Color(240, 176, 64),
+	ivory   = Color(246, 243, 255),
+	text    = Color(222, 218, 236),
+	muted   = Color(150, 144, 176),
+	dim     = Color(108, 102, 134),
+	crimson = Color(255, 84, 104),
+	crimsonL = Color(255, 130, 144),
+	laurel  = Color(84, 220, 138),
+	sky     = Color(90, 170, 255),
+	amber   = Color(255, 196, 74),
 	shadow  = Color(0, 0, 0, 120),
+	ink     = Color(8, 6, 16),        -- comic outline / hard shadow
+	edge    = Color(236, 232, 250),   -- light outline of windows and big cards
 }
 local C = UI.C
 
@@ -54,6 +56,15 @@ function UI.Icon(name, x, y, size, col)
 	surface.DrawTexturedRect(math.floor(x), math.floor(y), size, size)
 end
 
+-- an icon turned by `ang` degrees around its centre (wobbles, spins)
+function UI.IconRot(name, x, y, size, ang, col)
+	local m = UI.Mat("praetor/icons/" .. name .. ".png")
+	if m:IsError() then return end
+	surface.SetDrawColor(col or color_white)
+	surface.SetMaterial(m)
+	surface.DrawTexturedRectRotated(x + size / 2, y + size / 2, size, size, ang or 0)
+end
+
 -- pixel icons look best at multiples of 16
 function UI.IconSize(want)
 	return math.max(16, math.floor(want / 16 + 0.5) * 16)
@@ -69,8 +80,11 @@ local function solid(c)
 	return c
 end
 
--- rounded rectangle, optionally with a 1px border
-function UI.Round(x, y, w, h, r, fill, border)
+-- outline width of the comic look (2px at 1080p, 3px on big screens)
+function UI.BW() return math.max(2, math.floor(P.S(2) + 0.25)) end
+
+-- rounded rectangle, optionally with a thick (comic) border
+function UI.Round(x, y, w, h, r, fill, border, bw)
 	x, y, w, h = math.floor(x), math.floor(y), math.floor(w), math.floor(h)
 	if w <= 0 or h <= 0 then return end
 	r = math.max(0, math.floor(math.min(r or 0, h / 2, w / 2)))
@@ -80,24 +94,67 @@ function UI.Round(x, y, w, h, r, fill, border)
 		return
 	end
 	border = solid(border)
+	local t = bw or UI.BW()
+	if w <= t * 2 or h <= t * 2 then draw.RoundedBox(r, x, y, w, h, border) return end
 	if fill.a >= 255 then
 		draw.RoundedBox(r, x, y, w, h, border)
-		draw.RoundedBox(math.max(0, r - 1), x + 1, y + 1, w - 2, h - 2, fill)
+		draw.RoundedBox(math.max(0, r - t), x + t, y + t, w - t * 2, h - t * 2, fill)
 	else
-		-- see-through fill: the border is drawn as four edges so it doesn't show through
-		draw.RoundedBox(r, x, y, w, h, fill)
-		surface.SetDrawColor(border)
-		local c = math.max(r - 1, 0)
-		surface.DrawRect(x + c, y, w - c * 2, 1)
-		surface.DrawRect(x + c, y + h - 1, w - c * 2, 1)
-		surface.DrawRect(x, y + c, 1, h - c * 2)
-		surface.DrawRect(x + w - 1, y + c, 1, h - c * 2)
+		-- see-through fill: the border is a ring of quads so it doesn't show through
+		draw.RoundedBox(math.max(0, r - t), x + t, y + t, w - t * 2, h - t * 2, fill)
+		UI.Ring(x, y, w, h, r, t, border)
 	end
+end
+
+-- outline of a rounded box (thickness t) drawn as quads along the edge
+local SEG = 6
+local ringPoly = {}
+for i = 1, 4 do ringPoly[i] = { x = 0, y = 0 } end
+local function quad(ax, ay, bx, by, cx, cy, dx, dy)
+	ringPoly[1].x, ringPoly[1].y = ax, ay
+	ringPoly[2].x, ringPoly[2].y = bx, by
+	ringPoly[3].x, ringPoly[3].y = cx, cy
+	ringPoly[4].x, ringPoly[4].y = dx, dy
+	surface.DrawPoly(ringPoly)
+end
+function UI.Ring(x, y, w, h, r, t, col)
+	surface.SetDrawColor(col)
+	draw.NoTexture()
+	r = math.max(r, t)
+	-- straight edges
+	surface.DrawRect(x + r, y, w - r * 2, t)
+	surface.DrawRect(x + r, y + h - t, w - r * 2, t)
+	surface.DrawRect(x, y + r, t, h - r * 2)
+	surface.DrawRect(x + w - t, y + r, t, h - r * 2)
+	-- corners (centre, start angle)
+	local ri = r - t
+	for _, c in ipairs({ { x + r, y + r, 180 }, { x + w - r, y + r, 270 }, { x + w - r, y + h - r, 0 }, { x + r, y + h - r, 90 } }) do
+		for i = 0, SEG - 1 do
+			local a1 = math.rad(c[3] + 90 * i / SEG)
+			local a2 = math.rad(c[3] + 90 * (i + 1) / SEG)
+			local c1, s1, c2, s2 = math.cos(a1), math.sin(a1), math.cos(a2), math.sin(a2)
+			-- clockwise winding: outer a1 -> outer a2 -> inner a2 -> inner a1
+			quad(c[1] + c1 * r, c[2] + s1 * r, c[1] + c2 * r, c[2] + s2 * r, c[1] + c2 * ri, c[2] + s2 * ri, c[1] + c1 * ri, c[2] + s1 * ri)
+		end
+	end
+end
+
+-- hard comic shadow: the same rounded box, offset down-right, in ink
+function UI.Shadow(x, y, w, h, r, off, a)
+	off = off or P.S(4)
+	if off <= 0 then return end
+	draw.RoundedBox(math.max(0, math.floor(math.min(r or 0, h / 2, w / 2))), math.floor(x + off), math.floor(y + off), math.floor(w), math.floor(h), Color(C.ink.r, C.ink.g, C.ink.b, a or 200))
+end
+
+-- a comic card: hard shadow + fill + thick border
+function UI.Comic(x, y, w, h, r, fill, border, off, a)
+	UI.Shadow(x, y, w, h, r, off, a)
+	UI.Round(x, y, w, h, r, fill, border)
 end
 
 -- 1.0 used cut corners; everything that called it now gets soft rounded corners
 function UI.Notch(x, y, w, h, cut, fill, border)
-	UI.Round(x, y, w, h, math.min(cut or 0, P.S(5)), fill, border)
+	UI.Round(x, y, w, h, math.max(cut or 0, P.S(8)), fill, border)
 end
 
 function UI.Rect(x, y, w, h, col)
@@ -110,9 +167,49 @@ function UI.Outline(x, y, w, h, col, t)
 	surface.DrawOutlinedRect(x, y, w, h, t or 1)
 end
 
--- a card / window background
+-- a card / window background (comic: hard shadow + thick border)
+-- (the shadow stays inside w x h, so a card painted over a whole panel isn't clipped)
 function UI.Tablet(x, y, w, h, fill, trim)
-	UI.Round(x, y, w, h, P.S(8), fill or C.panel, trim or C.line)
+	local off = P.S(4)
+	UI.Comic(x, y, w - off, h - off, P.S(12), fill or C.panel, trim or C.line, off)
+end
+
+-- a big window: light outline, deeper shadow
+function UI.Window(x, y, w, h, fill)
+	UI.Comic(x, y, w, h, P.S(16), fill or Color(C.bg.r, C.bg.g, C.bg.b, 244), C.edge, P.S(6), 220)
+end
+
+-- springy 0..1 curve (overshoots a little, like a cartoon pop)
+function UI.EaseBack(t)
+	t = math.Clamp(t, 0, 1)
+	local c1, c3 = 1.70158, 2.70158
+	return 1 + c3 * (t - 1) ^ 3 + c1 * (t - 1) ^ 2
+end
+
+-- Makes a panel pop in: fades in and springs up from a little below.
+function UI.PopIn(pnl, dur, delay)
+	if not IsValid(pnl) then return end
+	dur, delay = dur or 0.32, delay or 0
+	local start = RealTime() + delay
+	local x, y = pnl:GetPos()
+	local dy = P.S(18)
+	pnl:SetAlpha(0)
+	pnl:SetPos(x, y + dy)
+	local old = pnl.Think
+	pnl.Think = function(s, ...)
+		local t = (RealTime() - start) / dur
+		if t >= 0 then
+			if t >= 1 then
+				s:SetPos(x, y)
+				s:SetAlpha(255)
+				s.Think = old
+			else
+				s:SetPos(x, math.Round(y + dy * (1 - UI.EaseBack(t))))
+				s:SetAlpha(math.min(255, 255 * t * 2))
+			end
+		end
+		if old then return old(s, ...) end
+	end
 end
 
 -- thin divider
@@ -189,6 +286,8 @@ end
 -- ------------------------------------------------------------------ sounds
 
 UI.Sounds = {
+	hover = "praetor/hover.ogg",
+	toggle = "praetor/toggle.ogg",
 	click = "praetor/click.ogg",
 	open = "praetor/open.ogg",
 	close = "praetor/close.ogg",
@@ -198,7 +297,8 @@ UI.Sounds = {
 	gavel = "praetor/gavel.ogg",
 	warn = "praetor/warn.ogg",
 	error = "praetor/error.ogg",
-	ok = "praetor/seal.ogg",
+	ok = "praetor/ok.ogg",
+	seal = "praetor/seal.ogg",
 	chat = "praetor/chat.ogg",
 }
 

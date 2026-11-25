@@ -64,7 +64,7 @@ hook.Add("HUDPaint", "Praetor.Spectate", function()
 	local w = S(420)
 	local h = S(86)
 	local x, y = ScrW() / 2 - w / 2, ScrH() - h - S(28)
-	UI.Tablet(x, y, w, h, Color(22, 23, 29, 235), C.line)
+	UI.Tablet(x, y, w, h, Color(C.panel.r, C.panel.g, C.panel.b, 240), C.edge)
 	UI.Text(P.L("spec_watching"), "Praetor.Tiny", x + S(14), y + S(8), C.muted)
 	if t:IsPlayer() then
 		local style, icon = UI.PlayerRankStyle(t)
