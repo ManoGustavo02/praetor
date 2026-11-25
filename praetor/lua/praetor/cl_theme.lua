@@ -187,29 +187,46 @@ function UI.EaseBack(t)
 end
 
 -- Makes a panel pop in: fades in and springs up from a little below.
-function UI.PopIn(pnl, dur, delay)
-	if not IsValid(pnl) then return end
-	dur, delay = dur or 0.32, delay or 0
-	local start = RealTime() + delay
-	local x, y = pnl:GetPos()
-	local dy = P.S(18)
-	pnl:SetAlpha(0)
-	pnl:SetPos(x, y + dy)
-	local old = pnl.Think
-	pnl.Think = function(s, ...)
-		local t = (RealTime() - start) / dur
-		if t >= 0 then
+-- Runs on its own DrawOverlay hook (not the panel's Think: it also runs with the
+-- game paused), so a screen that sets
+-- pnl.Think afterwards can't stop it halfway and leave the panel invisible.
+local pops = {}
+local function popStep()
+	local now = RealTime()
+	for pnl, a in pairs(pops) do
+		if not IsValid(pnl) then
+			pops[pnl] = nil
+		else
+			local t = (now - a.start) / a.dur
 			if t >= 1 then
-				s:SetPos(x, y)
-				s:SetAlpha(255)
-				s.Think = old
-			else
-				s:SetPos(x, math.Round(y + dy * (1 - UI.EaseBack(t))))
-				s:SetAlpha(math.min(255, 255 * t * 2))
+				pnl:SetPos(a.x, a.y)
+				pnl:SetAlpha(255)
+				pops[pnl] = nil
+			elseif t >= 0 then
+				pnl:SetPos(a.x, math.Round(a.y + a.dy * (1 - UI.EaseBack(t))))
+				pnl:SetAlpha(math.min(255, 255 * t * 2))
 			end
 		end
-		if old then return old(s, ...) end
 	end
+	if next(pops) == nil then hook.Remove("DrawOverlay", "Praetor.PopIn") end
+end
+function UI.PopIn(pnl, dur, delay)
+	if not IsValid(pnl) then return end
+	local x, y = pnl:GetPos()
+	local a = { start = RealTime() + (delay or 0), dur = dur or 0.32, x = x, y = y, dy = P.S(18) }
+	pnl:SetAlpha(0)
+	pnl:SetPos(x, y + a.dy)
+	pops[pnl] = a
+	hook.Add("DrawOverlay", "Praetor.PopIn", function()
+		local ok, err = pcall(popStep)
+		if not ok then
+			-- never leave a window invisible because of an error here
+			for p, b in pairs(pops) do if IsValid(p) then p:SetPos(b.x, b.y) p:SetAlpha(255) end end
+			pops = {}
+			hook.Remove("DrawOverlay", "Praetor.PopIn")
+			ErrorNoHalt("[Praetor] PopIn: " .. tostring(err) .. "\n")
+		end
+	end)
 end
 
 -- thin divider

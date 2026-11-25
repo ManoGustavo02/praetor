@@ -1,3 +1,18 @@
+[h2]1.5.1[/h2]
+[b]English[/b]
+[list]
+[*]Fixed: the menu, the scoreboard (TAB) and the DarkRP F4 menu could open completely invisible (only the music and the player model showed).
+[*]The loading screen is now hosted at [b]praetor-loading.vercel.app[/b]. Nothing to set up: servers that kept the old link are moved to the new one on their own.
+[*]Note: the loading screen shows to players joining your server. Whoever hosts the game (singleplayer or "Start new game") doesn't see it, that is how Garry's Mod works.
+[/list]
+
+[b]Português[/b]
+[list]
+[*]Corrigido: o menu, o TAB e o menu F4 do DarkRP podiam abrir totalmente invisíveis (só aparecia a música e o modelo do jogador).
+[*]A tela de loading agora fica em [b]praetor-loading.vercel.app[/b]. Não precisa configurar nada: servidores com o link antigo passam para o novo sozinhos.
+[*]Obs.: a tela de loading aparece para quem entra no seu servidor. Quem hospeda a partida (singleplayer ou "Iniciar novo jogo") não vê, é assim no Garry's Mod.
+[/list]
+
 [h2]1.5.0[/h2]
 [b]English[/b]
 The whole interface was redone, and DarkRP servers get their own HUD and F4 menu.

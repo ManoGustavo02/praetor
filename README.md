@@ -3,14 +3,14 @@
 A full admin mod for Garry's Mod that replaces SAM or ULX on its own: ranks, 94 commands, logs, chat box, scoreboard, AutoMod, reports, bans with a ban screen, votes, staff panel, prop protection and a loading screen. Everything is set up in one in-game menu.
 
 - Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3844482190
-- Loading screen: https://manogustavo02.github.io/praetor/loading/
+- Loading screen: https://praetor-loading.vercel.app/ (Vercel, serves this repo's `docs/loading` from GitHub Pages)
 
 ## Folders
 
 | Folder | What it is |
 |---|---|
 | `praetor/` | The addon (put it in `garrysmod/addons/`) |
-| `docs/loading/` | The loading screen page (GitHub Pages) |
+| `docs/loading/` | The loading screen page (GitHub Pages, served at praetor-loading.vercel.app) |
 | `workshop/` | Workshop description, changelog and pictures |
 
 ## Loading screen

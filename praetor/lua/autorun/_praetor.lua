@@ -3,7 +3,7 @@
 -- files: addons written for ULX or SAM can find the compatibility bridge early.
 
 Praetor = Praetor or {}
-Praetor.Version = "1.5.0"
+Praetor.Version = "1.5.1"
 
 local shared = {
 	"sh_core.lua",

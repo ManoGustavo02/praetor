@@ -1,5 +1,5 @@
 -- Praetor: loading screen. Garry's Mod shows a web page while a player joins
--- (sv_loadingurl). Praetor's page lives on GitHub Pages and reads its look from
+-- (sv_loadingurl). Praetor's page is hosted on Vercel and reads its look from
 -- the link, so the server only builds the link from the settings menu.
 local P = Praetor
 
@@ -14,7 +14,8 @@ local function txt(k) return P.Trim(tostring(P.Setting(k) or "")) end
 
 function P.LoadingURL()
 	local base = txt("loading_base")
-	if base == "" then base = P.Defaults.loading_base end
+	-- empty, or the old GitHub Pages link saved by 1.5.0 = the current default (Vercel)
+	if base == "" or base:find("manogustavo02.github.io/praetor/loading", 1, true) then base = P.Defaults.loading_base end
 	-- empty = the server name; the page also takes the live name Garry's Mod gives it
 	local name = txt("loading_name")
 	local fixed = name ~= ""

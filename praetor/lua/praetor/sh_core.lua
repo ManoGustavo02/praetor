@@ -132,7 +132,7 @@ P.Defaults = {
 	ac_spam_secs      = 3,          -- ... in this many seconds
 	-- loading screen (a web page on GitHub Pages, see sv_loading)
 	loading_on        = true,       -- use Praetor's loading screen (a server with its own keeps it until this is saved)
-	loading_base      = "https://manogustavo02.github.io/praetor/loading/",
+	loading_base      = "https://praetor-loading.vercel.app/",
 	loading_name      = "",         -- empty = server name
 	loading_sub       = "",         -- short line under the name
 	loading_tips      = "",         -- one tip per line (empty = Praetor's tips)
