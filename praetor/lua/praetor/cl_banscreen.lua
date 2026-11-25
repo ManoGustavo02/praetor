@@ -9,7 +9,7 @@ local UI = P.UI
 local C = UI.C
 local S = P.S
 
-local RED = Color(226, 72, 72)
+local RED = Color(255, 84, 104)
 local screen
 
 local function fmtLeft(secs)
@@ -48,9 +48,11 @@ local function openScreen(d)
 	local hasLink = isstring(d.d) and d.d ~= ""
 	local ch = S(hasLink and 470 or 400)
 	local card = vgui.Create("DPanel", f)
-	card:SetSize(cw, ch)
+	card:SetSize(cw + S(6), ch + S(6))
 	card:Center()
-	card:DockPadding(S(24), S(196), S(24), S(20))
+	card:DockPadding(S(24), S(196), S(24) + S(6), S(20) + S(6))
+	-- the card drops in like a stamp
+	UI.PopIn(card, 0.42)
 
 	local rows = {
 		{ "bs_reason", (d.r and d.r ~= "") and d.r or P.L("bs_no_reason") },
@@ -62,24 +64,28 @@ local function openScreen(d)
 		local t = RealTime() - opened
 		local a = math.min(1, t * 4)
 		-- shadow + card
-		UI.Round(-S(6), -S(6), w + S(12), h + S(12), S(18), Color(0, 0, 0, 90 * a))
-		UI.Round(0, 0, w, h, S(14), Color(16, 17, 22, 250 * a), Color(RED.r, RED.g, RED.b, 160 * a))
+		local off = S(6)
+		w, h = w - off, h - off
+		UI.Round(off, off, w, h, S(18), Color(C.ink.r, C.ink.g, C.ink.b, 220 * a))
+		UI.Round(0, 0, w, h, S(18), Color(C.panel.r, C.panel.g, C.panel.b, 250 * a), Color(C.ink.r, C.ink.g, C.ink.b, 255 * a))
 		-- top band
-		UI.Round(0, 0, w, S(64), S(14), Color(RED.r * 0.55, RED.g * 0.55, RED.b * 0.55, 255 * a))
-		UI.Rect(0, S(50), w, S(14), Color(RED.r * 0.55, RED.g * 0.55, RED.b * 0.55, 255 * a))
+		local bw = UI.BW()
+		draw.RoundedBoxEx(S(16), bw, bw, w - bw * 2, S(64) - bw, Color(RED.r, RED.g, RED.b, 255 * a), true, true, false, false)
+		UI.Rect(bw, S(64), w - bw * 2, bw, Color(C.ink.r, C.ink.g, C.ink.b, 255 * a))
 		for x = -S(64), w, S(18) do
 			surface.SetDrawColor(255, 255, 255, 10 * a)
 			surface.DrawLine(x, S(64), x + S(64), 0)
 		end
-		UI.Icon("lock", S(22), S(32) - 8, 16, Color(255, 255, 255, 255 * a))
-		UI.Text(P.Upper(P.L("bs_title")), "Praetor.H1", S(46), S(32), Color(255, 255, 255, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		UI.IconRot("lock", S(18), S(32) - 14, 28, math.sin(t * 6) * math.max(0, 1 - t) * 20, Color(255, 255, 255, 255 * a))
+		draw.SimpleText(P.Upper(P.L("bs_title")), "Praetor.H1", S(54) + S(3), S(32) + S(3), Color(C.ink.r, C.ink.g, C.ink.b, 230 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		UI.Text(P.Upper(P.L("bs_title")), "Praetor.H1", S(54), S(32), Color(255, 255, 255, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		UI.Text(UI.Fit(d.host or "", "Praetor.Small", w * 0.45), "Praetor.Small", w - S(22), S(32), Color(255, 255, 255, 190 * a), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 
 		-- who
 		local av = S(64)
 		UI.DrawAvatar(d.sid, lp, S(24), S(84), av, 255 * a, RED)
 		local nx = S(24) + av + S(18)
-		UI.Text(UI.Fit(IsValid(lp) and lp:Nick() or (d.n or ""), "Praetor.Big", w - nx - S(24)), "Praetor.Big", nx, S(100), Color(240, 240, 244, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		UI.Text(UI.Fit(IsValid(lp) and lp:Nick() or (d.n or ""), "Praetor.Big", w - nx - S(24)), "Praetor.Big", nx, S(100), Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		UI.Text(util.SteamIDFrom64(d.sid or "0") or "", "Praetor.Small", nx, S(124), Color(C.muted.r, C.muted.g, C.muted.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
 		-- time left
@@ -97,15 +103,15 @@ local function openScreen(d)
 			local lines = UI.Wrap(tostring(r[2]), "Praetor.SmallB", w - S(200))
 			for i, l in ipairs(lines) do
 				if i > 2 then break end
-				UI.Text(l, "Praetor.SmallB", S(160), y + (i - 1) * S(18), Color(235, 236, 240, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+				UI.Text(l, "Praetor.SmallB", S(160), y + (i - 1) * S(18), Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 			end
 			y = y + S(math.min(#lines, 2) > 1 and 42 or 26)
 		end
 
 		-- kick bar
 		local frac = math.Clamp(1 - t / secs, 0, 1)
-		UI.Round(S(24), h - S(14), w - S(48), S(4), S(2), Color(255, 255, 255, 14 * a))
-		UI.Round(S(24), h - S(14), (w - S(48)) * frac, S(4), S(2), Color(RED.r, RED.g, RED.b, 220 * a))
+		UI.Round(S(24), h - S(16), w - S(48), S(8), S(4), Color(C.bg.r, C.bg.g, C.bg.b, 255 * a), Color(C.ink.r, C.ink.g, C.ink.b, 255 * a))
+		UI.Round(S(26), h - S(14), (w - S(52)) * frac, S(4), S(2), Color(RED.r, RED.g, RED.b, 255 * a))
 	end
 
 	-- footer: code, link, leave
@@ -165,7 +171,7 @@ local function openScreen(d)
 	f.Paint = function(s, w, h)
 		local a = math.min(1, (RealTime() - opened) * 3)
 		Derma_DrawBackgroundBlur(s, opened - 1)
-		surface.SetDrawColor(6, 6, 9, 235 * a)
+		surface.SetDrawColor(8, 6, 16, 235 * a)
 		surface.DrawRect(0, 0, w, h)
 		-- red glow behind the card
 		local cx, cy = w / 2, h / 2

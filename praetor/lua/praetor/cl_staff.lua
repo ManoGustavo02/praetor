@@ -80,7 +80,7 @@ hook.Add("HUDPaint", "Praetor.PromoParty", function()
 	local x, y = ScrW() / 2 - w / 2, ScrH() * 0.24
 	local col = party.c
 	UI.Round(x - S(3), y - S(3), w + S(6), h + S(6), S(16), Color(col.r, col.g, col.b, 60 * a))
-	UI.Round(x, y, w, h, S(14), Color(14, 15, 20, 240 * a), Color(col.r, col.g, col.b, 200 * a))
+	UI.Round(x + S(4), y + S(4), w, h, math.max(S(14), S(12)), Color(C.ink.r, C.ink.g, C.ink.b, (240 * a) * 0.8)) UI.Round(x, y, w, h, math.max(S(14), S(12)), Color(C.panel.r, C.panel.g, C.panel.b, 240 * a), Color(col.r, col.g, col.b, 200 * a))
 	-- light sweeping across the top
 	local sweep = (age * 0.6) % 1
 	for i = 0, 6 do

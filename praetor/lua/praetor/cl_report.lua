@@ -447,7 +447,7 @@ hook.Add("HUDPaint", "Praetor.ReportCard", function()
 	local w, h = S(230), S(46)
 	local x, y = ScrW() - w - S(16), math.floor(ScrH() * 0.30)
 	local col = STATUS_COL[s.st] or C.amber
-	UI.Round(x, y, w, h, S(8), Color(14, 15, 20, 220), Color(col.r, col.g, col.b, 160))
+	UI.Round(x + S(4), y + S(4), w, h, math.max(S(8), S(12)), Color(C.ink.r, C.ink.g, C.ink.b, (220) * 0.8)) UI.Round(x, y, w, h, math.max(S(8), S(12)), Color(C.panel.r, C.panel.g, C.panel.b, 220), Color(col.r, col.g, col.b, 160))
 	UI.Round(x + 1, y + S(8), S(3), h - S(16), S(1), col)
 	UI.Icon("flag", x + S(12), y + S(15) - 8, 16, col)
 	UI.Text(P.L("rp_tag", { V = s.id }) .. (s.t and s.t ~= "" and ("  ·  " .. s.t) or ""), "Praetor.SmallB", x + S(34), y + S(15), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)

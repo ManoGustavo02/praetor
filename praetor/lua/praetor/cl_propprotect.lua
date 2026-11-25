@@ -98,10 +98,10 @@ hook.Add("HUDPaint", "Praetor.PP", function()
 		if age < 0.35 then x = x + math.sin(age * 60) * (0.35 - age) * S(18) end
 	end
 	local a = alpha * 255
-	UI.Round(x, y, w, h, S(8), Color(14, 15, 20, 225 * alpha), Color(col.r, col.g, col.b, 200 * alpha))
+	UI.Round(x + S(4), y + S(4), w, h, math.max(S(8), S(12)), Color(C.ink.r, C.ink.g, C.ink.b, (225 * alpha) * 0.8)) UI.Round(x, y, w, h, math.max(S(8), S(12)), Color(C.panel.r, C.panel.g, C.panel.b, 225 * alpha), Color(col.r, col.g, col.b, 200 * alpha))
 	UI.Round(x + 1, y + S(6), S(3), h - S(12), S(1), Color(col.r, col.g, col.b, a))
 	UI.Icon(icon, x + S(12), y + h / 2 - 8, 16, Color(col.r, col.g, col.b, a))
-	UI.Text(title, "Praetor.SmallB", x + S(36), sub and y + S(13) or y + h / 2, Color(235, 236, 240, a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	UI.Text(title, "Praetor.SmallB", x + S(36), sub and y + S(13) or y + h / 2, Color(C.ivory.r, C.ivory.g, C.ivory.b, a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	if sub then UI.Text(sub, "Praetor.Tiny", x + S(36), y + S(29), Color(col.r, col.g, col.b, a * 0.9), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
 end)
 

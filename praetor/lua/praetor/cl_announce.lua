@@ -44,7 +44,7 @@ function D.popup(it, x, y, w, a, frac, measureOnly)
 	local h = S(14) + (hasTitle and S(22) or 0) + nl * S(17) + (it.link and S(22) or 0) + S(14)
 	h = math.max(h, S(70))
 	if measureOnly then return h end
-	UI.Round(x, y, w, h, S(10), Color(15, 16, 21, 242 * a), Color(col.r, col.g, col.b, 150 * a))
+	UI.Round(x + S(4), y + S(4), w, h, math.max(S(10), S(12)), Color(C.ink.r, C.ink.g, C.ink.b, (242 * a) * 0.8)) UI.Round(x, y, w, h, math.max(S(10), S(12)), Color(C.panel.r, C.panel.g, C.panel.b, 242 * a), Color(col.r, col.g, col.b, 150 * a))
 	-- soft glow of the colour on the left
 	UI.Round(x + 1, y + 1, S(58), h - 2, S(9), Color(col.r, col.g, col.b, 26 * a))
 	UI.Round(x + S(10), y + (h - S(44)) / 2, S(44), S(44), S(10), Color(col.r, col.g, col.b, 60 * a), Color(col.r, col.g, col.b, 200 * a))
@@ -55,7 +55,7 @@ function D.popup(it, x, y, w, a, frac, measureOnly)
 		cy = cy + S(22)
 	end
 	for i = 1, nl do
-		UI.Text(lines[i], "Praetor.Small", tx, cy, Color(226, 228, 235, 255 * a))
+		UI.Text(lines[i], "Praetor.Small", tx, cy, Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a))
 		cy = cy + S(17)
 	end
 	if it.link then
@@ -81,7 +81,7 @@ function D.banner(it, x, y, w, a, frac, measureOnly)
 	local h = S(20) + (hasTitle and S(24) or 0) + nl * S(27) + (it.link and S(24) or 0) + S(16)
 	h = math.max(h, S(84))
 	if measureOnly then return h end
-	UI.Round(x, y, w, h, S(10), Color(14, 15, 20, 245 * a), Color(col.r, col.g, col.b, 140 * a))
+	UI.Round(x + S(4), y + S(4), w, h, math.max(S(10), S(12)), Color(C.ink.r, C.ink.g, C.ink.b, (245 * a) * 0.8)) UI.Round(x, y, w, h, math.max(S(10), S(12)), Color(C.panel.r, C.panel.g, C.panel.b, 245 * a), Color(col.r, col.g, col.b, 140 * a))
 	UI.Round(x, y, w, S(4), S(2), Color(col.r, col.g, col.b, 255 * a))
 	UI.Round(x + S(18), y + (h - S(60)) / 2, S(60), S(60), S(12), Color(col.r, col.g, col.b, 55 * a), Color(col.r, col.g, col.b, 210 * a))
 	UI.Icon(it.icon or "megaphone", x + S(18) + (S(60) - 32) / 2, y + (h - 32) / 2, 32, Color(255, 255, 255, 255 * a))
@@ -93,14 +93,14 @@ function D.banner(it, x, y, w, a, frac, measureOnly)
 		cy = cy + S(24)
 	end
 	for i = 1, nl do
-		UI.Text(lines[i], "Praetor.Big", tx, cy, Color(240, 241, 246, 255 * a))
+		UI.Text(lines[i], "Praetor.Big", tx, cy, Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a))
 		cy = cy + S(27)
 	end
 	if it.link then
 		UI.Icon("send", tx, cy + S(4), 16, Color(255, 255, 255, 200 * a))
 		UI.Text(UI.Fit(shortLink(it.link), "Praetor.BodyB", tw - 22), "Praetor.BodyB", tx + 22, cy + S(3), Color(110, 170, 255, 255 * a))
 	end
-	if it.by then UI.Text("- " .. it.by, "Praetor.Tiny", x + w - S(14), y + h - S(14), Color(140, 145, 158, 255 * a), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER) end
+	if it.by then UI.Text("- " .. it.by, "Praetor.Tiny", x + w - S(14), y + h - S(14), Color(C.muted.r, C.muted.g, C.muted.b, 255 * a), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER) end
 	if frac then UI.Round(x + S(12), y + h - S(4), (w - S(24)) * math.Clamp(frac, 0, 1), S(2), S(1), Color(col.r, col.g, col.b, 160 * a)) end
 	return h
 end
@@ -123,7 +123,7 @@ function D.center(it, x, y, w, a, frac, measureOnly, small)
 	local h = S(24) + isz + S(12) + (hasTitle and S(40) or 0) + nl * lh + (it.link and S(28) or 0) + S(24)
 	if measureOnly then return h end
 	-- dark band across the area, fading at the top and bottom
-	local band = Color(6, 7, 10, 200 * a)
+	local band = Color(8, 6, 16, 200 * a)
 	surface.SetDrawColor(band)
 	surface.DrawRect(x, y + h * 0.2, w, h * 0.6)
 	surface.SetMaterial(gradU)
@@ -139,7 +139,7 @@ function D.center(it, x, y, w, a, frac, measureOnly, small)
 		cy = cy + S(40)
 	end
 	for i = 1, nl do
-		UI.TextShadow(lines[i], textFont, cx, cy + lh / 2, Color(240, 241, 246, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		UI.TextShadow(lines[i], textFont, cx, cy + lh / 2, Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		cy = cy + lh
 	end
 	if it.link then UI.TextShadow(shortLink(it.link), small and "Praetor.SmallB" or "Praetor.BodyB", cx, cy + S(14), Color(110, 170, 255, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) end

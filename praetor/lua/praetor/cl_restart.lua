@@ -60,7 +60,7 @@ hook.Add("HUDPaint", "Praetor.Restart", function()
 	if P.MySit then y = y + S(58) end
 	local urgent = left < 60
 	local col = urgent and C.crimsonL or C.amber
-	UI.Round(x, y, tw, S(38), S(19), Color(16, 17, 22, 236), col)
+	UI.Round(x + S(4), y + S(4), tw, S(38), math.max(S(19), S(12)), Color(C.ink.r, C.ink.g, C.ink.b, (236) * 0.8)) UI.Round(x, y, tw, S(38), math.max(S(19), S(12)), Color(C.panel.r, C.panel.g, C.panel.b, 236), col)
 	local frac = math.Clamp(left / math.max(1, showFrom), 0, 1)
 	UI.Round(x + S(19), y + S(34), (tw - S(38)) * frac, S(2), S(1), col)
 	UI.Icon("reload", x + S(14), y + (S(38) - 16) / 2, 16, col)

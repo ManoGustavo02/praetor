@@ -143,7 +143,7 @@ function P.Toast(title, text, kind, time)
 end
 
 local kindCol = { info = C.bronze, ok = C.laurel, warn = C.amber, report = C.sky, alert = C.crimson }
-local kindIcon = { info = "scroll", ok = "laurel", warn = "bolt", report = "flag", alert = "shield" }
+local kindIcon = { info = "bell", ok = "check", warn = "warn", report = "flag", alert = "shield" }
 
 hook.Add("HUDPaint", "Praetor.Toasts", function()
 	if #toasts == 0 then return end
@@ -156,23 +156,46 @@ hook.Add("HUDPaint", "Praetor.Toasts", function()
 	end
 	for _, t in ipairs(toasts) do
 		local age = now - t.t
-		local a = math.min(1, age * 5, (t.life - age) * 2)
-		local slide = (1 - math.min(1, age * 4)) * S(40)
-		t.lines = t.lines or UI.Wrap(t.text, "Praetor.Small", w - S(58))
+		local a = math.min(1, age * 6, (t.life - age) * 3)
+		-- comes in from the right with a little spring, leaves to the right
+		local inK = UI.EaseBack(math.min(1, age / 0.38))
+		local outK = math.max(0, 1 - (t.life - age) / 0.3)
+		local slide = (1 - inK) * (w + S(30)) + outK * outK * S(80)
+		t.lines = t.lines or UI.Wrap(t.text, "Praetor.Small", w - S(76))
 		local nl = math.min(#t.lines, 3)
-		local h = S(30) + nl * S(17) + S(10)
+		local h = S(34) + nl * S(17) + S(14)
 		local col = kindCol[t.kind] or C.bronze
 		local bx = x + slide
-		UI.Notch(bx, y, w, h, S(6), Color(22, 18, 27, 235 * a), Color(col.r * 0.7, col.g * 0.7, col.b * 0.7, 255 * a))
-		UI.Rect(bx + 1, y + S(6), S(3), h - S(12), Color(col.r, col.g, col.b, 255 * a))
-		UI.Icon(kindIcon[t.kind] or "scroll", bx + S(12), y + S(10), 32 > S(40) and 32 or 16, Color(255, 255, 255, 255 * a))
-		draw.SimpleText(UI.Fit(t.title, "Praetor.BodyB", w - S(58)), "Praetor.BodyB", bx + S(40), y + S(7), Color(col.r, col.g, col.b, 255 * a))
+		local off = S(4)
+		UI.Round(bx + off, y + off, w, h, S(14), Color(C.ink.r, C.ink.g, C.ink.b, 200 * a))
+		UI.Round(bx, y, w, h, S(14), Color(C.panel.r, C.panel.g, C.panel.b, 245 * a), Color(col.r, col.g, col.b, 255 * a))
+		-- the icon on a disc of the toast colour; it wobbles once when the toast arrives
+		local d = S(40)
+		local wob = age < 0.6 and math.sin(age * 30) * (0.6 - age) * 30 or 0
+		UI.Round(bx + S(10), y + S(10), d, d, d / 2, Color(col.r, col.g, col.b, 255 * a), Color(C.ink.r, C.ink.g, C.ink.b, 255 * a))
+		UI.IconRot(kindIcon[t.kind] or "scroll", bx + S(10) + (d - 24) / 2, y + S(10) + (d - 24) / 2, 24, wob, Color(255, 255, 255, 255 * a))
+		draw.SimpleText(UI.Fit(t.title, "Praetor.BodyB", w - S(76)), "Praetor.BodyB", bx + S(60), y + S(10), Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a))
 		for li = 1, nl do
-			draw.SimpleText(t.lines[li], "Praetor.Small", bx + S(40), y + S(28) + (li - 1) * S(17), Color(222, 212, 196, 255 * a))
+			draw.SimpleText(t.lines[li], "Praetor.Small", bx + S(60), y + S(31) + (li - 1) * S(17), Color(C.text.r, C.text.g, C.text.b, 255 * a))
 		end
-		y = y + h + S(8)
+		-- time left: a thin bar that empties along the bottom
+		local left = math.Clamp(1 - age / t.life, 0, 1)
+		UI.Round(bx + S(12), y + h - S(8), (w - S(24)) * left, S(3), S(1), Color(col.r, col.g, col.b, 200 * a))
+		y = y + h + S(10)
 	end
 end)
+
+-- DarkRP (and other addons) send their notices with notification.AddLegacy:
+-- while the Praetor HUD is on they show up as Praetor toasts
+local legacyKind = { [0] = "info", [1] = "alert", [2] = "info", [3] = "ok", [4] = "info" }
+P.OrigAddLegacy = P.OrigAddLegacy or notification.AddLegacy
+function notification.AddLegacy(text, kind, len)
+	if P.HUD and P.HUD.On and P.HUD.On() then
+		P.Toast(P.L(kind == 1 and "hud_notice_err" or "hud_notice"), tostring(text or ""), legacyKind[kind or 0] or "info", tonumber(len) or 5)
+		return
+	end
+	return P.OrigAddLegacy(text, kind, len)
+end
 
 -- ------------------------------------------------------------------ announcements
 
@@ -187,22 +210,52 @@ hook.Add("HUDPaint", "Praetor.Announce", function()
 	local age = RealTime() - announce.start
 	local life = math.Clamp(#announce.t * 0.09, 6, 14)
 	if age > life then announce = nil return end
-	local a = math.min(1, age * 4, (life - age) * 2)
-	local w = math.min(ScrW() - S(40), S(760))
-	announce.lines = announce.lines or UI.Wrap(announce.t, "Praetor.Big", w - S(60))
+	local a = math.min(1, age * 5, (life - age) * 2)
+	local w = math.min(ScrW() - S(40), S(780))
+	announce.lines = announce.lines or UI.Wrap(announce.t, "Praetor.Big", w - S(70))
 	local nl = math.min(#announce.lines, 4)
-	local h = S(58) + nl * S(26) + S(16)
+	local h = S(70) + nl * S(28) + S(20)
 	local x = (ScrW() - w) / 2
-	local y = S(90) - (1 - math.min(1, age * 3)) * S(30)
-	UI.Round(x, y, w, h, S(8), Color(18, 19, 24, 238 * a), Color(50, 53, 63, 255 * a))
-	UI.Round(x, y, w, S(4), S(2), Color(142, 98, 255, 255 * a))
-	draw.SimpleText(P.Upper(P.L("announcement")), "Praetor.SmallB", x + w / 2, y + S(16), Color(188, 160, 255, 255 * a), TEXT_ALIGN_CENTER)
+	local y = S(96)
+	-- pops in (grows with a spring from its centre) and rises away at the end
+	local pop = 0.6 + 0.4 * UI.EaseBack(math.min(1, age / 0.4))
+	y = y - math.max(0, 0.5 - (life - age)) * S(60)
+	local m = Matrix()
+	local cx, cy = ScrW() / 2, y + h / 2
+	m:Translate(Vector(cx, cy, 0))
+	m:Scale(Vector(pop, pop, 1))
+	m:Translate(Vector(-cx, -cy, 0))
+	cam.PushModelMatrix(m, true)
+	local off = S(6)
+	UI.Round(x + off, y + off, w, h, S(18), Color(C.ink.r, C.ink.g, C.ink.b, 210 * a))
+	UI.Round(x, y, w, h, S(18), Color(C.panel.r, C.panel.g, C.panel.b, 248 * a), Color(C.edge.r, C.edge.g, C.edge.b, 255 * a))
+	-- a tilted "ANNOUNCEMENT" sticker on the top edge, with the megaphone
+	local label = P.Upper(P.L("announcement"))
+	surface.SetFont("Praetor.H2")
+	local lw = surface.GetTextSize(label) + S(62)
+	local lh = S(36)
+	local lx, ly = x + w / 2 - lw / 2, y - lh / 2
+	local tilt = Matrix()
+	tilt:Translate(Vector(lx + lw / 2, ly + lh / 2, 0))
+	tilt:Rotate(Angle(0, -2 + math.sin(age * 3) * 1.2, 0))
+	tilt:Translate(Vector(-(lx + lw / 2), -(ly + lh / 2), 0))
+	cam.PushModelMatrix(tilt, true)
+	UI.Round(lx + S(3), ly + S(3), lw, lh, lh / 2, Color(C.ink.r, C.ink.g, C.ink.b, 230 * a))
+	UI.Round(lx, ly, lw, lh, lh / 2, Color(C.bronze.r, C.bronze.g, C.bronze.b, 255 * a), Color(C.ink.r, C.ink.g, C.ink.b, 255 * a))
+	UI.Icon("megaphone", lx + S(12), ly + (lh - 24) / 2, 24, Color(255, 255, 255, 255 * a))
+	draw.SimpleText(label, "Praetor.H2", lx + S(44), ly + lh / 2, Color(255, 255, 255, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	cam.PopModelMatrix()
 	for i = 1, nl do
-		draw.SimpleText(announce.lines[i], "Praetor.Big", x + w / 2, y + S(46) + (i - 1) * S(26), Color(238, 240, 245, 255 * a), TEXT_ALIGN_CENTER)
+		local ty = y + S(34) + (i - 1) * S(28)
+		draw.SimpleText(announce.lines[i], "Praetor.Big", x + w / 2 + S(2), ty + S(2), Color(C.ink.r, C.ink.g, C.ink.b, 200 * a), TEXT_ALIGN_CENTER)
+		draw.SimpleText(announce.lines[i], "Praetor.Big", x + w / 2, ty, Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a), TEXT_ALIGN_CENTER)
 	end
 	if announce.n then
-		draw.SimpleText("- " .. announce.n, "Praetor.Small", x + w - S(16), y + h - S(22), Color(142, 147, 160, 255 * a), TEXT_ALIGN_RIGHT)
+		draw.SimpleText("- " .. announce.n, "Praetor.SmallB", x + w - S(20), y + h - S(26), Color(C.bronzeL.r, C.bronzeL.g, C.bronzeL.b, 255 * a), TEXT_ALIGN_RIGHT)
 	end
+	local left = math.Clamp(1 - age / life, 0, 1)
+	UI.Round(x + S(20), y + h - S(10), (w - S(40)) * left, S(4), S(2), Color(C.bronze.r, C.bronze.g, C.bronze.b, 220 * a))
+	cam.PopModelMatrix()
 end)
 
 -- ------------------------------------------------------------------ warnings, reports, security
@@ -267,7 +320,7 @@ hook.Add("PostDrawTranslucentRenderables", "Praetor.Jail", function(depth, sky)
 			if c and c ~= vector_origin and c:DistToSqr(EyePos()) < 2500 * 2500 then
 				render.SetColorMaterial()
 				local r, hgt = 56, 96
-				local col = Color(142, 98, 255, 230)
+				local col = Color(C.bronze.r, C.bronze.g, C.bronze.b, 230)
 				for i = 0, 15 do
 					local ang = i / 16 * math.pi * 2
 					local x, y = math.cos(ang) * r, math.sin(ang) * r

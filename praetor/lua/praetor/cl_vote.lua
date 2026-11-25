@@ -245,7 +245,8 @@ end
 local function paintMini(self, w, h)
 	local a = self.alpha or 1
 	local col = C.laurel
-	UI.Round(0, 0, w, h, h / 2, Color(16, 17, 22, 236 * a), Color(col.r, col.g, col.b, 200 * a))
+	UI.Round(S(3), S(3), w - S(3), h - S(3), (h - S(3)) / 2, Color(C.ink.r, C.ink.g, C.ink.b, 200 * a))
+	UI.Round(0, 0, w - S(3), h - S(3), (h - S(3)) / 2, Color(C.panel.r, C.panel.g, C.panel.b, 245 * a), Color(col.r, col.g, col.b, 255 * a))
 	local frac = math.Clamp(timeLeft() / math.max(1, V.dur), 0, 1)
 	UI.Round(h / 2, h - S(3), (w - h) * frac, S(2), S(1), Color(C.bronzeL.r, C.bronzeL.g, C.bronzeL.b, 220 * a))
 	UI.Round(S(6), S(6), h - S(12), h - S(12), (h - S(12)) / 2, Color(col.r, col.g, col.b, 40 * a))
@@ -267,10 +268,11 @@ local function paintCard(self, w, h)
 	if self.mini then return paintMini(self, w, h) end
 	local a = self.alpha or 1
 	local lines = self.lines
-	UI.Round(0, 0, w, h, S(10), Color(16, 17, 22, 242 * a), Color(C.line.r, C.line.g, C.line.b, 255 * a))
+	UI.Round(S(5), S(5), w - S(5), h - S(5), S(16), Color(C.ink.r, C.ink.g, C.ink.b, 200 * a))
+	UI.Round(0, 0, w - S(5), h - S(5), S(16), Color(C.panel.r, C.panel.g, C.panel.b, 246 * a), Color(C.lineL.r, C.lineL.g, C.lineL.b, 255 * a))
 	-- time bar
 	local frac = V.done and 0 or math.Clamp(timeLeft() / math.max(1, V.dur), 0, 1)
-	UI.Round(S(10), 0, (w - S(20)) * frac, S(3), S(1), Color(C.bronzeL.r, C.bronzeL.g, C.bronzeL.b, 255 * a))
+	UI.Round(S(14), S(3), (w - S(33)) * frac, S(4), S(2), Color(C.bronzeL.r, C.bronzeL.g, C.bronzeL.b, 255 * a))
 	-- header
 	UI.Icon(V.kind == "map" and "map" or "ballot", S(14), S(13), 16, Color(255, 255, 255, 255 * a))
 	local head = V.done and P.L("vote_result_t") or P.L(V.kind == "map" and "mv_short" or "vote_title")
@@ -310,14 +312,15 @@ local function paintCard(self, w, h)
 		local hov = not V.done and self.hover == i
 		local isWin = win == i
 		local base = isWin and C.bronze or (mine and C.laurel or C.lineL)
-		UI.Round(rx, y, rw, rh, S(7), Color(hov and 34 or 26, hov and 36 or 28, hov and 44 or 34, 255 * a), Color(base.r, base.g, base.b, (mine or isWin) and 255 * a or 110 * a))
+		local bg = hov and C.hover or C.panel2
+		UI.Round(rx, y, rw, rh, S(12), Color(bg.r, bg.g, bg.b, 255 * a), Color(base.r, base.g, base.b, (mine or isWin) and 255 * a or 150 * a))
 		-- bar
 		local fillCol = isWin and C.bronze or (mine and C.laurel or (i == lead and C.bronzeD or C.lineL))
 		if V.anim[i] > 0.004 then
-			UI.Round(rx + 1, y + 1, math.max(S(8), (rw - 2) * V.anim[i]), rh - 2, S(6), Color(fillCol.r, fillCol.g, fillCol.b, 70 * a))
+			UI.Round(rx + S(2), y + S(2), math.max(S(10), (rw - S(4)) * V.anim[i]), rh - S(4), S(10), Color(fillCol.r, fillCol.g, fillCol.b, 80 * a))
 		end
 		-- key
-		UI.Round(rx + S(7), y + (rh - S(22)) / 2, S(22), S(22), S(5), Color(0, 0, 0, 120 * a), Color(base.r, base.g, base.b, 200 * a))
+		UI.Round(rx + S(7), y + (rh - S(22)) / 2, S(22), S(22), S(11), Color(base.r, base.g, base.b, 255 * a), Color(C.ink.r, C.ink.g, C.ink.b, 255 * a))
 		UI.Text(tostring(i), "Praetor.SmallB", rx + S(18), y + rh / 2, Color(255, 255, 255, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		local right = string.format("%d%%  ·  %d", math.Round(pct * 100), n)
 		surface.SetFont("Praetor.SmallB")
@@ -437,7 +440,7 @@ local function openOverlay()
 	local gy = math.floor(ScrH() / 2 - gridH / 2 + S(20))
 	overlay.Paint = function(s, w, h)
 		local a = math.min(1, (RealTime() - s.born) * 4)
-		surface.SetDrawColor(6, 7, 10, 215 * a)
+		surface.SetDrawColor(8, 6, 16, 220 * a)
 		surface.DrawRect(0, 0, w, h)
 		if not V then return end
 		local ty = gy - S(96)
@@ -494,7 +497,7 @@ local function openOverlay()
 			local border = win and C.bronzeL or (mine and C.laurel or P.LerpColor(s.hov, C.line, C.lineL))
 			local lift = math.floor(s.hov * S(3))
 			local alpha = lose and 110 or 255
-			UI.Round(0, 0, w, h, S(10), Color(18, 19, 24, 250), border)
+			UI.Round(0, 0, w, h, S(14), C.panel, border)
 			local ph = h - S(56)
 			P.DrawMapPicture(mapName, 2, 2 - lift, w - 4, ph, alpha)
 			if isKeep then
@@ -504,7 +507,7 @@ local function openOverlay()
 				UI.TextShadow(P.L("mv_keep"), "Praetor.H2", w / 2, ph / 2 + S(16) - lift, C.ivory, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			end
 			-- key and tag
-			UI.Round(S(8), S(8) - lift, S(26), S(26), S(6), Color(0, 0, 0, 170), border)
+			UI.Round(S(8), S(8) - lift, S(26), S(26), S(13), C.bronze, C.ink)
 			UI.Text(tostring(i), "Praetor.BodyB", S(8) + S(13), S(21) - lift, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			local pretty, tag = P.MapPretty(mapName)
 			if tag then
@@ -616,7 +619,7 @@ hook.Add("HUDPaint", "Praetor.MapChange", function()
 	surface.SetFont("Praetor.BodyB")
 	local tw = surface.GetTextSize(text) + S(60)
 	local x, y = ScrW() / 2 - tw / 2, S(18)
-	UI.Round(x, y, tw, S(38), S(19), Color(16, 17, 22, 240), C.bronze)
+	UI.Comic(x, y, tw, S(38), S(19), Color(C.panel.r, C.panel.g, C.panel.b, 245), C.bronze, S(4))
 	UI.Icon("map", x + S(14), y + (S(38) - 16) / 2, 16)
 	UI.Text(text, "Praetor.BodyB", x + S(40), y + S(19), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 end)
