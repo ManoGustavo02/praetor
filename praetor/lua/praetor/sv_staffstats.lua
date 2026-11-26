@@ -110,6 +110,11 @@ P.Receive("staff_stats", { perm = "staff_stats", rate = 1 }, function(ply, data)
 		spark[r.sid] = spark[r.sid] or {}
 		spark[r.sid][tostring(r.day)] = math.floor((tonumber(r.online) or 0) / 60)
 	end
+	-- the last 7 days on duty, for the weekly goal of each rank
+	local week = {}
+	for _, r in ipairs(P.DB.Query("SELECT sid, SUM(duty) AS d FROM praetor_staff_days WHERE day >= ? GROUP BY sid", dayAgo(6)) or {}) do
+		week[r.sid] = math.floor(tonumber(r.d) or 0)
+	end
 	local list, seen = {}, {}
 	local function add(sid, r)
 		if seen[sid] then return end
@@ -120,6 +125,8 @@ P.Receive("staff_stats", { perm = "staff_stats", rate = 1 }, function(ply, data)
 			last = IsValid(online) and os.time() or tonumber(u.last) or 0, on = IsValid(online) or nil, duty = IsValid(online) and online:GetNW2Bool("pr_duty", false) or nil }
 		for _, f in ipairs(FIELDS) do e[f] = math.floor(tonumber(r and r[f]) or 0) end
 		e.dutyNow = e.duty
+		e.week = week[sid] or 0
+		e.goal = P.DutyGoalOf and P.DutyGoalOf(e.rank) or nil
 		e.duty = math.floor(tonumber(r and r.duty) or 0)
 		local sp = {}
 		for i = 13, 0, -1 do sp[#sp + 1] = (spark[sid] or {})[tostring(dayAgo(i))] or 0 end

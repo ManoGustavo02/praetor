@@ -483,6 +483,7 @@ P.Receive("sit_room_go", { perm = { "sit", "manage_sits" }, rate = 1 }, function
 end)
 
 P.Receive("sit_start", { perm = "sit", rate = 1 }, function(ply, data)
+	if P.NeedDuty and P.NeedDuty(ply, "sit_start", data) then return end
 	local list = {}
 	for _, sid in ipairs(istable(data.sids) and data.sids or {}) do
 		local p = isstring(sid) and P.BySID(sid)
@@ -515,6 +516,7 @@ end)
 P.Receive("sit_join", { perm = "sit", rate = 1 }, function(ply, data)
 	local sit = P.Sits[tonumber(data.id) or -1]
 	if not sit then return end
+	if P.NeedDuty and P.NeedDuty(ply, "sit_join", { id = data.id }) then return end
 	if P.SitAdd(sit, ply, true) then syncSit(sit) end
 end)
 

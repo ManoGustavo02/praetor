@@ -129,6 +129,17 @@ local function buildDetail(detail, e)
 		else
 			UI.Text(P.L("st_no_stars"), "Praetor.Tiny", w - S(14), sy + S(10), C.dim, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		end
+		-- weekly goal of the rank (Settings > duty_goal + the goal in the rank)
+		if e.goal then
+			local gy2 = sy + S(30)
+			local need = e.goal * 3600
+			local frac = math.Clamp((e.week or 0) / need, 0, 1)
+			local ok = (e.week or 0) >= need
+			UI.Text(P.L("st_goal"), "Praetor.SmallB", S(14), gy2 + S(8), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			UI.Text(hours(e.week) .. " / " .. P.FormatHours(need), "Praetor.Tiny", w - S(14), gy2 + S(8), ok and C.laurel or C.amber, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+			UI.Round(S(14), gy2 + S(20), w - S(28), S(8), S(4), C.bg, C.line, 1)
+			if frac > 0 then UI.Round(S(15), gy2 + S(21), math.max(S(6), (w - S(30)) * frac), S(6), S(3), ok and C.laurel or C.amber) end
+		end
 	end
 	local open = UI.Button(detail, P.L("st_open_sheet"), "ghost", "badge", function() P.OpenMenu("users", { sid = e.sid }) end)
 	open:Dock(BOTTOM)
@@ -302,7 +313,16 @@ P.AddTab("staff", {
 					local bw2 = xs[2][2] - S(14)
 					UI.Round(xs[2][1], h - S(13), bw2, S(3), S(1), Color(255, 255, 255, 16))
 					UI.Round(xs[2][1], h - S(13), math.max(S(2), bw2 * (e.online or 0) / maxOn), S(3), S(1), C.sky)
-					UI.Text(hours(e.duty), "Praetor.Small", xs[3][1], h / 2, e.duty > 0 and C.text or C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+					if e.goal then
+						-- hours of the period + a bar of the weekly goal
+						UI.Text(hours(e.duty), "Praetor.Small", xs[3][1], S(16), e.duty > 0 and C.text or C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+						local gw = xs[3][2] - S(14)
+						local frac = math.Clamp((e.week or 0) / (e.goal * 3600), 0, 1)
+						UI.Round(xs[3][1], h - S(13), gw, S(3), S(1), Color(255, 255, 255, 16))
+						UI.Round(xs[3][1], h - S(13), math.max(S(2), gw * frac), S(3), S(1), frac >= 1 and C.laurel or C.amber)
+					else
+						UI.Text(hours(e.duty), "Praetor.Small", xs[3][1], h / 2, e.duty > 0 and C.text or C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+					end
 					UI.Text(tostring(e.cmds), "Praetor.Small", xs[4][1], h / 2, C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 					local pun = actionsOf(e)
 					UI.Text(tostring(pun), "Praetor.Small", xs[5][1], S(16), pun > 0 and C.crimsonL or C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)

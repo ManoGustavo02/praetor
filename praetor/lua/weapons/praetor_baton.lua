@@ -2,12 +2,17 @@
 -- It never hurts anyone. R switches the mode (Shift + R goes back); the list of
 -- modes and what each button does shows on the left of the screen while it is held.
 --   Hold     LMB hold: carry a player or prop   RMB while carrying: throw
+--            (mouse wheel while carrying: closer / farther)
 --   Freeze   LMB: freeze / unfreeze a player or prop
 --   Push     LMB: push away                      RMB: pull closer
 --   Teleport LMB: go to where you aim            RMB: bring the player you aim at
 --   Info     LMB: who is it (rank, SteamID...)   RMB: copy the SteamID / model
+--   Room     LMB: support room with the player     RMB: end your room
+--   Jail     LMB: jail the player for 5 minutes    RMB: release (player or cell)
+--   Watch    LMB: spectate the player              RMB: free camera
 --   Remove   LMB: delete the prop you aim at
 --   Cloak    LMB: turn your invisibility on / off
+--   ESP      LMB: turn the staff ESP on / off
 -- Every action checks the same permissions as the matching command and logs it.
 AddCSLuaFile()
 
@@ -37,9 +42,14 @@ local MODES = {
 	{ id = "push",   icon = "jump" },
 	{ id = "tp",     icon = "portal" },
 	{ id = "info",   icon = "info" },
+	{ id = "sit",    icon = "headset" },
+	{ id = "jail",   icon = "jail" },
+	{ id = "spec",   icon = "eye" },
 	{ id = "remove", icon = "trash" },
 	{ id = "cloak",  icon = "ghost" },
+	{ id = "esp",    icon = "target" },
 }
+local JAIL_MINUTES = 5
 SWEP.Modes = MODES
 
 local SND = {
@@ -48,6 +58,7 @@ local SND = {
 	throw = "weapons/physcannon/superphys_launch1.wav", freeze = "physics/glass/glass_impact_hard1.wav",
 	push = "weapons/stunstick/spark1.wav", tp = "ambient/machines/teleport1.wav",
 	remove = "ambient/levels/citadel/weapon_disintegrate2.wav", cloak = "buttons/blip1.wav",
+	jail = "doors/heavy_metal_stop1.wav", sit = "buttons/button9.wav",
 }
 
 function SWEP:SetupDataTables()
@@ -104,6 +115,7 @@ if SERVER then
 
 	local function log(o, mode, t)
 		if not P then return end
+		if P.ShiftCount then P.ShiftCount(o, "baton") end
 		if IsValid(t) and t:IsPlayer() then
 			P.Log("cmd", "l_baton_ply", { A = P.LogPly(o), T = { P.LogPly(t) }, V = "@bt_" .. mode }, { o, t })
 		elseif IsValid(t) then
@@ -275,6 +287,66 @@ if SERVER then
 		SafeRemoveEntityDelayed(t, 0)
 	end
 
+	ACT.sit = function(self, o, t, second)
+		if second then
+			local sit = P.SitOf(o)
+			if not sit then return deny(o, "err_sit_none") end
+			P.EndSit(sit, o)
+			P.Echo(o, "e_endsit", {})
+			log(o, "sit_end")
+			return
+		end
+		if not IsValid(t) or not t:IsPlayer() then return deny(o, "err_bt_aim_player") end
+		if not canPlayer(o, t, "sit") then return end
+		local ok, err, eargs = P.StartSit(o, { t }, {})
+		if not ok then
+			if err then P.Notify(o, err, eargs) end
+			return
+		end
+		o:EmitSound(SND.sit, 50, 100, 0.5)
+		log(o, "sit", t)
+	end
+
+	ACT.jail = function(self, o, t, second)
+		-- aiming at a cell counts as aiming at the prisoner inside it
+		if IsValid(t) and t:GetClass() == "praetor_jail" and t.GetPrisoner then t = t:GetPrisoner() end
+		if not IsValid(t) or not t:IsPlayer() then return deny(o, "err_bt_aim_player") end
+		if second then
+			if not canPlayer(o, t, "unjail") then return end
+			if not t:GetNW2Bool("pr_jailed", false) then return deny(o, "err_bt_not_jailed", { S = t:Nick() }) end
+			P.Unjail(t, o)
+			P.Echo(o, "e_unjail", { T = { t } })
+			log(o, "unjail", t)
+			return
+		end
+		if not canPlayer(o, t, "jail") then return end
+		if t:GetNW2Bool("pr_jailed", false) then return deny(o, "err_bt_jailed", { S = t:Nick() }) end
+		if t:InVehicle() then t:ExitVehicle() end
+		P.Jail(t, JAIL_MINUTES, o, nil, "")
+		P.Echo(o, "e_jail_t", { T = { t }, V = P.FormatDuration(JAIL_MINUTES), V2 = "@jail_no_reason" })
+		o:EmitSound(SND.jail, 60, 100, 0.5)
+		log(o, "jail", t)
+	end
+
+	ACT.spec = function(self, o, t, second)
+		if not o:Alive() then return deny(o, "err_dead") end
+		if second then
+			if not has(o, "spectate") then return deny(o, "err_bt_perm", { V = "spectate" }) end
+			P.StartSpectate(o, nil)
+			return
+		end
+		if not IsValid(t) or not t:IsPlayer() then return deny(o, "err_bt_aim_player") end
+		if not canPlayer(o, t, "spectate") then return end
+		P.StartSpectate(o, t)
+	end
+
+	-- info mode: the card is drawn on the client; the server only adds the notes count
+	ACT.info = function(self, o, t)
+		if not IsValid(t) or not t:IsPlayer() or t:IsBot() or not has(o, "user_notes") then return end
+		local n = tonumber(P.DB.Value("SELECT COUNT(*) FROM praetor_notes WHERE sid = ?", t:SteamID64())) or 0
+		if n > 0 then P.Notify(o, "bt_info_notes", { S = t:Nick(), V = n }, "info") end
+	end
+
 	ACT.cloak = function(self, o)
 		if not has(o, "cloak") then return deny(o, "err_bt_perm", { V = "cloak" }) end
 		local on = not o:GetNW2Bool("pr_cloak")
@@ -301,9 +373,13 @@ if SERVER then
 		elseif m == "freeze" then ACT.freeze(self, o, t)
 		elseif m == "push" then ACT.push(self, o, t, second)
 		elseif m == "tp" then ACT.tp(self, o, t, second, tr)
+		elseif m == "info" then if not second then ACT.info(self, o, t) end
+		elseif m == "sit" then ACT.sit(self, o, t, second)
+		elseif m == "jail" then ACT.jail(self, o, t, second)
+		elseif m == "spec" then ACT.spec(self, o, t, second)
 		elseif m == "remove" then if not second then ACT.remove(self, o, t) end
 		elseif m == "cloak" then if not second then ACT.cloak(self, o) end
-		end
+		end -- esp is switched on the client
 	end
 
 	function SWEP:Think()
@@ -316,7 +392,12 @@ if SERVER then
 			o:EmitSound(SND.mode, 45, 100 + self:GetMode() * 4, 0.4)
 		end
 		if IsValid(self:GetHeld()) then
-			if not o:KeyDown(IN_ATTACK) or not o:Alive() then self:Drop() else self:MoveHeld() end
+			if not o:KeyDown(IN_ATTACK) or not o:Alive() then self:Drop() return end
+			-- the mouse wheel brings what you carry closer / sends it farther
+			local cmd = o:GetCurrentCommand()
+			local wheel = cmd and cmd:GetMouseWheel() or 0
+			if wheel ~= 0 then self.GrabDist = math.Clamp((self.GrabDist or 150) + wheel * 30, 60, 1000) end
+			self:MoveHeld()
 		end
 	end
 
@@ -361,9 +442,19 @@ if SERVER then return end
 -- ------------------------------------------------------------------ client side
 local P = Praetor
 
--- info mode is all on this side: what we know about the player / prop we aim at
+-- info mode is drawn on this side: what we know about the player / prop we aim at.
+-- The ESP mode only flips the praetor_esp setting of this player.
 function SWEP:ClientAct(second)
-	if not P or self:CurMode().id ~= "info" then return end
+	if not P then return end
+	if self:CurMode().id == "esp" then
+		if second or not P.EspVar then return end
+		if not LocalPlayer():GetNW2Bool("pr_duty", false) then return end
+		local on = not P.EspVar:GetBool()
+		RunConsoleCommand("praetor_esp", on and "1" or "0")
+		P.Toast(P.L("bt_esp"), P.L(on and "bt_esp_on" or "bt_esp_off"), "ok", 3)
+		return
+	end
+	if self:CurMode().id ~= "info" then return end
 	local o = self:GetOwner()
 	local tr = aimTrace(o, 4096)
 	local t = tr.Entity
@@ -441,6 +532,13 @@ function SWEP:DrawWorldModel()
 	render.SetColorModulation(1, 1, 1)
 end
 
+-- while carrying something the mouse wheel moves it, not the weapon selection
+hook.Add("PlayerBindPress", "Praetor.Baton", function(ply, bind, pressed)
+	if not pressed or (bind ~= "invprev" and bind ~= "invnext") then return end
+	local w = ply:GetActiveWeapon()
+	if IsValid(w) and w:GetClass() == "praetor_baton" and IsValid(w:GetHeld()) then return true end
+end)
+
 -- beam from the baton to what it carries
 local beam = Material("sprites/physbeama")
 hook.Add("PostDrawTranslucentRenderables", "Praetor.Baton", function(depth, sky)
@@ -475,7 +573,7 @@ function SWEP:DrawHUD()
 	local m = MODES[cur]
 	local w = S(250)
 	local pad = S(12)
-	local rowH = S(24)
+	local rowH = S(21)
 	local inner = w - pad * 2
 	local hint1 = P.L("bt_" .. m.id .. "_l")
 	local hint2 = P.L("bt_" .. m.id .. "_r", nil, "")

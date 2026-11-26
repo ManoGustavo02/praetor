@@ -87,6 +87,20 @@ C({ id = "ungag", cat = "moderation", def = "moderator",
 		P.Echo(caller, "e_ungag", { T = t })
 	end })
 
+C({ id = "sprayban", cat = "moderation", def = "moderator", aliases = { "banspray", "bloquearspray" },
+	args = { { type = "player" } },
+	run = function(caller, t)
+		for _, p in ipairs(t) do P.SetSprayBan(p, true, caller) end
+		P.Echo(caller, "e_sprayban", { T = t })
+	end })
+
+C({ id = "unsprayban", cat = "moderation", def = "moderator", aliases = { "unbanspray", "liberarspray" },
+	args = { { type = "player" } },
+	run = function(caller, t)
+		for _, p in ipairs(t) do P.SetSprayBan(p, false, caller) end
+		P.Echo(caller, "e_unsprayban", { T = t })
+	end })
+
 C({ id = "jail", cat = "moderation", def = "moderator", preset = true,
 	-- no time = until someone uses !unjail
 	args = { { type = "player" }, { type = "duration", hint = "time", optional = true, default = 0 }, reasonArg() },

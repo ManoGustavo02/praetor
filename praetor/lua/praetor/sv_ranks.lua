@@ -50,6 +50,8 @@ function P.CleanRank(r, name)
 	if istable(r.promote) and isstring(r.promote.from) and tonumber(r.promote.hours) then
 		out.promote = { from = r.promote.from:lower(), hours = math.Clamp(math.floor(tonumber(r.promote.hours) * 60 + 0.5) / 60, 1 / 60, 100000), off = r.promote.off == true or nil }
 	end
+	local goal = tonumber(r.goal)
+	if goal and goal > 0 then out.goal = math.Clamp(math.floor(goal * 4 + 0.5) / 4, 0.25, 168) end
 	if name == "user" then out.inherit = nil out.immunity = 0 end
 	return out
 end
@@ -188,6 +190,7 @@ P.Receive("rank_update", { perm = "manage_ranks", rate = 3, max = 262144 }, func
 		new.inherit = inh
 	end
 	if f.ban_limit ~= nil then new.ban_limit = f.ban_limit end
+	if f.goal ~= nil then new.goal = (tonumber(f.goal) or 0) > 0 and f.goal or nil end
 	if f.limits ~= nil then new.limits = f.limits end
 	if f.block ~= nil then new.block = f.block end
 	if f.promote ~= nil then new.promote = f.promote ~= false and f.promote or nil end

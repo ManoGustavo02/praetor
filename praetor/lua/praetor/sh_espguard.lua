@@ -8,11 +8,31 @@
 --  * Starfall (server and client chips): find.*, team.getPlayers, player(n) and
 --    entity(n) drop them, and entity methods that return a position give 0,0,0.
 -- The hidden player's own chips and staff who could cloak them still see them.
+--
+-- On the server it also notes, per chip, which other players the chip reads the
+-- position of and whether it parents holograms to a player. sv_chips uses that
+-- to point out chips that behave like an ESP / aimbot.
 local P = Praetor
 
 -- ------------------------------------------------------------------ who is hidden
 -- refreshed four times a second; the wrappers only do a table lookup
 local hidden, anyHidden = {}, false
+local isPly = {}
+
+-- chip entity -> { [player] = true } players whose position the chip read
+P.ChipEspHits = P.ChipEspHits or setmetatable({}, { __mode = "k" })
+-- chip entity -> true when it parented a hologram / EGP object to a player
+P.ChipHoloPly = P.ChipHoloPly or setmetatable({}, { __mode = "k" })
+
+local function note(chip, target, owner)
+	if not isPly[target] or target == owner or not IsValid(chip) then return end
+	local h = P.ChipEspHits[chip]
+	if not h then h = {} P.ChipEspHits[chip] = h end
+	h[target] = true
+end
+local function noteHolo(chip, target, owner)
+	if isPly[target] and target ~= owner and IsValid(chip) then P.ChipHoloPly[chip] = true end
+end
 
 function P.EspHidden(ply)
 	if not IsValid(ply) or not ply:IsPlayer() then return false end
@@ -29,11 +49,12 @@ function P.EspHiddenFrom(ply, viewer)
 end
 
 local function refresh()
-	local t, any = {}, false
+	local t, any, pl = {}, false, {}
 	for _, p in player.Iterator() do
+		pl[p] = true
 		if P.EspHidden(p) then t[p] = true any = true end
 	end
-	hidden, anyHidden = t, any
+	hidden, anyHidden, isPly = t, any, pl
 end
 timer.Create("Praetor.EspGuard", 0.25, 0, refresh)
 
@@ -79,10 +100,9 @@ if SERVER then
 		-- holograms and EGP objects can't follow a hidden player
 		if name:find("^holoParent") or name:find("^egpParent") then
 			return function(self, args, types)
-				if anyHidden then
-					for _, v in ipairs(args) do
-						if P.EspHiddenFrom(v, self.player) then return end
-					end
+				for _, v in ipairs(args) do
+					noteHolo(self.entity, v, self.player)
+					if anyHidden and P.EspHiddenFrom(v, self.player) then return end
 				end
 				return fn(self, args, types)
 			end
@@ -98,7 +118,11 @@ if SERVER then
 
 		if method and ret == "v" then
 			return function(self, args, types)
-				if anyHidden and P.EspHiddenFrom(args[1], self.player) then return Vector(0, 0, 0) end
+				local e = args[1]
+				if isPly[e] then
+					note(self.entity, e, self.player)
+					if anyHidden and P.EspHiddenFrom(e, self.player) then return Vector(0, 0, 0) end
+				end
 				return fn(self, args, types)
 			end
 		end
@@ -134,11 +158,17 @@ end
 -- ------------------------------------------------------------------ Starfall
 -- every chip instance gets its own copy of the libraries; they are wrapped right
 -- after the chip is compiled, before any of its code runs
+-- entity methods that tell where a player is (used to spot ESP chips)
+local SF_POS = {
+	getPos = true, getShootPos = true, getEyePos = true, obbCenterW = true, worldSpaceCenter = true,
+	localToWorld = true, getBonePosition = true, getAttachment = true, getNearestPoint = true,
+}
 local SF_FIND = { "inBox", "inSphere", "inCone", "inRay", "byClass", "byName", "byModel", "inPVS", "allPlayers", "all" }
 
 hook.Add("StarfallPostInstanceCompile", "Praetor.EspGuard", function(inst)
 	if not istable(inst) or not istable(inst.Types) or not isfunction(inst.UnwrapObject) then return end
 	local viewer = inst.player
+	local chip = inst.entity
 	local unwrap = inst.UnwrapObject
 	local T = inst.Types
 
@@ -199,8 +229,21 @@ hook.Add("StarfallPostInstanceCompile", "Praetor.EspGuard", function(inst)
 			if isfunction(f) then
 				if k == "setParent" then
 					methods[k] = function(self, parent, ...)
+						if SERVER and parent ~= nil then
+							local ok, e = pcall(unwrap, parent)
+							if ok then noteHolo(chip, e, viewer) end
+						end
 						if hid(parent) then return end
 						return f(self, parent, ...)
+					end
+				elseif SERVER and SF_POS[k] then
+					methods[k] = function(self, ...)
+						local ok, e = pcall(unwrap, self)
+						if ok and isPly[e] then
+							note(chip, e, viewer)
+							if anyHidden and P.EspHiddenFrom(e, viewer) then return zero(f(self, ...)) end
+						end
+						return f(self, ...)
 					end
 				else
 					methods[k] = function(self, ...)
@@ -219,6 +262,10 @@ hook.Add("StarfallPostInstanceCompile", "Praetor.EspGuard", function(inst)
 			local f = rawget(meta.Methods, "setParent")
 			if isfunction(f) then
 				meta.Methods.setParent = function(self, parent, ...)
+					if SERVER and parent ~= nil then
+						local ok, e = pcall(unwrap, parent)
+						if ok then noteHolo(chip, e, viewer) end
+					end
 					if hid(parent) then return end
 					return f(self, parent, ...)
 				end

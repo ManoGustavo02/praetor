@@ -78,9 +78,10 @@ C({ id = "duty", cat = "users", def = "moderator", aliases = { "staffmode", "ond
 	run = function(caller)
 		if not IsValid(caller) then return "err_console" end
 		local on = not caller:GetNW2Bool("pr_duty", false)
+		if on and P.Setting("duty_on") == false then return "err_duty_off" end
 		P.SetDuty(caller, on)
 		P.Echo(caller, on and "e_duty_on" or "e_duty_off", {})
-		P.Log("cmd", on and "l_duty_on" or "l_duty_off", { A = P.LogPly(caller) }, { caller })
+		if on then P.Log("cmd", "l_duty_on", { A = P.LogPly(caller) }, { caller }) end -- leaving logs the shift summary
 	end })
 
 C({ id = "who", cat = "users", def = "user", aliases = { "staff", "online" },

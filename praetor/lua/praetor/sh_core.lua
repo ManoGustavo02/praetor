@@ -67,9 +67,18 @@ P.Defaults = {
 	warn_rules        = { { pts = 3, act = "kick", min = 0 }, { pts = 5, act = "ban", min = 1440 }, { pts = 8, act = "ban", min = 10080 } },
 	physgun_players   = true,
 	physgun_freeze    = true,       -- right click while holding a player freezes them
+	duty_on           = true,       -- staff mode exists (off: !staffmode is refused and nothing below runs)
+	duty_reports      = false,      -- report alerts only for staff on duty; taking a report off duty asks to start it
+	staff_esp         = true,       -- staff on duty can turn on the ESP (permission esp)
 	duty_strip        = true,       -- !duty puts away the weapons that hurt (given back after)
 	duty_baton        = true,       -- !duty gives the staff baton
 	duty_cloak        = false,      -- !duty also makes the staff invisible (taken off when duty ends)
+	duty_afk          = true,       -- going AFK (afk_time) ends the shift
+	duty_goal         = false,      -- weekly goal of hours on duty, set per rank
+	ghost_cloaked     = true,       -- staff see invisible players as see-through ghosts
+	sprays            = true,       -- players can use their spray (staff can still block one player)
+	chip_alerts       = true,       -- staff on duty are warned about heavy or suspicious E2 / Starfall chips
+	chip_cpu_alert    = 80,         -- % of the CPU limit that counts as heavy
 	esp_block         = true,       -- E2 / Starfall chips can't find or follow staff on duty or invisible players
 	-- logs & reports
 	log_days          = 21,

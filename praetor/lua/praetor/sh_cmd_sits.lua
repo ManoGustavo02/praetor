@@ -11,6 +11,7 @@ C({ id = "sit", cat = "teleport", def = "moderator", aliases = { "atendimento", 
 	args = { { type = "player", optional = true, notself = true }, { type = "player", optional = true, notself = true } },
 	run = function(caller, a, b)
 		if not IsValid(caller) then return "err_console" end
+		if P.NeedDuty and P.NeedDuty(caller) then return end
 		local list, seen = {}, {}
 		for _, t in ipairs({ a or {}, b or {} }) do
 			for _, p in ipairs(t) do

@@ -126,6 +126,10 @@ local function editor(right, name)
 	local promoMin = edit.promote and math.floor((tonumber(edit.promote.hours) or 0) * 60 + 0.5) or 0
 	local promoTime = field(P.L("rk_promo_time"), UI.DurationField(sc, promoMin > 0 and exactDur(promoMin) or "", { chips = { "1h", "5h", "1d", "3d", "1w", "1mo" }, noPerm = true }), nil, P.L("rk_promo_time_d"))
 
+	-- weekly goal of hours on duty (only used when Settings > duty_goal is on)
+	UI.Section(sc, P.L("rk_goal_sec"), P.L(P.Setting("duty_goal") == true and "rk_goal_sec_sub" or "rk_goal_sec_off"))
+	local goalEntry = field(P.L("rk_goal"), UI.Entry(sc, P.L("rk_goal_ph"), (edit.goal or 0) > 0 and tostring(edit.goal) or ""), nil, P.L("rk_goal_d"))
+
 	UI.Section(sc, P.L("rk_limits"), P.L("rk_limits_sub"))
 	local limitGrid = vgui.Create("DIconLayout", sc)
 	limitGrid:Dock(TOP)
@@ -348,6 +352,7 @@ local function editor(right, name)
 				chat_color = edit.chat_color,
 				immunity = tonumber(imm:GetValue()) or edit.immunity,
 				ban_limit = banLimit:GetMinutes() or 0,
+				goal = tonumber((string.gsub(goalEntry:GetValue() or "", ",", "."))) or 0,
 				limits = {}, block = {}, perms = {},
 			}
 			if inh then local _, v = inh:GetSelected() out.inherit = v end

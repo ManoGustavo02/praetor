@@ -34,6 +34,18 @@ local cooldown = {}
 
 local function staff() return P.WithPerm("reports") end
 
+-- who gets the alerts: staff on duty (setting duty_reports). The others only get
+-- the counter updated, so an open reports tab stays right.
+local function alertStaff()
+	local all = staff()
+	if P.Setting("duty_reports") ~= true or P.Setting("duty_on") == false then return all, {} end
+	local on, off = {}, {}
+	for _, p in ipairs(all) do
+		if p:GetNW2Bool("pr_duty", false) then on[#on + 1] = p else off[#off + 1] = p end
+	end
+	return on, off
+end
+
 local function openCount()
 	return tonumber(P.DB.Value("SELECT COUNT(*) FROM praetor_reports WHERE status != 'closed'")) or 0
 end
@@ -179,7 +191,9 @@ P.Receive("report_send", { rate = 0.5, max = 16384 }, function(ply, data)
 		sid, ply:Nick(), tsid or "", tname, reasonText, text, os.time(), "{}", cat, prio, util.TableToJSON(ctx))
 	local id = tonumber(P.DB.Value("SELECT MAX(id) FROM praetor_reports")) or 0
 	P.Log("report", "l_report", { A = P.LogPly(ply), T = tsid and { n = tname, s = tsid } or nil, V = reasonText }, { ply, tsid })
-	P.Send(staff(), "report_new", { id = id, n = ply:Nick(), t = tname, r = reasonText, cat = cat, prio = prio, open = openCount() })
+	local onDuty, offDuty = alertStaff()
+	if #onDuty > 0 then P.Send(onDuty, "report_new", { id = id, n = ply:Nick(), t = tname, r = reasonText, cat = cat, prio = prio, open = openCount() }) end
+	if #offDuty > 0 then P.Send(offDuty, "report_upd", { id = id, open = openCount() }) end
 	hook.Run("Praetor.ReportCreated", id, ply, tsid, reasonText, text)
 	P.ReportPushState(getRow(id))
 
@@ -330,6 +344,8 @@ P.Receive("report_claim", { perm = "reports", rate = 2 }, function(ply, data)
 		P.ReportPushState(getRow(id))
 		return
 	end
+	-- taking a report needs staff mode: the player is asked to start it (and the report is taken right after)
+	if P.NeedDuty and P.NeedDuty(ply, "report_claim", { id = id, take = data.take }) then return end
 	if row.status == "claimed" and row.staff_sid ~= ply:SteamID64() then
 		local other = P.BySID(row.staff_sid or "")
 		if IsValid(other) and not data.take then P.Notify(ply, "err_report_taken", { S = other:Nick() }) return end
@@ -378,7 +394,7 @@ timer.Create("Praetor.ReportRemind", 120, 0, function()
 	if not P.Setting("reports") or (BBX and P.Setting("reports_blackbox")) then return end
 	local n = tonumber(P.DB.Value("SELECT COUNT(*) FROM praetor_reports WHERE status = 'open' AND created < ?", os.time() - 120)) or 0
 	if n == 0 then return end
-	local to = staff()
+	local to = alertStaff()
 	if #to > 0 then P.Send(to, "report_remind", { n = n, open = openCount() }) end
 end)
 
