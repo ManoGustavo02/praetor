@@ -1,5 +1,5 @@
 -- Praetor: chat messages, action broadcasts, toasts, announcements,
--- staff chat, private messages and a few screen effects (blind, jail cage).
+-- staff chat, private messages and a few screen effects (blind).
 local P = Praetor
 local UI = P.UI
 local C = UI.C
@@ -63,11 +63,28 @@ P.On("echo", function(d)
 		out[#out + 1] = C.dim
 		out[#out + 1] = "(" .. P.L("silent") .. ") "
 	end
-	for _, p in ipairs(P.TemplateParts(P.L(d.k), d.a)) do out[#out + 1] = p end
+	for _, p in ipairs(P.TemplateParts(P.L(d.k), P.LocalArgs(d.a))) do out[#out + 1] = p end
 	addParts(out)
 end)
 
+-- values the server can't translate: "@arg_player" is a word to translate, and
+-- U = a command id becomes its usage line ("!jail <player> [time] [reason]")
+local function localArgs(a)
+	if not istable(a) then return a end
+	local out = {}
+	for k, v in pairs(a) do
+		if isstring(v) and v:sub(1, 1) == "@" and #v > 1 then out[k] = P.L(v:sub(2), nil, v:sub(2)) else out[k] = v end
+	end
+	if isstring(out.U) then
+		local c = P.ServerCmds and P.ServerCmds[out.U]
+		out.U = (c and P.UsageText) and P.UsageText(c) or ("!" .. out.U)
+	end
+	return out
+end
+P.LocalArgs = localArgs
+
 P.On("notify", function(d)
+	d.a = localArgs(d.a)
 	local col = d.kind == "ok" and C.laurel or (d.kind == "warn" and C.amber or (tostring(d.k):sub(1, 4) == "err_" and C.crimsonL or C.text))
 	local out = prefix({})
 	for _, p in ipairs(P.TemplateParts(P.L(d.k), d.a, col)) do out[#out + 1] = p end
@@ -310,32 +327,7 @@ hook.Add("HUDPaint", "Praetor.Blind", function()
 	end
 end)
 
--- bronze cage around jailed players
-local barMat = Material("color")
-hook.Add("PostDrawTranslucentRenderables", "Praetor.Jail", function(depth, sky)
-	if sky then return end
-	for _, p in ipairs(player.GetAll()) do
-		if p:GetNW2Bool("pr_jailed") then
-			local c = p:GetNW2Vector("pr_jailpos")
-			if c and c ~= vector_origin and c:DistToSqr(EyePos()) < 2500 * 2500 then
-				render.SetColorMaterial()
-				local r, hgt = 56, 96
-				local col = Color(C.bronze.r, C.bronze.g, C.bronze.b, 230)
-				for i = 0, 15 do
-					local ang = i / 16 * math.pi * 2
-					local x, y = math.cos(ang) * r, math.sin(ang) * r
-					render.DrawBox(c + Vector(x, y, 0), Angle(0, 0, 0), Vector(-1, -1, 0), Vector(1, 1, hgt), col)
-				end
-				for _, z in ipairs({ 2, hgt / 2, hgt }) do
-					for i = 0, 15 do
-						local a1, a2 = i / 16 * math.pi * 2, (i + 1) / 16 * math.pi * 2
-						render.DrawBeam(c + Vector(math.cos(a1) * r, math.sin(a1) * r, z), c + Vector(math.cos(a2) * r, math.sin(a2) * r, z), 2.5, 0, 1, col)
-					end
-				end
-			end
-		end
-	end
-end)
+-- (the jail cage is the praetor_jail entity; its sign and the prisoner HUD live in cl_jail.lua)
 
 -- "Admin gave Moderator: Kick, Ban" when someone edits permissions
 function P.PermLabel(id)

@@ -802,6 +802,7 @@ function F4.Close()
 	f:SetMouseInputEnabled(false)
 	f:SetKeyboardInputEnabled(false)
 	f:AlphaTo(0, 0.12, 0, function() if IsValid(f) then f:Remove() end end)
+	if P.Music then P.Music("f4", false) end
 end
 
 function F4.Open(tabId)
@@ -817,6 +818,7 @@ function F4.Open(tabId)
 	f:MakePopup()
 	UI.Sound("open")
 	UI.PopIn(f, 0.34)
+	if P.Music then P.Music("f4", true) end
 	local side = S(236)
 	local showBar = P.Setting("f4_commands") ~= false
 
@@ -985,13 +987,16 @@ function F4.Open(tabId)
 		end
 		-- slide in from the right
 		p:SetAlpha(0)
-		local born = RealTime()
-		p.Think = function(s2)
-			local k = math.min(1, (RealTime() - born) / 0.24)
+		p:DockMargin(S(24), 0, 0, 0)
+		UI.Tween(p, 0.22, function(s2, k)
+			local e = 1 - (1 - k) ^ 3
 			s2:SetAlpha(255 * math.min(1, k * 1.6))
-			s2:DockMargin(math.floor((1 - UI.EaseBack(k)) * S(28)), 0, 0, 0)
-			if k >= 1 then s2:DockMargin(0, 0, 0, 0) s2.Think = nil end
-		end
+			s2:DockMargin(math.max(0, math.floor((1 - e) * S(24))), 0, 0, 0)
+		end, function(s2)
+			s2:SetAlpha(255)
+			s2:DockMargin(0, 0, 0, 0)
+			if IsValid(content) then content:InvalidateLayout(true) end
+		end)
 	end
 
 	for _, t in ipairs(tabs) do
@@ -1012,7 +1017,7 @@ function F4.Open(tabId)
 				UI.Round(grow + S(3), S(3), bw - grow * 2, bh, bh / 2, Color(C.ink.r, C.ink.g, C.ink.b, 200 * s.sel))
 				UI.Round(grow, 0, bw - grow * 2, bh, bh / 2, Color(C.bronze.r, C.bronze.g, C.bronze.b, 255 * s.sel), Color(C.ink.r, C.ink.g, C.ink.b, 255 * s.sel))
 			end
-			if s.anim > 0.01 and not isOn then UI.Round(0, 0, bw, bh, bh / 2, Color(255, 255, 255, 14 * s.anim)) end
+			if s.anim > 0.01 and not isOn then UI.Round(0, 0, bw, bh, bh / 2, Color(C.bronze.r, C.bronze.g, C.bronze.b, 46 * s.anim)) end
 			local nudge = math.floor(s.anim * S(3))
 			UI.Icon(t.icon, S(12) + nudge, (bh - 20) / 2, 20)
 			UI.Text(P.L(t.key), isOn and "Praetor.BodyB" or "Praetor.Body", S(40) + nudge, bh / 2, isOn and color_white or C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)

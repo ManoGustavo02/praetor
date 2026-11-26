@@ -147,7 +147,7 @@ P.AddTab("sits", {
 				nameE:SetValue("")
 			end)
 			save:Dock(RIGHT)
-			save:SetWide(S(190))
+			save:SizeToLabel(S(14))
 			save:DockMargin(S(6), 0, 0, 0)
 			nameE = UI.Entry(bar, P.L("sit_name_ph"), "")
 			nameE:Dock(FILL)

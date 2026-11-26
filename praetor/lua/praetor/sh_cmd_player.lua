@@ -165,3 +165,82 @@ C({ id = "unblind", cat = "fun", def = "admin",
 		for _, p in ipairs(t) do p:SetNW2Bool("pr_blind", false) end
 		P.Echo(caller, "e_unblind", { T = t })
 	end })
+
+-- ------------------------------------------------------------------ from SAM / ULX
+
+-- takes damage but never goes below 1 health
+C({ id = "buddha", cat = "player", def = "admin",
+	args = { selfArg() },
+	run = function(caller, t)
+		for _, p in ipairs(t) do p.PraetorBuddha = true p:SetNW2Bool("pr_buddha", true) end
+		P.Echo(caller, "e_buddha", { T = t })
+	end })
+
+C({ id = "unbuddha", cat = "player", def = "admin",
+	args = { selfArg() },
+	run = function(caller, t)
+		for _, p in ipairs(t) do p.PraetorBuddha = nil p:SetNW2Bool("pr_buddha", false) end
+		P.Echo(caller, "e_unbuddha", { T = t })
+	end })
+
+if SERVER then
+	hook.Add("EntityTakeDamage", "Praetor.Buddha", function(ent, dmg)
+		if ent:IsPlayer() and ent.PraetorBuddha and dmg:GetDamage() >= ent:Health() then
+			dmg:SetDamage(math.max(0, ent:Health() - 1))
+		end
+	end)
+end
+
+-- ammo for the weapon in their hands
+C({ id = "giveammo", cat = "player", def = "admin", aliases = { "ammo" },
+	args = { selfArg(), { type = "number", hint = "amount", min = 1, max = 9999, optional = true, default = 250 } },
+	run = function(caller, t, n)
+		local done = {}
+		for _, p in ipairs(t) do
+			local w = p:GetActiveWeapon()
+			if IsValid(w) and w:GetPrimaryAmmoType() >= 0 then
+				p:GiveAmmo(n, w:GetPrimaryAmmoType(), true)
+				done[#done + 1] = p
+			end
+		end
+		if #done == 0 then return "err_no_ammo" end
+		P.Echo(caller, "e_giveammo", { T = done, V = n })
+	end })
+
+C({ id = "exitvehicle", cat = "player", def = "admin", aliases = { "forceexit", "eject" },
+	args = { selfArg() },
+	run = function(caller, t)
+		local done = {}
+		for _, p in ipairs(t) do
+			if p:InVehicle() then p:ExitVehicle() done[#done + 1] = p end
+		end
+		if #done == 0 then return "err_no_vehicle" end
+		P.Echo(caller, "e_exitvehicle", { T = done })
+	end })
+
+C({ id = "setfrags", cat = "player", def = "admin", aliases = { "frags" },
+	args = { selfArg(), { type = "number", hint = "amount", min = -99999, max = 99999 } },
+	run = function(caller, t, n)
+		for _, p in ipairs(t) do p:SetFrags(n) end
+		P.Echo(caller, "e_setfrags", { T = t, V = n })
+	end })
+
+C({ id = "setdeaths", cat = "player", def = "admin", aliases = { "deaths" },
+	args = { selfArg(), { type = "number", hint = "amount", min = 0, max = 99999 } },
+	run = function(caller, t, n)
+		for _, p in ipairs(t) do p:SetDeaths(n) end
+		P.Echo(caller, "e_setdeaths", { T = t, V = n })
+	end })
+
+-- shows a player's SteamID (only to you)
+C({ id = "steamid", cat = "player", def = "user", aliases = { "sid" },
+	args = { { type = "player", single = true, higher = true, self_default = true, optional = true } },
+	run = function(caller, t)
+		local p = t[1]
+		local text = p:IsBot() and "BOT" or (p:SteamID() .. "  |  " .. p:SteamID64())
+		if IsValid(caller) then
+			P.Notify(caller, "n_steamid", { S = p:Nick(), V = text }, "info")
+		else
+			print("[Praetor] " .. p:Nick() .. ": " .. text)
+		end
+	end })

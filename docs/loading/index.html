@@ -8,10 +8,11 @@
 	(sv_loadingurl). Praetor builds the link from its settings, for example:
 	index.html?name=My%20Server&sub=Have%20fun&accent=8e62ff&tips=Tip%20one|Tip%20two&music=1&vol=40
 	Parameters: name, fixed, sub, accent (hex), tips (split by |), music (1 = default, 0 = off, or a link
-	to an .mp3/.ogg), vol (0-100), bg (link to a picture), logo (link to a picture), discord (text),
-	map (%m) and sid (%s), which Garry's Mod fills in.
-	The page is drawn like a comic book page: four panels, a narrator, a speech bubble,
-	a sound effect that fills up while you load and a cassette for the music.
+	to an .mp3/.ogg), vol (0-100), bg (link to a picture or GIF; empty = the starry sky in bg.gif, none = plain colours), logo (link to a picture), discord (text),
+	map (%m), which Garry's Mod fills in.
+	Layout: the server at the top left, tips and music on the right, and at the bottom the
+	download panel: the step you are in, the file being downloaded now, how many are left,
+	the time it is taking, an estimate of the time left and the last files that arrived.
 	Written for old and new GMod browsers: no flexbox, no modern JS.
 -->
 <style>
@@ -20,265 +21,204 @@
 @font-face { font-family: "Praetor Body"; src: url("fonts/praetor_body_black.ttf") format("truetype"); font-weight: 900; }
 
 * { margin: 0; padding: 0; -webkit-box-sizing: border-box; box-sizing: border-box; }
-html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0b16; color: #f4f1ff;
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0914; color: #f4f1ff;
 	font-family: "Praetor Body", "Nunito", "Segoe UI", sans-serif; font-weight: 800; -webkit-user-select: none; user-select: none; }
-.disp { font-family: "Praetor Display", "Praetor Body", sans-serif; font-weight: normal; }
+.disp { font-family: "Praetor Display", "Praetor Body", sans-serif; font-weight: normal; letter-spacing: .02em; }
+.dim { color: #9a93b8; }
 
-/* ------------------------------------------------------------ the page (gutters) */
-#page { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-	background-image: -webkit-radial-gradient(rgba(142,98,255,.22) 1.4px, transparent 1.6px); background-image: radial-gradient(rgba(142,98,255,.22) 1.4px, transparent 1.6px);
-	background-size: 14px 14px; -webkit-animation: drift 40s linear infinite; animation: drift 40s linear infinite; }
+/* ------------------------------------------------------------ background */
+#bg { position: absolute; left: -2%; top: -2%; width: 104%; height: 104%; background-color: #120e22; background-size: cover; background-position: center;
+	-webkit-animation: zoom 40s ease-in-out infinite alternate; animation: zoom 40s ease-in-out infinite alternate; }
+.blob { position: absolute; width: 70vh; height: 70vh; border-radius: 50%; opacity: .55;
+	-webkit-animation: float 18s ease-in-out infinite alternate; animation: float 18s ease-in-out infinite alternate; }
+#b1 { left: -12vh; top: -18vh; }
+#b2 { right: -16vh; top: 22vh; -webkit-animation-duration: 23s; animation-duration: 23s; opacity: .35; }
+#b3 { left: 35%; bottom: -40vh; -webkit-animation-duration: 27s; animation-duration: 27s; opacity: .3; }
+#dots { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: .5;
+	background-image: -webkit-radial-gradient(rgba(255,255,255,.10) 1.2px, transparent 1.5px); background-image: radial-gradient(rgba(255,255,255,.10) 1.2px, transparent 1.5px);
+	background-size: 18px 18px; }
+#shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+	background: -webkit-linear-gradient(top, rgba(8,6,16,.55) 0%, rgba(8,6,16,.15) 35%, rgba(8,6,16,.55) 62%, rgba(8,6,16,.92) 100%);
+	background: linear-gradient(to bottom, rgba(8,6,16,.55) 0%, rgba(8,6,16,.15) 35%, rgba(8,6,16,.55) 62%, rgba(8,6,16,.92) 100%); }
+#shade.img { background: -webkit-linear-gradient(top, rgba(8,6,16,.35) 0%, rgba(8,6,16,0) 30%, rgba(8,6,16,.2) 58%, rgba(8,6,16,.82) 100%);
+	background: linear-gradient(to bottom, rgba(8,6,16,.35) 0%, rgba(8,6,16,0) 30%, rgba(8,6,16,.2) 58%, rgba(8,6,16,.82) 100%); }
 #vign { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-	background: -webkit-radial-gradient(center, ellipse, rgba(13,11,22,0) 40%, rgba(5,4,10,.85) 100%);
-	background: radial-gradient(ellipse at center, rgba(13,11,22,0) 40%, rgba(5,4,10,.85) 100%); }
-#flash { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #fffdf5; z-index: 50; pointer-events: none;
-	-webkit-animation: flash .55s ease-out forwards; animation: flash .55s ease-out forwards; }
+	background: -webkit-radial-gradient(center, ellipse, rgba(0,0,0,0) 55%, rgba(0,0,0,.6) 100%);
+	background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.6) 100%); }
 
-/* ------------------------------------------------------------ panels */
-.slot { position: absolute; opacity: 0; -webkit-animation: slam .6s cubic-bezier(.2,1.4,.4,1) forwards; animation: slam .6s cubic-bezier(.2,1.4,.4,1) forwards; }
-.panel { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #1a1530; border: 4px solid #f4f1ff; border-radius: 6px;
-	box-shadow: 9px 10px 0 #05040a; overflow: hidden; }
-#sA { left: 2.2vw; top: 3.5vh; width: 61vw; height: 55vh; -webkit-animation-delay: .1s; animation-delay: .1s; }
-#sA .panel { -webkit-transform: rotate(-.8deg); transform: rotate(-.8deg); }
-#sB { left: 65.2vw; top: 3.5vh; width: 32.6vw; height: 33vh; -webkit-animation-delay: .28s; animation-delay: .28s; }
-#sB .panel { -webkit-transform: rotate(1deg); transform: rotate(1deg); overflow: visible; }
-#sC { left: 65.2vw; top: 39.6vh; width: 32.6vw; height: 19vh; -webkit-animation-delay: .42s; animation-delay: .42s; }
-#sC .panel { -webkit-transform: rotate(-.6deg); transform: rotate(-.6deg); overflow: visible; }
-#sD { left: 2.2vw; top: 63vh; width: 95.6vw; height: 33vh; -webkit-animation-delay: .56s; animation-delay: .56s; }
-#sD .panel { -webkit-transform: rotate(.35deg); transform: rotate(.35deg); overflow: visible; }
+/* ------------------------------------------------------------ cards */
+.card { position: absolute; background: rgba(17,13,32,.82); border: 3px solid rgba(236,232,250,.9); border-radius: 18px;
+	box-shadow: 7px 8px 0 rgba(5,4,10,.85); opacity: 0;
+	-webkit-animation: rise .7s cubic-bezier(.2,1.25,.4,1) forwards; animation: rise .7s cubic-bezier(.2,1.25,.4,1) forwards; }
+.cap { font-size: 1.5vh; letter-spacing: .14em; text-transform: uppercase; color: #9a93b8; font-weight: 900; }
 
-/* ------------------------------------------------------------ panel A: the cover */
-#heroBg { position: absolute; left: -3%; top: -3%; width: 106%; height: 106%; background-size: cover; background-position: center;
-	background-color: #241b45;
-	background-image: -webkit-radial-gradient(center, ellipse, #3a2a78 0%, #1a1530 70%); background-image: radial-gradient(ellipse at center, #3a2a78 0%, #1a1530 70%);
-	-webkit-animation: zoom 30s ease-in-out infinite alternate; animation: zoom 30s ease-in-out infinite alternate; }
-#heroShade { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-	background: -webkit-radial-gradient(center, ellipse, rgba(26,21,48,.25) 0%, rgba(26,21,48,.85) 100%);
-	background: radial-gradient(ellipse at center, rgba(26,21,48,.25) 0%, rgba(26,21,48,.85) 100%); }
-.tone { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: .2;
-	background-image: -webkit-radial-gradient(#05040a 2.2px, transparent 2.6px); background-image: radial-gradient(#05040a 2.2px, transparent 2.6px); background-size: 9px 9px; }
-#rays { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-#rays g { -webkit-animation: rays .36s steps(1) infinite; animation: rays .36s steps(1) infinite; }
-#rays #rg2 { -webkit-animation-delay: -.18s; animation-delay: -.18s; }
-.spark { position: absolute; color: #ffd36b; font-family: "Praetor Display"; opacity: 0; -webkit-animation: spark 4s ease-in-out infinite; animation: spark 4s ease-in-out infinite; }
-#titleWrap { position: absolute; left: 3vw; right: 3vw; top: 30%; text-align: center; }
-#title { display: inline-block; font-family: "Praetor Display"; line-height: 1.05; color: #fff; white-space: nowrap; font-size: 14vh; }
-#title .w { display: inline-block; white-space: nowrap; }
-#title .ch { position: relative; display: inline-block; opacity: 0;
-	text-shadow: -4px -4px 0 #05040a, 4px -4px 0 #05040a, -4px 4px 0 #05040a, 4px 4px 0 #05040a, 0 4px 0 #05040a, 0 -4px 0 #05040a, 4px 0 0 #05040a, -4px 0 0 #05040a, 10px 11px 0 #8e62ff;
-	-webkit-animation: letter .8s cubic-bezier(.2,1.8,.4,1) forwards, bob 3.2s ease-in-out infinite; animation: letter .8s cubic-bezier(.2,1.8,.4,1) forwards, bob 3.2s ease-in-out infinite; }
-#sub { display: inline-block; margin-top: 2.6vh; padding: 1vh 2.2vh; background: #8e62ff; color: #fff; border: 4px solid #05040a; border-radius: 12px;
-	box-shadow: 6px 6px 0 #05040a; font-size: 2.8vh; font-weight: 900; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-	opacity: 0; -webkit-animation: stamp .5s cubic-bezier(.2,1.6,.4,1) 1.25s forwards; animation: stamp .5s cubic-bezier(.2,1.6,.4,1) 1.25s forwards; }
-#disc { position: absolute; left: 2vw; bottom: 2.6vh; padding: .9vh 2vh .9vh 6vh; background: #5865f2; color: #fff; border: 4px solid #05040a; border-radius: 999px;
-	box-shadow: 5px 5px 0 #05040a; font-size: 2.2vh; font-weight: 900; white-space: nowrap; display: none; max-width: 70%; overflow: hidden; text-overflow: ellipsis;
-	-webkit-transform: rotate(-2.5deg); transform: rotate(-2.5deg); }
-#disc svg { position: absolute; left: 1.6vh; top: 50%; width: 3.4vh; height: 3.4vh; margin-top: -1.7vh; }
-#logo { position: absolute; left: .8vw; top: 1vh; width: 12vh; height: 12vh; z-index: 5; border-radius: 50%; background: #8e62ff; border: .55vh solid #f4f1ff;
-	box-shadow: 6px 7px 0 #05040a; overflow: hidden; text-align: center; font-family: "Praetor Display"; font-size: 6.6vh; line-height: 10.6vh; color: #fff;
-	opacity: 0; -webkit-animation: spinIn .8s cubic-bezier(.2,1.5,.4,1) .85s forwards; animation: spinIn .8s cubic-bezier(.2,1.5,.4,1) .85s forwards; }
-#logo img { width: 100%; height: 100%; }
-#logoIn { width: 100%; height: 100%; -webkit-animation: wobble 5s ease-in-out infinite; animation: wobble 5s ease-in-out infinite; }
+/* ------------------------------------------------------------ server (top left) */
+#head { position: absolute; left: 4vw; top: 5.5vh; width: 58vw; opacity: 0;
+	-webkit-animation: rise .7s .05s cubic-bezier(.2,1.25,.4,1) forwards; animation: rise .7s .05s cubic-bezier(.2,1.25,.4,1) forwards; }
+#logo { position: absolute; left: 0; top: 0; width: 11vh; height: 11vh; border-radius: 22px; border: 3px solid #f4f1ff; overflow: hidden;
+	box-shadow: 6px 7px 0 #05040a; text-align: center; line-height: 10.4vh; font-size: 6.4vh; color: #fff; }
+#logo img { width: 100%; height: 100%; display: block; }
+#nameBox { position: absolute; left: 13.6vh; top: -.6vh; right: 0; }
+#title { font-family: "Praetor Display", sans-serif; font-size: 7.6vh; line-height: 1.08; color: #fff; white-space: nowrap; display: inline-block;
+	text-shadow: 0 .55vh 0 #05040a; }
+#sub { display: inline-block; margin-top: .6vh; padding: .5vh 1.4vh; border-radius: 99px; font-size: 1.9vh; font-weight: 900; color: #fff;
+	border: 2px solid #05040a; box-shadow: 3px 3px 0 #05040a; }
+#chips { position: absolute; left: 0; top: 14.6vh; white-space: nowrap; }
+.chip { display: inline-block; vertical-align: top; margin-right: 1vh; padding: .8vh 1.6vh .8vh 1vh; border-radius: 99px;
+	background: rgba(17,13,32,.8); border: 2px solid rgba(236,232,250,.25); }
+.chip .ic { display: inline-block; vertical-align: middle; width: 3.2vh; height: 3.2vh; border-radius: 50%; margin-right: 1vh; text-align: center; padding-top: .55vh; }
+.chip .ic svg { width: 2vh; height: 2vh; }
+.chip .tx { display: inline-block; vertical-align: middle; }
+.chip .k { display: block; font-size: 1.25vh; letter-spacing: .12em; text-transform: uppercase; color: #9a93b8; font-weight: 900; line-height: 1.2; }
+.chip .v { display: block; font-size: 2vh; color: #fff; font-weight: 900; line-height: 1.2; max-width: 26vw; overflow: hidden; text-overflow: ellipsis; }
 
-/* ------------------------------------------------------------ panel B: narrator + speech bubble */
-#bubble { position: absolute; left: 1.3vw; right: 1.3vw; top: 2vh; height: 19vh; background: #fffdf5; color: #120e20; border: 4px solid #05040a;
-	border-radius: 26px; padding: 1.5vh 2vh; box-shadow: 5px 5px 0 #05040a; }
-#tail { position: absolute; left: 7vh; top: 20.4vh; width: 5vh; height: 4.6vh; }
-#tipHead { font-family: "Praetor Display"; font-size: 2.2vh; color: #8e62ff; letter-spacing: 1px; }
-#tipHead i { font-style: normal; font-family: "Praetor Body"; font-weight: 900; font-size: 1.6vh; color: rgba(18,14,32,.45); margin-left: 1vh; }
-#tipText { margin-top: .6vh; font-size: 2.3vh; line-height: 3.1vh; font-weight: 900; }
-#tipText b { font-weight: 900; opacity: 0; }
-#mascot { position: absolute; left: 1vw; bottom: .6vh; width: 10.5vh; height: 10.5vh; -webkit-animation: hover 2.6s ease-in-out infinite; animation: hover 2.6s ease-in-out infinite; }
-#mascot.talk { -webkit-animation: talk .22s ease-in-out infinite alternate; animation: talk .22s ease-in-out infinite alternate; }
-#mascot svg { width: 100%; height: 100%; overflow: visible; }
-#tipDots { position: absolute; left: 13.5vh; bottom: 3.6vh; }
-#tipDots b { display: inline-block; width: 1.1vh; height: 1.1vh; margin-right: .7vh; border-radius: 50%; background: rgba(244,241,255,.25); border: 2px solid #05040a;
-	-webkit-transition: all .3s; transition: all .3s; }
-#tipDots b.on { background: #ffd36b; width: 2.8vh; border-radius: 999px; }
-#tipBtn { position: absolute; right: 1.3vw; bottom: 2.2vh; padding: .8vh 2vh; border: 3px solid #05040a; border-radius: 999px; background: #ffd36b; color: #120e20;
-	font-size: 1.8vh; font-weight: 900; cursor: pointer; box-shadow: 4px 4px 0 #05040a; -webkit-transition: -webkit-transform .12s; transition: transform .12s; }
-#tipBtn:hover { -webkit-transform: translate(-2px,-2px) rotate(-2deg); transform: translate(-2px,-2px) rotate(-2deg); }
-#tipBtn:active { -webkit-transform: translate(3px,3px); transform: translate(3px,3px); box-shadow: 0 0 0 #05040a; }
+/* ------------------------------------------------------------ music (top right) */
+#music { position: absolute; right: 4vw; top: 5.5vh; padding: 1vh 1.8vh 1vh 1.3vh; border-radius: 99px; cursor: pointer; white-space: nowrap;
+	background: rgba(17,13,32,.82); border: 2px solid rgba(236,232,250,.6); box-shadow: 4px 5px 0 rgba(5,4,10,.85); opacity: 0;
+	-webkit-animation: rise .7s .15s cubic-bezier(.2,1.25,.4,1) forwards; animation: rise .7s .15s cubic-bezier(.2,1.25,.4,1) forwards; }
+#eq { display: inline-block; vertical-align: middle; width: 3.2vh; height: 2.6vh; margin-right: 1.1vh; position: relative; }
+#eq i { position: absolute; bottom: 0; width: .55vh; height: 30%; border-radius: 2px; background: #fff;
+	-webkit-animation: eq .9s ease-in-out infinite alternate; animation: eq .9s ease-in-out infinite alternate; }
+#eq i:nth-child(1) { left: 0; } #eq i:nth-child(2) { left: .9vh; -webkit-animation-delay: -.3s; animation-delay: -.3s; }
+#eq i:nth-child(3) { left: 1.8vh; -webkit-animation-delay: -.6s; animation-delay: -.6s; } #eq i:nth-child(4) { left: 2.7vh; -webkit-animation-delay: -.15s; animation-delay: -.15s; }
+#music.off #eq i { -webkit-animation: none; animation: none; height: 18%; opacity: .5; }
+#musicTx { display: inline-block; vertical-align: middle; font-size: 1.8vh; font-weight: 900; }
+#musicTx kbd { display: inline-block; margin-left: .8vh; padding: .1vh .8vh; border-radius: 6px; border: 2px solid rgba(236,232,250,.4); font-family: inherit; font-size: 1.5vh; color: #c9c2e6; }
 
-/* ------------------------------------------------------------ panel C: caption boxes */
-.row { position: absolute; left: 1.3vw; right: 1.3vw; height: 4.7vh; opacity: 0;
-	-webkit-animation: slideR .5s cubic-bezier(.2,1.5,.4,1) forwards; animation: slideR .5s cubic-bezier(.2,1.5,.4,1) forwards; }
-#r1 { top: 1.6vh; -webkit-animation-delay: .9s; animation-delay: .9s; }
-#r2 { top: 7.1vh; -webkit-animation-delay: 1.02s; animation-delay: 1.02s; }
-#r3 { top: 12.6vh; -webkit-animation-delay: 1.14s; animation-delay: 1.14s; }
-.row .ico { position: absolute; left: 0; top: 0; width: 4.7vh; height: 4.7vh; border-radius: 10px; background: #8e62ff; border: 3px solid #05040a; box-shadow: 3px 3px 0 #05040a; }
-.row .ico svg { position: absolute; left: 50%; top: 50%; width: 2.7vh; height: 2.7vh; margin: -1.35vh 0 0 -1.35vh; }
-.row .lbl { position: absolute; left: 6.3vh; top: 0; font-size: 1.35vh; line-height: 1.7vh; letter-spacing: .25vh; text-transform: uppercase; color: rgba(244,241,255,.55); font-weight: 900; }
-.row .val { position: absolute; left: 6.3vh; right: 0; top: 1.7vh; font-family: "Praetor Display"; font-size: 2.5vh; line-height: 3vh; color: #fff;
-	white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .val.swap { -webkit-animation: tipin .45s ease-out; animation: tipin .45s ease-out; }
+/* ------------------------------------------------------------ tips (right) */
+#tips { right: 4vw; top: 15vh; width: 31vw; min-height: 21vh; padding: 2.2vh 2.4vh 2.4vh; -webkit-animation-delay: .25s; animation-delay: .25s; }
+#tipHead { white-space: nowrap; }
+#tipHead .badge { display: inline-block; padding: .4vh 1.2vh; border-radius: 99px; font-size: 1.5vh; font-weight: 900; color: #fff; letter-spacing: .1em; text-transform: uppercase; border: 2px solid #05040a; }
+#tipNum { float: right; font-size: 1.6vh; color: #9a93b8; padding-top: .5vh; }
+#tipText { margin-top: 1.6vh; font-size: 2.35vh; line-height: 1.38; color: #fff; min-height: 9vh; -webkit-transition: opacity .35s; transition: opacity .35s; }
+#tipFoot { margin-top: 1.4vh; height: 3.2vh; position: relative; }
+#tipTrack { position: absolute; left: 0; top: 1.3vh; right: 13vh; height: .6vh; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+#tipRun { height: 100%; width: 0; border-radius: 4px; }
+#tipBtn { position: absolute; right: 0; top: 0; padding: .45vh 1.4vh; border-radius: 99px; font-size: 1.6vh; font-weight: 900; color: #120e20; background: #ffd36b;
+	border: 2px solid #05040a; box-shadow: 2px 3px 0 #05040a; cursor: pointer; }
+#disc { right: 4vw; top: 40vh; width: 31vw; padding: 1.5vh 2vh; display: none; -webkit-animation-delay: .35s; animation-delay: .35s; white-space: nowrap; overflow: hidden; }
+#disc .ic { display: inline-block; vertical-align: middle; width: 4.6vh; height: 4.6vh; border-radius: 14px; background: #5865f2; border: 2px solid #05040a; text-align: center; padding-top: .9vh; margin-right: 1.4vh; }
+#disc .ic svg { width: 2.8vh; height: 2.8vh; }
+#disc .tx { display: inline-block; vertical-align: middle; }
+#vDisc { display: block; font-size: 2.1vh; color: #fff; font-weight: 900; }
 
-/* ------------------------------------------------------------ panel D: the loading sound effect */
-#status { position: absolute; left: 4.6vw; top: 60.2vh; z-index: 6; max-width: 56vw; padding: .9vh 2vh; background: #ffd36b; color: #120e20; border: 4px solid #05040a;
-	box-shadow: 5px 5px 0 #05040a; font-size: 2.4vh; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-	-webkit-transform: rotate(-1.8deg); transform: rotate(-1.8deg); opacity: 0; -webkit-animation: stamp .5s cubic-bezier(.2,1.6,.4,1) 1s forwards; animation: stamp .5s cubic-bezier(.2,1.6,.4,1) 1s forwards; }
-#status.swap { -webkit-animation: nudge .35s ease-out; animation: nudge .35s ease-out; opacity: 1; }
-#sfx { position: absolute; left: 2.5vw; top: 4.4vh; height: 11.5vh; white-space: nowrap; font-family: "Praetor Display"; font-size: 10vh; line-height: 11.5vh; }
-#sfx span { position: relative; display: inline-block; -webkit-animation: wave 1.6s ease-in-out infinite; animation: wave 1.6s ease-in-out infinite; }
-#sfxGhost { color: rgba(244,241,255,.07); -webkit-text-stroke: 2px rgba(244,241,255,.45); }
-#sfxClip { position: absolute; left: 0; top: 0; height: 100%; width: 0; overflow: hidden; }
-#sfxFill { color: #8e62ff; -webkit-text-stroke: 3px #05040a; text-shadow: 6px 6px 0 #05040a; }
-#barWrap { position: absolute; left: 2.5vw; right: 61vh; top: 17.8vh; height: 3.8vh; }
-#bar { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 4px solid #f4f1ff; border-radius: 999px; background: #0d0b16; overflow: hidden; box-shadow: 5px 5px 0 #05040a; }
-#ticks { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-	background-image: -webkit-linear-gradient(left, rgba(244,241,255,.18) 2px, transparent 2px); background-image: linear-gradient(to right, rgba(244,241,255,.18) 2px, transparent 2px);
-	background-size: 10% 100%; }
-#fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background-color: #8e62ff; border-right: 3px solid #05040a;
-	background-image: -webkit-linear-gradient(135deg, rgba(255,255,255,.22) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.22) 75%, transparent 75%, transparent);
-	background-image: linear-gradient(135deg, rgba(255,255,255,.22) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.22) 75%, transparent 75%, transparent);
-	background-size: 30px 30px; -webkit-animation: stripes .9s linear infinite; animation: stripes .9s linear infinite; }
-#runner { position: absolute; top: -4.6vh; left: 0; width: 4.6vh; height: 4.6vh; margin-left: -2.3vh; -webkit-animation: hop .45s ease-in-out infinite alternate; animation: hop .45s ease-in-out infinite alternate; }
-#runner svg { width: 100%; height: 100%; overflow: visible; }
-#file { position: absolute; left: 2.6vw; right: 61vh; top: 23.4vh; font-size: 1.9vh; color: rgba(244,241,255,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#file b { color: #ffd36b; font-weight: 900; }
-#burst { position: absolute; right: 34vh; top: 2.8vh; width: 24vh; height: 24vh; -webkit-animation: rock 3s ease-in-out infinite; animation: rock 3s ease-in-out infinite; }
-#burst svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
-#burstIn { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-#burstIn.bump { -webkit-animation: bump .4s cubic-bezier(.2,1.8,.4,1); animation: bump .4s cubic-bezier(.2,1.8,.4,1); }
-#pct { position: absolute; left: 0; right: 0; top: 50%; margin-top: -4.4vh; text-align: center; font-family: "Praetor Display"; font-size: 7vh; line-height: 8.8vh; color: #120e20; }
-#pct small { font-size: 3.4vh; }
-#music { position: absolute; right: 3vh; top: 3.4vh; width: 28vh; height: 17.8vh; cursor: pointer; -webkit-transition: -webkit-transform .15s; transition: transform .15s; }
-#music:hover { -webkit-transform: rotate(-3deg) scale(1.04); transform: rotate(-3deg) scale(1.04); }
-#music svg { width: 100%; height: 100%; overflow: visible; }
-#music.muted #casBody { opacity: .45; }
-#hint { position: absolute; right: 3vh; top: 23.4vh; width: 28vh; text-align: center; font-size: 1.7vh; color: rgba(244,241,255,.55); white-space: nowrap; }
-#hint kbd { display: inline-block; padding: .2vh 1vh; margin-right: .8vh; border: 2px solid #f4f1ff; border-radius: 7px; color: #fff; font-family: "Praetor Body"; font-weight: 900;
-	box-shadow: 2px 2px 0 #05040a; }
-#credit { position: absolute; right: 2.4vw; bottom: .9vh; font-size: 1.3vh; letter-spacing: .35vh; color: rgba(244,241,255,.25); }
+/* ------------------------------------------------------------ download panel (bottom) */
+#dl { left: 4vw; right: 4vw; bottom: 5vh; height: 35vh; padding: 2.6vh 3vh; -webkit-animation-delay: .4s; animation-delay: .4s; }
+#dlL { position: absolute; left: 3vh; top: 2.6vh; right: 36%; bottom: 2.6vh; }
+#dlR { position: absolute; right: 3vh; top: 2.6vh; width: calc(36% - 6vh); width: -webkit-calc(36% - 6vh); bottom: 2.6vh; }
+#stage { font-family: "Praetor Display", sans-serif; font-size: 3.5vh; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15vh; line-height: 1.2; }
+#raw { font-size: 1.55vh; color: #7d7698; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15vh; margin-top: .3vh; height: 2vh; }
+#pct { position: absolute; right: 0; top: -.4vh; font-family: "Praetor Display", sans-serif; font-size: 6.4vh; color: #fff; line-height: 1; text-shadow: 0 .45vh 0 #05040a; }
+#pct small { font-size: .45em; margin-left: .3vh; }
 
-/* ------------------------------------------------------------ animations */
-@-webkit-keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
-@keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
-@-webkit-keyframes slam { 0% { opacity: 0; -webkit-transform: scale(1.22) rotate(3deg); } 55% { opacity: 1; -webkit-transform: scale(.97) rotate(-.5deg); } 100% { opacity: 1; -webkit-transform: none; } }
-@keyframes slam { 0% { opacity: 0; transform: scale(1.22) rotate(3deg); } 55% { opacity: 1; transform: scale(.97) rotate(-.5deg); } 100% { opacity: 1; transform: none; } }
-@-webkit-keyframes stamp { 0% { opacity: 0; -webkit-transform: scale(2) rotate(-12deg); } 100% { opacity: 1; -webkit-transform: rotate(-1.8deg); } }
-@keyframes stamp { 0% { opacity: 0; transform: scale(2) rotate(-12deg); } 100% { opacity: 1; transform: rotate(-1.8deg); } }
-@-webkit-keyframes nudge { 0% { -webkit-transform: rotate(-1.8deg) translateX(-14px); } 50% { -webkit-transform: rotate(1deg) translateX(6px); } 100% { -webkit-transform: rotate(-1.8deg); } }
-@keyframes nudge { 0% { transform: rotate(-1.8deg) translateX(-14px); } 50% { transform: rotate(1deg) translateX(6px); } 100% { transform: rotate(-1.8deg); } }
-@-webkit-keyframes spinIn { 0% { opacity: 0; -webkit-transform: scale(.2) rotate(-200deg); } 100% { opacity: 1; -webkit-transform: none; } }
-@keyframes spinIn { 0% { opacity: 0; transform: scale(.2) rotate(-200deg); } 100% { opacity: 1; transform: none; } }
-@-webkit-keyframes letter { 0% { opacity: 0; -webkit-transform: translateY(-60px) scale(.4) rotate(-14deg); } 100% { opacity: 1; -webkit-transform: none; } }
-@keyframes letter { 0% { opacity: 0; transform: translateY(-60px) scale(.4) rotate(-14deg); } 100% { opacity: 1; transform: none; } }
-@-webkit-keyframes bob { 0%,100% { top: 0; } 50% { top: -7px; } }
-@keyframes bob { 0%,100% { top: 0; } 50% { top: -7px; } }
-@-webkit-keyframes wave { 0%,60%,100% { top: 0; } 30% { top: -1.4vh; } }
-@keyframes wave { 0%,60%,100% { top: 0; } 30% { top: -1.4vh; } }
-@-webkit-keyframes wobble { 0%,100% { -webkit-transform: rotate(-5deg); } 50% { -webkit-transform: rotate(5deg); } }
-@keyframes wobble { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
-@-webkit-keyframes rock { 0%,100% { -webkit-transform: rotate(-6deg); } 50% { -webkit-transform: rotate(6deg); } }
-@keyframes rock { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
-@-webkit-keyframes bump { 0% { -webkit-transform: scale(1); } 40% { -webkit-transform: scale(1.22); } 100% { -webkit-transform: scale(1); } }
-@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
-@-webkit-keyframes hover { 0%,100% { -webkit-transform: translateY(0) rotate(-3deg); } 50% { -webkit-transform: translateY(-.8vh) rotate(3deg); } }
-@keyframes hover { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-.8vh) rotate(3deg); } }
-@-webkit-keyframes talk { from { -webkit-transform: scale(1, 1) rotate(-2deg); } to { -webkit-transform: scale(1.04, .95) rotate(2deg); } }
-@keyframes talk { from { transform: scale(1, 1) rotate(-2deg); } to { transform: scale(1.04, .95) rotate(2deg); } }
-@-webkit-keyframes hop { from { -webkit-transform: translateY(0) rotate(-8deg); } to { -webkit-transform: translateY(-.9vh) rotate(8deg); } }
-@keyframes hop { from { transform: translateY(0) rotate(-8deg); } to { transform: translateY(-.9vh) rotate(8deg); } }
-@-webkit-keyframes stripes { from { background-position: 0 0; } to { background-position: 30px 0; } }
-@keyframes stripes { from { background-position: 0 0; } to { background-position: 30px 0; } }
-@-webkit-keyframes tipin { 0% { opacity: 0; -webkit-transform: translateX(24px); } 100% { opacity: 1; -webkit-transform: none; } }
-@keyframes tipin { 0% { opacity: 0; transform: translateX(24px); } 100% { opacity: 1; transform: none; } }
-@-webkit-keyframes slideR { 0% { opacity: 0; -webkit-transform: translateX(60px) rotate(4deg); } 100% { opacity: 1; -webkit-transform: none; } }
-@keyframes slideR { 0% { opacity: 0; transform: translateX(60px) rotate(4deg); } 100% { opacity: 1; transform: none; } }
-@-webkit-keyframes spark { 0%,100% { opacity: 0; -webkit-transform: scale(.3) rotate(0); } 50% { opacity: .9; -webkit-transform: scale(1) rotate(90deg); } }
-@keyframes spark { 0%,100% { opacity: 0; transform: scale(.3) rotate(0); } 50% { opacity: .9; transform: scale(1) rotate(90deg); } }
-@-webkit-keyframes zoom { from { -webkit-transform: scale(1); } to { -webkit-transform: scale(1.1) translate(-1.5%, 1%); } }
-@keyframes zoom { from { transform: scale(1); } to { transform: scale(1.1) translate(-1.5%, 1%); } }
-@-webkit-keyframes drift { to { background-position: 140px 140px; } }
-@keyframes drift { to { background-position: 140px 140px; } }
-@-webkit-keyframes rays { 0% { opacity: 1; } 50% { opacity: .35; } }
-@keyframes rays { 0% { opacity: 1; } 50% { opacity: .35; } }
+#steps { position: relative; margin-top: 2.2vh; height: 5.4vh; }
+#stepLine { position: absolute; left: 1.5vh; right: 1.5vh; top: 1.25vh; height: .5vh; background: rgba(255,255,255,.1); border-radius: 3px; }
+#stepFill { height: 100%; width: 0; border-radius: 3px; -webkit-transition: width .6s; transition: width .6s; }
+.step { position: absolute; top: 0; width: 16vh; margin-left: -8vh; text-align: center; }
+.step .d { display: block; width: 3vh; height: 3vh; margin: 0 auto; border-radius: 50%; background: #1d1836; border: 2px solid rgba(236,232,250,.3);
+	text-align: center; font-size: 1.6vh; line-height: 2.6vh; line-height: calc(3vh - 4px); color: #9a93b8; -webkit-transition: all .3s; transition: all .3s; }
+.step .n { display: block; margin-top: .5vh; font-size: 1.45vh; color: #7d7698; white-space: nowrap; }
+.step.done .d { color: #fff; border-color: #05040a; }
+.step.done .n { color: #c9c2e6; }
+.step.on .d { color: #fff; border-color: #fff; -webkit-animation: pulse 1.3s ease-in-out infinite; animation: pulse 1.3s ease-in-out infinite; }
+.step.on .n { color: #fff; }
+
+#bar { position: relative; margin-top: 2vh; height: 3vh; border-radius: 99px; background: rgba(255,255,255,.08); border: 2px solid rgba(236,232,250,.35); overflow: hidden; }
+#fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 99px; overflow: hidden; }
+#fill i { position: absolute; left: 0; top: 0; width: 200%; height: 100%; opacity: .25;
+	background-image: -webkit-linear-gradient(135deg, #fff 25%, transparent 25%, transparent 50%, #fff 50%, #fff 75%, transparent 75%, transparent);
+	background-image: linear-gradient(-45deg, #fff 25%, transparent 25%, transparent 50%, #fff 50%, #fff 75%, transparent 75%, transparent);
+	background-size: 3vh 3vh; -webkit-animation: stripes 1s linear infinite; animation: stripes 1s linear infinite; }
+#fill b { position: absolute; left: 0; right: 0; top: 12%; height: 22%; margin: 0 1vh; border-radius: 99px; background: rgba(255,255,255,.35); }
+
+#now { margin-top: 2.2vh; white-space: nowrap; height: 4.2vh; overflow: hidden; }
+#nowTag { display: inline-block; vertical-align: middle; padding: .4vh 1.1vh; border-radius: 8px; font-size: 1.4vh; letter-spacing: .1em; text-transform: uppercase;
+	font-weight: 900; color: #fff; border: 2px solid #05040a; margin-right: 1.2vh; }
+#nowTx { display: inline-block; vertical-align: middle; max-width: 75%; max-width: calc(100% - 14vh); max-width: -webkit-calc(100% - 14vh); overflow: hidden; text-overflow: ellipsis; }
+#nowName { font-size: 2.1vh; color: #fff; }
+#nowDir { font-size: 1.55vh; color: #7d7698; margin-left: .8vh; }
+
+#stats { height: 15.5vh; }
+.stat { display: inline-block; vertical-align: top; width: 48.5%; height: 7vh; margin-bottom: 1.3vh; padding: 1vh 1.4vh; border-radius: 12px;
+	background: rgba(255,255,255,.05); border: 2px solid rgba(236,232,250,.14); }
+.stat:nth-child(odd) { margin-right: 3%; }
+.stat .k { display: block; font-size: 1.3vh; letter-spacing: .12em; text-transform: uppercase; color: #9a93b8; font-weight: 900; }
+.stat .v { display: block; margin-top: .3vh; font-size: 2.6vh; color: #fff; font-weight: 900; white-space: nowrap; overflow: hidden; }
+#recent { margin-top: .4vh; }
+#recent .cap { margin-bottom: .7vh; }
+.rec { position: relative; height: 2.5vh; margin-bottom: .45vh; padding-left: 8.6vh; border-radius: 7px; background: rgba(255,255,255,.04);
+	white-space: nowrap; overflow: hidden; -webkit-animation: recIn .35s ease-out; animation: recIn .35s ease-out; }
+.rec i { position: absolute; left: .4vh; top: .4vh; width: 7.4vh; height: 1.7vh; border-radius: 5px; font-style: normal; text-align: center;
+	font-size: 1.05vh; line-height: 1.7vh; letter-spacing: .08em; text-transform: uppercase; font-weight: 900; color: #0b0816; overflow: hidden; }
+.rec span { display: block; font-size: 1.5vh; line-height: 2.5vh; color: #d8d2ee; overflow: hidden; text-overflow: ellipsis; padding-right: .8vh; }
+.rec.empty { padding-left: 1vh; background: none; color: #6f6890; font-size: 1.5vh; line-height: 2.5vh; -webkit-animation: none; animation: none; }
+
+#credit { position: absolute; right: 4vw; bottom: 1.6vh; font-size: 1.3vh; letter-spacing: .3em; color: rgba(244,241,255,.25); }
+
+.swap { -webkit-animation: swap .45s ease-out; animation: swap .45s ease-out; }
+
+@-webkit-keyframes rise { 0% { opacity: 0; -webkit-transform: translateY(3vh); } 100% { opacity: 1; -webkit-transform: translateY(0); } }
+@keyframes rise { 0% { opacity: 0; transform: translateY(3vh); } 100% { opacity: 1; transform: translateY(0); } }
+@-webkit-keyframes zoom { 0% { -webkit-transform: scale(1); } 100% { -webkit-transform: scale(1.06); } }
+@keyframes zoom { 0% { transform: scale(1); } 100% { transform: scale(1.06); } }
+@-webkit-keyframes float { 0% { -webkit-transform: translate(0, 0) scale(1); } 100% { -webkit-transform: translate(8vh, 6vh) scale(1.15); } }
+@keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(8vh, 6vh) scale(1.15); } }
+@-webkit-keyframes eq { 0% { height: 20%; } 100% { height: 100%; } }
+@keyframes eq { 0% { height: 20%; } 100% { height: 100%; } }
+@-webkit-keyframes stripes { 0% { -webkit-transform: translateX(-3vh); } 100% { -webkit-transform: translateX(0); } }
+@keyframes stripes { 0% { transform: translateX(-3vh); } 100% { transform: translateX(0); } }
+@-webkit-keyframes pulse { 0%, 100% { -webkit-transform: scale(1); } 50% { -webkit-transform: scale(1.18); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@-webkit-keyframes recIn { 0% { opacity: 0; -webkit-transform: translateX(-1.5vh); } 100% { opacity: 1; -webkit-transform: translateX(0); } }
+@keyframes recIn { 0% { opacity: 0; transform: translateX(-1.5vh); } 100% { opacity: 1; transform: translateX(0); } }
+@-webkit-keyframes swap { 0% { opacity: 0; -webkit-transform: translateY(.8vh); } 100% { opacity: 1; -webkit-transform: translateY(0); } }
+@keyframes swap { 0% { opacity: 0; transform: translateY(.8vh); } 100% { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
-<div id="page"></div>
+<div id="bg"><div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div></div>
+<div id="dots"></div>
+<div id="shade"></div>
 <div id="vign"></div>
 
-<!-- the little praetor helmet, used by the narrator and by the runner on the bar -->
-<svg width="0" height="0" style="position:absolute">
-	<defs>
-		<symbol id="helm" viewBox="0 0 100 100">
-			<path d="M30 30 Q50 -4 74 24" fill="none" stroke="#05040a" stroke-width="17" stroke-linecap="round"/>
-			<path class="crest" d="M30 30 Q50 -4 74 24" fill="none" stroke="#8e62ff" stroke-width="10" stroke-linecap="round"/>
-			<path d="M20 60 Q20 22 50 22 Q80 22 80 60 L72 84 L58 76 L58 64 L42 64 L42 76 L28 84 Z" fill="#f4f1ff" stroke="#05040a" stroke-width="5" stroke-linejoin="round"/>
-			<rect x="27" y="42" width="46" height="20" rx="9" fill="#120e20" stroke="#05040a" stroke-width="3"/>
-			<ellipse cx="40" cy="52" rx="4" ry="5" fill="#fffdf5"/>
-			<ellipse cx="60" cy="52" rx="4" ry="5" fill="#fffdf5"/>
-		</symbol>
-	</defs>
-</svg>
+<div id="head">
+	<div id="logo" class="disp"></div>
+	<div id="nameBox"><div id="title"></div><br><div id="sub"></div></div>
+	<div id="chips">
+		<div class="chip"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg></span><span class="tx"><span class="k" id="lMap">Mapa</span><span class="v" id="vMap">...</span></span></div>
+		<div class="chip"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M16 4a4 4 0 0 1 0 8M22 21c0-3-1.5-5-4-5.7"/></svg></span><span class="tx"><span class="k" id="lSlots">Vagas</span><span class="v" id="vSlots">...</span></span></div>
+		<div class="chip"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="16" cy="11.5" r="1"/><circle cx="18" cy="13.5" r="1"/></svg></span><span class="tx"><span class="k" id="lMode">Modo</span><span class="v" id="vMode">...</span></span></div>
+	</div>
+</div>
 
-<!-- panel A: the cover with the server name -->
-<div class="slot" id="sA"><div class="panel">
-	<div id="heroBg"></div>
-	<div id="heroShade"></div>
-	<div class="tone"></div>
-	<svg id="rays" viewBox="0 0 100 100" preserveAspectRatio="none"><g id="rg1"></g><g id="rg2"></g></svg>
-	<div id="sparks"></div>
-	<div id="titleWrap"><div id="title"></div><br><div id="sub"></div></div>
-	<div id="disc"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5C6 6 4.6 6.6 3.5 7.6 2 10.5 1.6 13.5 2 17c1.5 1.1 3 1.8 4.6 2.3l1-1.8M16 5.5c2 .5 3.4 1.1 4.5 2.1 1.5 2.9 1.9 5.9 1.5 9.4-1.5 1.1-3 1.8-4.6 2.3l-1-1.8M7 16.8c3.3 1.4 6.7 1.4 10 0M8 5.5c2.7-.7 5.3-.7 8 0"/><circle cx="9" cy="12.5" r="1.3"/><circle cx="15" cy="12.5" r="1.3"/></svg><span id="vDisc"></span></div>
-</div></div>
-<div id="logo"><div id="logoIn">P</div></div>
+<div id="music"><span id="eq"><i></i><i></i><i></i><i></i></span><span id="musicTx"><span id="lMusic">Música</span><kbd>M</kbd></span></div>
 
-<!-- panel B: the narrator talks -->
-<div class="slot" id="sB"><div class="panel">
-	<div id="bubble"><div id="tipHead"><span id="lTip">Dica</span><i id="tipNum"></i></div><div id="tipText"></div></div>
-	<svg id="tail" viewBox="0 0 50 46"><path d="M4 0 L18 46 L40 0" fill="#fffdf5" stroke="#05040a" stroke-width="4" stroke-linejoin="round"/><rect x="0" y="0" width="50" height="5" fill="#fffdf5"/></svg>
-	<div id="mascot"><svg viewBox="0 0 100 100">
-		<path d="M30 30 Q50 -4 74 24" fill="none" stroke="#05040a" stroke-width="17" stroke-linecap="round"/>
-		<path id="crest" d="M30 30 Q50 -4 74 24" fill="none" stroke="#8e62ff" stroke-width="10" stroke-linecap="round"/>
-		<path d="M20 60 Q20 22 50 22 Q80 22 80 60 L72 84 L58 76 L58 64 L42 64 L42 76 L28 84 Z" fill="#f4f1ff" stroke="#05040a" stroke-width="5" stroke-linejoin="round"/>
-		<rect x="27" y="42" width="46" height="20" rx="9" fill="#120e20" stroke="#05040a" stroke-width="3"/>
-		<ellipse id="eyeL" cx="40" cy="52" rx="4" ry="5" fill="#fffdf5"/>
-		<ellipse id="eyeR" cx="60" cy="52" rx="4" ry="5" fill="#fffdf5"/>
-	</svg></div>
-	<div id="tipDots"></div>
-	<div id="tipBtn"><span id="lNext">Próxima</span> &#8594;</div>
-</div></div>
+<div class="card" id="tips">
+	<div id="tipHead"><span class="badge" id="lTip">Dica</span><span id="tipNum"></span></div>
+	<div id="tipText"></div>
+	<div id="tipFoot"><div id="tipTrack"><div id="tipRun"></div></div><div id="tipBtn"><span id="lNext">Próxima</span> &#8594;</div></div>
+</div>
 
-<!-- panel C: caption boxes with the server details -->
-<div class="slot" id="sC"><div class="panel">
-	<div class="row" id="r1"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg></div>
-		<div class="lbl" id="lMap">Mapa</div><div class="val" id="vMap">...</div></div>
-	<div class="row" id="r2"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M16 4a4 4 0 0 1 0 8M22 21c0-3-1.5-5-4-5.7"/></svg></div>
-		<div class="lbl" id="lSlots">Vagas</div><div class="val" id="vSlots">...</div></div>
-	<div class="row" id="r3"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="16" cy="11.5" r="1"/><circle cx="18" cy="13.5" r="1"/></svg></div>
-		<div class="lbl" id="lMode">Modo</div><div class="val" id="vMode">...</div></div>
-</div></div>
+<div class="card" id="disc"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5C6 6 4.6 6.6 3.5 7.6 2 10.5 1.6 13.5 2 17c1.5 1.1 3 1.8 4.6 2.3l1-1.8M16 5.5c2 .5 3.4 1.1 4.5 2.1 1.5 2.9 1.9 5.9 1.5 9.4-1.5 1.1-3 1.8-4.6 2.3l-1-1.8M7 16.8c3.3 1.4 6.7 1.4 10 0M8 5.5c2.7-.7 5.3-.7 8 0"/><circle cx="9" cy="12.5" r="1.3"/><circle cx="15" cy="12.5" r="1.3"/></svg></span><span class="tx"><span class="cap" id="lDisc">Discord</span><span id="vDisc"></span></span></div>
 
-<!-- panel D: the loading sound effect, the percent burst and the cassette -->
-<div class="slot" id="sD"><div class="panel">
-	<div id="sfx"><div id="sfxGhost"></div><div id="sfxClip"><div id="sfxFill"></div></div></div>
-	<div id="barWrap"><div id="bar"><div id="ticks"></div><div id="fill"></div></div><div id="runner"><svg viewBox="0 0 100 100"><use xlink:href="#helm" href="#helm"/></svg></div></div>
-	<div id="file"></div>
-	<div id="burst"><div id="burstIn"><svg viewBox="0 0 200 200"><polygon id="burstShadow" fill="#05040a"/><polygon id="burstStar" fill="#ffd36b" stroke="#05040a" stroke-width="7" stroke-linejoin="round"/></svg><div id="pct">0<small>%</small></div></div></div>
-	<div id="music"><svg viewBox="0 0 220 140">
-		<rect x="9" y="9" width="208" height="128" rx="14" fill="#05040a"/>
-		<g id="casBody">
-			<rect id="casShell" x="2" y="2" width="208" height="128" rx="14" fill="#8e62ff" stroke="#05040a" stroke-width="5"/>
-			<rect x="18" y="13" width="176" height="38" rx="6" fill="#fffdf5" stroke="#05040a" stroke-width="3"/>
-			<text id="casText" x="106" y="40" text-anchor="middle" font-family="Praetor Display, sans-serif" font-size="21" fill="#120e20">TOCANDO</text>
-			<rect x="44" y="60" width="124" height="46" rx="22" fill="#120e20" stroke="#05040a" stroke-width="3"/>
-			<circle id="tapeL" cx="76" cy="83" r="20" fill="#4a3426"/>
-			<circle id="tapeR" cx="136" cy="83" r="14" fill="#4a3426"/>
-			<g id="reelL"><circle cx="76" cy="83" r="11" fill="#f4f1ff" stroke="#05040a" stroke-width="3"/><path d="M76 74 V79 M68 87.5 L72.3 85 M84 87.5 L79.7 85" stroke="#05040a" stroke-width="3" stroke-linecap="round"/></g>
-			<g id="reelR"><circle cx="136" cy="83" r="11" fill="#f4f1ff" stroke="#05040a" stroke-width="3"/><path d="M136 74 V79 M128 87.5 L132.3 85 M144 87.5 L139.7 85" stroke="#05040a" stroke-width="3" stroke-linecap="round"/></g>
-			<path d="M52 128 L62 112 L150 112 L160 128" fill="#120e20" stroke="#05040a" stroke-width="3" stroke-linejoin="round"/>
-			<circle cx="82" cy="121" r="3.5" fill="#f4f1ff"/><circle cx="130" cy="121" r="3.5" fill="#f4f1ff"/>
-			<circle cx="14" cy="14" r="3" fill="#05040a"/><circle cx="198" cy="14" r="3" fill="#05040a"/><circle cx="14" cy="118" r="3" fill="#05040a"/><circle cx="198" cy="118" r="3" fill="#05040a"/>
-		</g>
-	</svg></div>
-	<div id="hint"><kbd>M</kbd><span id="lHint">liga / desliga a música</span></div>
-</div></div>
-<div id="status">...</div>
+<div class="card" id="dl">
+	<div id="dlL">
+		<div id="stage"></div>
+		<div id="raw"></div>
+		<div id="pct">0<small>%</small></div>
+		<div id="steps"><div id="stepLine"><div id="stepFill"></div></div></div>
+		<div id="bar"><div id="fill"><i></i><b></b></div></div>
+		<div id="now"><span id="nowTag">...</span><span id="nowTx"><span id="nowName"></span><span id="nowDir"></span></span></div>
+	</div>
+	<div id="dlR">
+		<div id="stats">
+			<div class="stat"><span class="k" id="lFiles">Arquivos</span><span class="v" id="vFiles">-</span></div><div class="stat"><span class="k" id="lLeft">Faltam</span><span class="v" id="vLeft">-</span></div>
+			<div class="stat"><span class="k" id="lTime">Tempo</span><span class="v" id="vTime">0:00</span></div><div class="stat"><span class="k" id="lEta">Restante</span><span class="v" id="vEta">-</span></div>
+		</div>
+		<div id="recent"><div class="cap" id="lRecent">Últimos baixados</div><div id="recList"></div></div>
+	</div>
+</div>
 <div id="credit">PRAETOR</div>
-<div id="flash"></div>
 
 <audio id="audio" loop preload="auto"></audio>
 
@@ -292,9 +232,19 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0b16; c
 	}
 	function $(id) { return document.getElementById(id); }
 	function text(id, t) { var e = typeof id === "string" ? $(id) : id; if (e) { if (e.textContent !== undefined) e.textContent = t; else e.innerText = t; } }
+	// a stat value that doesn't fit its box gets a smaller font instead of being cut
+	function stat(id, t) {
+		var e = $(id);
+		if (!e || e._t === t) return;
+		e._t = t; text(e, t);
+		var size = vh(2.6), min = vh(1.4);
+		e.style.fontSize = size + "px";
+		while (e.scrollWidth > e.clientWidth + 1 && size > min) { size -= 1; e.style.fontSize = size + "px"; }
+	}
 	function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 	function vh(n) { return (window.innerHeight || document.documentElement.clientHeight) * n / 100; }
 	function restart(el, cls) { el.className = el.className.replace(new RegExp("\\s*" + cls, "g"), ""); void el.offsetWidth; el.className += " " + cls; }
+	function now() { return new Date().getTime(); }
 
 	var acc = (param("accent") || "8e62ff").replace(/[^0-9a-fA-F]/g, "");
 	if (acc.length !== 6) acc = "8e62ff";
@@ -302,20 +252,23 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0b16; c
 	acc = "#" + acc;
 	// a very light accent gets dark text on top of it so it stays readable
 	var onAcc = (ar * 0.299 + ag * 0.587 + ab * 0.114) > 170 ? "#120e20" : "#ffffff";
+	function rgba(a) { return "rgba(" + ar + "," + ag + "," + ab + "," + a + ")"; }
 
 	// paint the accent by hand (works in old browsers without CSS variables too)
 	$("logo").style.backgroundColor = acc; $("logo").style.color = onAcc;
 	$("sub").style.backgroundColor = acc; $("sub").style.color = onAcc;
+	$("lTip").style.backgroundColor = acc; $("lTip").style.color = onAcc;
+	$("tipRun").style.backgroundColor = acc;
+	$("stepFill").style.backgroundColor = acc;
 	$("fill").style.backgroundColor = acc;
-	$("sfxFill").style.color = acc;
-	$("tipHead").style.color = acc;
-	$("casShell").setAttribute("fill", acc);
-	$("crest").setAttribute("stroke", acc);
-	var crests = document.getElementsByTagName("path");
-	for (var ci = 0; ci < crests.length; ci++) if (crests[ci].getAttribute("class") === "crest") crests[ci].setAttribute("stroke", acc);
-	var icos = document.querySelectorAll ? document.querySelectorAll(".row .ico") : [];
+	$("nowTag").style.backgroundColor = acc; $("nowTag").style.color = onAcc;
+	var icos = document.querySelectorAll ? document.querySelectorAll(".chip .ic") : [];
 	for (var ii = 0; ii < icos.length; ii++) icos[ii].style.backgroundColor = acc;
-	$("page").style.backgroundImage = "radial-gradient(rgba(" + ar + "," + ag + "," + ab + ",.22) 1.4px, transparent 1.6px)";
+	var blobs = [["b1", .5], ["b2", .45], ["b3", .4]];
+	for (var bi = 0; bi < blobs.length; bi++) {
+		var g = "radial-gradient(circle, " + rgba(blobs[bi][1]) + " 0%, " + rgba(0) + " 70%)";
+		$(blobs[bi][0]).style.backgroundImage = "-webkit-" + g; $(blobs[bi][0]).style.backgroundImage = g;
+	}
 
 	var name = param("name") || "Garry's Mod";
 	var sub = param("sub") || "";
@@ -323,116 +276,67 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0b16; c
 	var gameVol = 1;
 
 	var T = {
-		pt: { map: "Mapa", slots: "Vagas", mode: "Modo", tip: "Dica", next: "Próxima", playing: "TOCANDO", off: "DESLIGADA",
-			hint: "liga / desliga a música", players: "jogadores", files: "arquivos", start: "Conectando ao servidor...", sfx: "CARREGANDO", ready: "PRONTO!",
-			downloading: "Baixando",
+		pt: { map: "Mapa", slots: "Vagas", mode: "Modo", tip: "Dica", next: "Próxima", music: "Música", musicOff: "Música desligada",
+			players: "jogadores", files: "Arquivos", left: "Faltam", time: "Tempo", eta: "Restante", recent: "Últimos baixados", none: "Nada baixado ainda",
+			start: "Conectando ao servidor", ready: "Tudo pronto, entrando!", nothing: "Você já tem todos os arquivos", calc: "calculando...",
+			now: "Agora", waiting: "Aguardando o servidor", of: "de",
+			steps: ["Conectar", "Workshop", "Arquivos", "Scripts", "Entrar"],
+			types: { model: "Modelo", texture: "Textura", sound: "Som", map: "Mapa", font: "Fonte", script: "Script", addon: "Addon", file: "Arquivo" },
 			stages: { retrieving: "Buscando as informações do servidor", "sending client": "Enviando seus dados", workshop: "Baixando o conteúdo da Workshop",
 				lua: "Carregando os scripts", "client info": "Recebendo as informações", parsing: "Lendo o jogo", starting: "Começando a partida", precach: "Preparando modelos e sons",
-				mount: "Montando o conteúdo", download: "Baixando arquivos" },
+				mount: "Montando o conteúdo", download: "Baixando arquivos do servidor" },
 			tips: ["Digite !menu para abrir o menu do servidor.", "Leia as regras antes de jogar.", "Viu alguém quebrando as regras? Use !report.", "Respeite os outros jogadores e as construções deles."] },
-		en: { map: "Map", slots: "Slots", mode: "Mode", tip: "Tip", next: "Next", playing: "PLAYING", off: "MUTED",
-			hint: "turns the music on / off", players: "players", files: "files", start: "Connecting to the server...", sfx: "LOADING", ready: "READY!",
-			downloading: "Downloading",
+		en: { map: "Map", slots: "Slots", mode: "Mode", tip: "Tip", next: "Next", music: "Music", musicOff: "Music off",
+			players: "players", files: "Files", left: "Left", time: "Time", eta: "Time left", recent: "Last downloaded", none: "Nothing downloaded yet",
+			start: "Connecting to the server", ready: "All set, joining!", nothing: "You already have every file", calc: "working it out...",
+			now: "Now", waiting: "Waiting for the server", of: "of",
+			steps: ["Connect", "Workshop", "Files", "Scripts", "Join"],
+			types: { model: "Model", texture: "Texture", sound: "Sound", map: "Map", font: "Font", script: "Script", addon: "Addon", file: "File" },
 			stages: { retrieving: "Getting the server info", "sending client": "Sending your info", workshop: "Downloading Workshop content",
 				lua: "Loading scripts", "client info": "Receiving info", parsing: "Reading the game", starting: "Starting the match", precach: "Getting models and sounds ready",
-				mount: "Mounting content", download: "Downloading files" },
+				mount: "Mounting content", download: "Downloading server files" },
 			tips: ["Type !menu to open the server menu.", "Read the rules before you play.", "Saw someone breaking the rules? Use !report.", "Respect other players and their builds."] }
 	};
 	function L(k) { return (T[lang] || T.en)[k]; }
 
-	// ---------------------------------------------------------------- the cover: name, sub, logo, discord
+	// ---------------------------------------------------------------- server: name, sub, logo, background, discord
 	function fitTitle() {
-		var box = $("title"), wrap = $("titleWrap");
-		var avail = wrap.offsetWidth - 20, guard = 0;
-		var size = vh(15);
-		box.style.whiteSpace = "nowrap"; box.style.fontSize = size + "px";
-		while (box.offsetWidth > avail && size > 18 && guard < 60) { size *= 0.93; box.style.fontSize = size + "px"; guard++; }
-		// a long name gets too small on one line: let it break into two lines instead
-		if (size < vh(8.5) && box.getElementsByTagName("span").length > 0 && box.innerHTML.indexOf(" ") >= 0) {
-			box.style.whiteSpace = "normal"; size = vh(13); guard = 0; box.style.fontSize = size + "px";
-			var ws = box.getElementsByTagName("span");
-			var widest = function () { var m = 0; for (var q = 0; q < ws.length; q++) if (ws[q].className === "w" && ws[q].offsetWidth > m) m = ws[q].offsetWidth; return m; };
-			while ((box.offsetHeight > size * 2.4 || widest() > avail) && size > 18 && guard < 60) { size *= 0.93; box.style.fontSize = size + "px"; guard++; }
-		}
-		// keep the title + sub in the middle of the panel
-		var panel = $("sA");
-		wrap.style.top = Math.max(vh(9), (panel.offsetHeight - wrap.offsetHeight) / 2 - vh(1)) + "px";
+		var box = $("title"), avail = $("nameBox").offsetWidth - 10, size = vh(7.6), guard = 0;
+		box.style.fontSize = size + "px";
+		while (box.offsetWidth > avail && size > 14 && guard < 60) { size *= 0.94; box.style.fontSize = size + "px"; guard++; }
 	}
-	function buildTitle(t) {
-		var box = $("title"); box.innerHTML = "";
-		var words = t.split(" "), n = 0;
-		var shadow = "-4px -4px 0 #05040a, 4px -4px 0 #05040a, -4px 4px 0 #05040a, 4px 4px 0 #05040a, 0 4px 0 #05040a, 0 -4px 0 #05040a, 4px 0 0 #05040a, -4px 0 0 #05040a, 10px 11px 0 " + acc;
-		for (var w = 0; w < words.length; w++) {
-			if (w > 0) { box.appendChild(document.createTextNode(" ")); n++; }
-			if (words[w] === "") continue;
-			// every word stays in one piece, the line only breaks between words
-			var ws = document.createElement("span");
-			ws.className = "w";
-			for (var i = 0; i < words[w].length; i++) {
-				var s = document.createElement("span");
-				s.className = "ch";
-				s.innerHTML = esc(words[w].charAt(i));
-				var d = (0.45 + n * 0.05) + "s", d2 = (1.4 + n * 0.12) + "s";
-				s.style.webkitAnimationDelay = d + ", " + d2;
-				s.style.animationDelay = d + ", " + d2;
-				s.style.textShadow = shadow;
-				ws.appendChild(s);
-				n++;
-			}
-			box.appendChild(ws);
-		}
-		fitTitle();
+	function setName(t) { text("title", t); fitTitle(); setLogoLetter(); }
+	// an imgur page link (imgur.com/abc12) becomes the picture itself (i.imgur.com/abc12.png)
+	function img(u, ext) {
+		if (!u) return u;
+		var m = /^(?:https?:\/\/)?(?:www\.|m\.)?imgur\.com\/([A-Za-z0-9]{5,10})\/?$/.exec(u);
+		return m ? "https://i.imgur.com/" + m[1] + ext : u;
 	}
-	buildTitle(name);
+	var logo = img(param("logo"), ".png");
+	function setLogoLetter() { if (!logo) text("logo", name.replace(/^[^A-Za-z0-9À-ɏ]+/, "").charAt(0).toUpperCase() || "P"); }
+	if (logo) $("logo").innerHTML = '<img src="' + esc(logo).replace(/"/g, "") + '">';
+	setName(name);
 	if (sub) text("sub", sub); else $("sub").style.display = "none";
 
-	var logo = param("logo");
-	function setLogoLetter() { if (!logo) text("logoIn", name.replace(/^[^A-Za-z0-9À-ɏ]+/, "").charAt(0).toUpperCase() || "P"); }
-	if (logo) $("logoIn").innerHTML = '<img src="' + esc(logo).replace(/"/g, "") + '">';
-	setLogoLetter();
-
+	// without a bg of its own the page uses bg.gif (a starry night sky); bg=none keeps the coloured blobs
 	var bg = param("bg");
-	if (bg) $("heroBg").style.backgroundImage = 'url("' + bg.replace(/["()\\]/g, "") + '")';
+	if (bg === "none") bg = "";
+	else if (!bg) bg = "bg.gif";
+	else bg = img(bg, ".gif");
+	if (bg) {
+		// a picture or GIF of the server: the coloured blobs make way for it
+		$("bg").style.backgroundImage = 'url("' + bg.replace(/["()\\]/g, "") + '")';
+		for (var bj = 0; bj < blobs.length; bj++) $(blobs[bj][0]).style.display = "none";
+		$("dots").style.display = "none";
+		$("shade").className = "img";
+	}
 
 	var discord = param("discord");
 	if (discord) { text("vDisc", discord); $("disc").style.display = "block"; }
 	var map = param("map");
 	if (map && map.indexOf("%") < 0) text("vMap", map);
 
-	// action lines behind the name: two sets that flicker in turns, like a comic panel
-	var NS = "http://www.w3.org/2000/svg";
-	function rays(group, n, seed) {
-		for (var i = 0; i < n; i++) {
-			var a = (i + seed) / n * Math.PI * 2 + (Math.random() - 0.5) * 0.05;
-			var da = 0.008 + Math.random() * 0.016;
-			var r1 = 34 + Math.random() * 16;
-			var p = document.createElementNS(NS, "polygon");
-			p.setAttribute("points",
-				(50 + Math.cos(a - da) * 160) + "," + (50 + Math.sin(a - da) * 160) + " " +
-				(50 + Math.cos(a + da) * 160) + "," + (50 + Math.sin(a + da) * 160) + " " +
-				(50 + Math.cos(a) * r1) + "," + (50 + Math.sin(a) * r1));
-			p.setAttribute("fill", i % 5 === 0 ? acc : "#f4f1ff");
-			p.setAttribute("fill-opacity", i % 5 === 0 ? "0.22" : "0.08");
-			group.appendChild(p);
-		}
-	}
-	try { rays($("rg1"), 54, 0); rays($("rg2"), 54, 0.5); } catch (e) {}
-
-	var sparkBox = $("sparks");
-	for (var k = 0; k < 12; k++) {
-		var sp = document.createElement("div");
-		sp.className = "spark";
-		sp.innerHTML = k % 3 === 0 ? "&#10022;" : "&#10023;";
-		sp.style.left = (Math.random() * 92 + 3) + "%";
-		sp.style.top = (Math.random() * 86 + 6) + "%";
-		sp.style.fontSize = (14 + Math.random() * 24) + "px";
-		if (k % 4 === 0) sp.style.color = "#ff8fc6";
-		var dl = (Math.random() * 4).toFixed(2) + "s";
-		sp.style.webkitAnimationDelay = dl; sp.style.animationDelay = dl;
-		sparkBox.appendChild(sp);
-	}
-
-	// ---------------------------------------------------------------- the narrator: tips typed into the speech bubble
+	// ---------------------------------------------------------------- tips
 	var customTips = false;
 	var tips = L("tips");
 	var tp = param("tips");
@@ -441,86 +345,21 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0b16; c
 		for (var j = 0; j < list.length; j++) if (list[j].replace(/\s/g, "") !== "") clean.push(list[j]);
 		if (clean.length) { tips = clean; customTips = true; }
 	}
-	var tipIdx = 0, typeTimer = null, typeChars = [], typeAt = 0;
-	function fitTip() {
-		var el = $("tipText"), bubble = $("bubble");
-		var size = vh(2.3), guard = 0;
-		el.style.fontSize = size + "px"; el.style.lineHeight = (size * 1.35) + "px";
-		var room = bubble.clientHeight - el.offsetTop - vh(1);
-		while (el.offsetHeight > room && size > 10 && guard < 30) { size *= 0.92; el.style.fontSize = size + "px"; el.style.lineHeight = (size * 1.35) + "px"; guard++; }
-	}
-	function typeStep() {
-		// a few letters per step so long tips do not take forever
-		for (var n = 0; n < 2 && typeAt < typeChars.length; n++) { typeChars[typeAt].style.opacity = 1; typeAt++; }
-		if (typeAt >= typeChars.length) { clearInterval(typeTimer); typeTimer = null; $("mascot").className = ""; }
-	}
-	function showTip(i) {
-		if (!tips.length) return;
+	var TIP_MS = 9000, tipIdx = 0, tipAt = now();
+	function showTip(i, instant) {
+		if (!tips.length) { $("tips").style.display = "none"; return; }
 		tipIdx = (i + tips.length) % tips.length;
-		var el = $("tipText"), t = String(tips[tipIdx]), html = "";
-		// every letter is placed (invisible) first, so the bubble never jumps while it types
-		for (var c = 0; c < t.length; c++) html += "<b>" + esc(t.charAt(c)) + "</b>";
-		el.innerHTML = html;
-		fitTip();
-		typeChars = el.getElementsByTagName("b"); typeAt = 0;
-		if (typeTimer) clearInterval(typeTimer);
-		typeTimer = setInterval(typeStep, 28);
-		$("mascot").className = "talk";
+		tipAt = now();
 		text("tipNum", (tipIdx + 1) + " / " + tips.length);
-		var dots = "";
-		for (var d = 0; d < Math.min(tips.length, 10); d++) dots += '<b class="' + (d === tipIdx ? "on" : "") + '"></b>';
-		$("tipDots").innerHTML = dots;
+		var el = $("tipText");
+		if (instant) { text(el, tips[tipIdx]); return; }
+		el.style.opacity = 0;
+		setTimeout(function () { text(el, tips[tipIdx]); el.style.opacity = 1; }, 300);
 	}
-	var tipTimer = null;
-	function startTips() { if (tipTimer) clearInterval(tipTimer); tipTimer = setInterval(function () { showTip(tipIdx + 1); }, 9000); }
-	setTimeout(function () { showTip(0); startTips(); }, 900);
-	$("tipBtn").onclick = function () { showTip(tipIdx + 1); startTips(); };
+	showTip(0, true);
+	$("tipBtn").onclick = function () { showTip(tipIdx + 1); };
 
-	// the narrator blinks now and then
-	function blink() {
-		$("eyeL").setAttribute("ry", "0.8"); $("eyeR").setAttribute("ry", "0.8");
-		setTimeout(function () { $("eyeL").setAttribute("ry", "5"); $("eyeR").setAttribute("ry", "5"); }, 130);
-		setTimeout(blink, 2200 + Math.random() * 2600);
-	}
-	setTimeout(blink, 1800);
-
-	// ---------------------------------------------------------------- the loading sound effect
-	function buildSfx(word) {
-		var g = "", f = "";
-		for (var i = 0; i < word.length; i++) {
-			var dl = (i * 0.09).toFixed(2);
-			var st = ' style="-webkit-animation-delay:' + dl + 's;animation-delay:' + dl + 's"';
-			g += "<span" + st + ">" + esc(word.charAt(i)) + "</span>";
-			f += "<span" + st + ">" + esc(word.charAt(i)) + "</span>";
-		}
-		$("sfxGhost").innerHTML = g; $("sfxFill").innerHTML = f;
-		fitSfx();
-	}
-	function fitSfx() {
-		var box = $("sfx"), bar = $("barWrap");
-		var size = vh(10), guard = 0;
-		box.style.fontSize = size + "px";
-		var avail = bar.offsetWidth;
-		while ($("sfxGhost").offsetWidth > avail && size > 16 && guard < 40) { size *= 0.94; box.style.fontSize = size + "px"; guard++; }
-	}
-	var sfxWord = "";
-	function setSfx(w) { if (w !== sfxWord) { sfxWord = w; buildSfx(w); } }
-	setSfx(L("sfx"));
-
-	// the percent burst: a jagged star
-	(function () {
-		var pts = "", sh = "", n = 14;
-		for (var i = 0; i < n * 2; i++) {
-			var a = i / (n * 2) * Math.PI * 2 - Math.PI / 2;
-			var r = i % 2 === 0 ? 92 + (i % 4 === 0 ? 6 : 0) : 66 + (i % 3) * 3;
-			pts += (100 + Math.cos(a) * r).toFixed(1) + "," + (100 + Math.sin(a) * r).toFixed(1) + " ";
-			sh += (108 + Math.cos(a) * r).toFixed(1) + "," + (109 + Math.sin(a) * r).toFixed(1) + " ";
-		}
-		$("burstStar").setAttribute("points", pts);
-		$("burstShadow").setAttribute("points", sh);
-	})();
-
-	// ---------------------------------------------------------------- music on a cassette
+	// ---------------------------------------------------------------- music
 	var audio = $("audio");
 	var mus = param("music");
 	var vol = parseFloat(param("vol"));
@@ -528,75 +367,182 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0b16; c
 	vol = Math.max(0, Math.min(100, vol)) / 100;
 	var musicOn = mus !== "0";
 	var src = (!mus || mus === "1") ? "music.mp3" : mus;
-	function setMusicLabel() { text("casText", musicOn ? "♪ " + L("playing") : L("off")); $("music").className = musicOn ? "" : "muted"; }
+	if (mus === "0") $("music").style.display = "none";
+	function setMusicLabel() { text("lMusic", musicOn ? L("music") : L("musicOff")); $("music").className = musicOn ? "" : "off"; }
 	function applyVol() { try { audio.volume = Math.max(0, Math.min(1, vol * gameVol)); } catch (e) {} }
-	if (musicOn) {
-		audio.src = src;
-		applyVol();
-		var tryPlay = function () { try { var p = audio.play(); if (p && p["catch"]) p["catch"](function () {}); } catch (e) {} };
-		tryPlay(); setTimeout(tryPlay, 800);
-	}
+	function play() { try { var p = audio.play(); if (p && p["catch"]) p["catch"](function () {}); } catch (e) {} }
+	if (musicOn) { audio.src = src; applyVol(); play(); setTimeout(play, 800); }
 	function toggleMusic() {
+		if (mus === "0") return;
 		musicOn = !musicOn;
-		if (musicOn) { if (!audio.src) audio.src = src; applyVol(); try { var p = audio.play(); if (p && p["catch"]) p["catch"](function () {}); } catch (e) {} }
+		if (musicOn) { if (!audio.src) audio.src = src; applyVol(); play(); }
 		else { try { audio.pause(); } catch (e) {} }
 		setMusicLabel();
 	}
 	$("music").onclick = toggleMusic;
 	document.onkeydown = function (e) { e = e || window.event; if ((e.keyCode || e.which) === 77) toggleMusic(); };
 
+	// ---------------------------------------------------------------- steps
+	var stepEls = [];
+	(function () {
+		var box = $("steps");
+		for (var i = 0; i < 5; i++) {
+			var s = document.createElement("div");
+			s.className = "step";
+			// circle centres sit on the line, which runs from 1.5vh to (width - 1.5vh)
+			var pos = "(1.5vh + (100% - 3vh) * " + (i / 4) + ")";
+			s.style.left = "-webkit-calc" + pos; s.style.left = "calc" + pos;
+			s.innerHTML = '<span class="d">' + (i + 1) + '</span><span class="n"></span>';
+			box.appendChild(s);
+			stepEls.push(s);
+		}
+		// the first and the last label sit inside the panel, under their circle
+		stepEls[0].style.left = "0"; stepEls[0].style.marginLeft = "0"; stepEls[0].style.width = "auto"; stepEls[0].style.textAlign = "left";
+		stepEls[0].firstChild.style.margin = "0";
+		stepEls[4].style.left = "auto"; stepEls[4].style.right = "0"; stepEls[4].style.marginLeft = "0"; stepEls[4].style.width = "auto"; stepEls[4].style.textAlign = "right";
+		stepEls[4].firstChild.style.margin = "0 0 0 auto";
+	})();
+	var step = 0;
+	function setStep(n) {
+		if (n < step) return;
+		step = n;
+		for (var i = 0; i < stepEls.length; i++) {
+			var cls = "step" + (i < step ? " done" : (i === step ? " on" : ""));
+			stepEls[i].className = cls;
+			stepEls[i].firstChild.style.backgroundColor = i < step ? acc : (i === step ? rgba(.55) : "");
+			stepEls[i].firstChild.innerHTML = i < step ? "&#10003;" : String(i + 1);
+		}
+		$("stepFill").style.width = (step / 4 * 100) + "%";
+	}
+
 	function applyLang() {
 		text("lMap", L("map")); text("lSlots", L("slots")); text("lMode", L("mode"));
-		text("lTip", L("tip")); text("lNext", L("next")); text("lHint", L("hint"));
-		if (!customTips) { tips = L("tips"); if (typeChars.length) showTip(tipIdx); }
-		setSfx(shown >= 99.5 ? L("ready") : L("sfx"));
+		text("lTip", L("tip")); text("lNext", L("next"));
+		text("lFiles", L("files")); text("lLeft", L("left")); text("lTime", L("time")); text("lEta", L("eta")); text("lRecent", L("recent"));
+		var names = L("steps");
+		for (var i = 0; i < stepEls.length; i++) stepEls[i].lastChild.innerHTML = esc(names[i]);
+		if (!customTips) { tips = L("tips"); showTip(tipIdx, true); }
 		setMusicLabel();
-		if (lastStatus) setStatus(lastStatus, true); else text("status", L("start"));
+		if (lastStatus) setStatus(lastStatus, true); else text("stage", L("start"));
+		renderRecent(); renderNow();
+	}
+
+	// ---------------------------------------------------------------- files
+	var TYPES = { mdl: "model", vvd: "model", vtx: "model", phy: "model", ani: "model", vmt: "texture", vtf: "texture", png: "texture", jpg: "texture",
+		wav: "sound", mp3: "sound", ogg: "sound", bsp: "map", nav: "map", ain: "map", ttf: "font", otf: "font", lua: "script", gma: "addon" };
+	var total = 0, needed = 0, cur = null, recent = [], firstFileAt = 0, doneAtFirst = 0;
+	function typeOf(path) { var m = /\.([a-z0-9]+)$/i.exec(path || ""); return (m && TYPES[m[1].toLowerCase()]) || "file"; }
+	function renderNow() {
+		if (cur) {
+			text("nowTag", L("types")[cur.type] || cur.type);
+			text("nowName", cur.name); text("nowDir", cur.dir);
+			$("nowTag").style.display = "";
+		} else {
+			$("nowTag").style.display = "none";
+			text("nowName", step >= 3 ? (total === 0 && !wsSeen ? L("nothing") : "") : L("waiting"));
+			text("nowDir", "");
+		}
+	}
+	function renderRecent() {
+		var html = "";
+		if (!recent.length) html = '<div class="rec empty">' + esc(L("none")) + "</div>";
+		for (var i = 0; i < recent.length; i++) {
+			var r = recent[i];
+			html += '<div class="rec"' + (i === 0 ? "" : ' style="-webkit-animation:none;animation:none;opacity:' + (1 - i * 0.17).toFixed(2) + '"') + '>'
+				+ '<i style="background:' + (TYPE_COL[r.type] || acc) + '">' + esc(L("types")[r.type] || r.type) + '</i><span>' + esc(r.name) + "</span></div>";
+		}
+		var list = $("recList");
+		list.innerHTML = html;
+		// only the rows that fit in the column (small screens show fewer)
+		var limit = $("dlR").getBoundingClientRect().bottom;
+		while (list.childNodes.length > 1 && list.lastChild.getBoundingClientRect().bottom > limit + 0.5) list.removeChild(list.lastChild);
+	}
+	// newest on top: the type in its colour and the file name
+	var TYPE_COL = { texture: "#5aaaff", sound: "#54dc8a", map: "#ffc44a", font: "#ff8290", script: "#c9c2e6", file: "#9a93b8" };
+	function pushRecent(f) {
+		recent.unshift({ name: f.name, type: f.type });
+		if (recent.length > 4) recent.length = 4;
+		renderRecent();
+	}
+	function fmt(sec) {
+		sec = Math.max(0, Math.round(sec));
+		var m = Math.floor(sec / 60), s = sec % 60;
+		if (m >= 60) return Math.floor(m / 60) + "h " + (m % 60) + "m";
+		return m + ":" + (s < 10 ? "0" : "") + s;
 	}
 
 	// ---------------------------------------------------------------- progress (Garry's Mod calls these)
-	var total = 0, needed = 0, shown = 0, target = 0, lastTen = 0, reelA = 0;
+	var started = now(), shown = 0, target = 0, wsSeen = false, wsDone = 0, wsTotal = 0;
 	function setTarget(p) { if (p > target) target = Math.min(100, p); }
 	function tick() {
-		if (shown < target) shown += Math.max(0.25, (target - shown) * 0.1);
+		if (shown < target) shown += Math.max(0.2, (target - shown) * 0.08);
 		if (shown > target) shown = target;
 		// slow crawl so it never looks stuck when there is nothing to download
-		if (target < 92 && total === 0) target += 0.035;
-		var k = shown / 100;
-		var barW = $("bar").clientWidth;
-		$("fill").style.width = Math.round(barW * k) + "px";
-		$("runner").style.left = Math.round(4 + (barW - 4) * k) + "px";
-		$("sfxClip").style.width = Math.round($("sfxGhost").offsetWidth * k + (k > 0 ? 4 : 0)) + "px";
+		if (target < 92 && total === 0) target += 0.03;
+		$("fill").style.width = shown.toFixed(2) + "%";
 		$("pct").innerHTML = Math.floor(shown) + "<small>%</small>";
-		var ten = Math.floor(shown / 10);
-		if (ten > lastTen) { lastTen = ten; restart($("burstIn"), "bump"); }
-		if (shown >= 99.5) setSfx(L("ready"));
-		// cassette: the reels turn while the music plays, the tape moves from left to right as you load
-		if (musicOn) reelA = (reelA + 9) % 360;
-		$("reelL").setAttribute("transform", "rotate(" + reelA + " 76 83)");
-		$("reelR").setAttribute("transform", "rotate(" + reelA + " 136 83)");
-		$("tapeL").setAttribute("r", (20 - 7 * k).toFixed(1));
-		$("tapeR").setAttribute("r", (13 + 7 * k).toFixed(1));
+		if (shown >= 99.5) text("stage", L("ready"));
+		$("tipRun").style.width = Math.min(100, (now() - tipAt) / TIP_MS * 100) + "%";
+		if (now() - tipAt > TIP_MS) showTip(tipIdx + 1);
 	}
 	setInterval(tick, 40);
 
+	function second() {
+		stat("vTime", fmt((now() - started) / 1000));
+		// files left and an estimate from the speed so far
+		var done = total - needed;
+		if (wsTotal > 0 && step <= 1) {
+			stat("vFiles", wsDone + " " + L("of") + " " + wsTotal);
+			stat("vLeft", String(Math.max(0, wsTotal - wsDone)));
+		} else if (total > 0) {
+			stat("vFiles", done + " " + L("of") + " " + total);
+			stat("vLeft", String(needed));
+		}
+		var eta = "-";
+		if (total > 0 && needed > 0 && firstFileAt) {
+			var got = done - doneAtFirst, secs = (now() - firstFileAt) / 1000;
+			eta = (got >= 3 && secs > 1) ? "~" + fmt(needed / (got / secs)) : L("calc");
+		} else if (step >= 3 || (total > 0 && needed === 0)) eta = "0:00";
+		stat("vEta", eta);
+	}
+	setInterval(second, 1000);
+
 	var lastStatus = "";
-	var stages = [["retrieving", 6], ["sending client", 10], ["workshop", 14], ["mount", 16], ["download", 18], ["lua", 90], ["client info", 92], ["parsing", 93], ["starting", 95], ["precach", 97]];
+	// status text -> [step, progress]
+	var stages = [["retrieving", 0, 6], ["sending client", 0, 10], ["workshop", 1, 14], ["mount", 1, 16], ["download", 2, 18], ["lua", 3, 90],
+		["client info", 3, 92], ["parsing", 3, 93], ["starting", 4, 95], ["precach", 4, 97]];
 	function setStatus(s, quiet) {
 		lastStatus = s;
-		var low = s.toLowerCase(), nice = "", st = L("stages");
-		for (var i = 0; i < stages.length; i++) if (low.indexOf(stages[i][0]) >= 0) { nice = st[stages[i][0]] || ""; if (!quiet) setTarget(stages[i][1]); }
-		var shownText = nice ? nice + "..." : s;
-		var el = $("status");
-		if ((el.textContent || el.innerText) !== shownText) {
-			text(el, shownText);
-			if (!quiet) { el.style.opacity = 1; restart(el, "swap"); }
+		var low = s.toLowerCase(), nice = "", st = L("stages"), hit = null;
+		for (var i = 0; i < stages.length; i++) if (low.indexOf(stages[i][0]) >= 0) { nice = st[stages[i][0]] || ""; hit = stages[i]; }
+		if (hit && !quiet) { setTarget(hit[2]); setStep(hit[1]); }
+		// Workshop: "x/y" and the addon name in quotes, when Garry's Mod gives them
+		var cnt = /(\d+)\s*\/\s*(\d+)/.exec(s);
+		var q = /'([^']+)'|"([^"]+)"/.exec(s);
+		if (!quiet && (hit && hit[1] === 1 || (!hit && (cnt || q) && step <= 1))) {
+			wsSeen = true;
+			if (!hit) setStep(1);
+			if (cnt) { wsDone = parseInt(cnt[1], 10); wsTotal = Math.max(wsTotal, parseInt(cnt[2], 10)); setTarget(10 + (wsDone / Math.max(1, wsTotal)) * 8); }
+			if (q) {
+				var addon = q[1] || q[2];
+				if (!cur || cur.name !== addon) {
+					if (cur && cur.type === "addon") pushRecent(cur);
+					cur = { name: addon, dir: "", type: "addon" };
+					renderNow();
+				}
+			}
 		}
+		if (step >= 3 && cur) { pushRecent(cur); cur = null; }
+		var shownText = nice || s;
+		var el = $("stage");
+		if ((el.textContent || el.innerText) !== shownText) { text(el, shownText); if (!quiet) restart(el, "swap"); }
+		text("raw", nice ? s : "");
+		renderNow();
 	}
 
 	window.GameDetails = function (servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, language) {
 		if (language) lang = String(language).toLowerCase().indexOf("pt") === 0 ? "pt" : "en";
-		if (!param("fixed") && servername && servername !== name) { name = servername; buildTitle(name); setLogoLetter(); }
+		if (!param("fixed") && servername && servername !== name) { name = servername; setName(name); }
 		if (mapname) { text("vMap", mapname); restart($("vMap"), "swap"); }
 		if (maxplayers) { text("vSlots", maxplayers + " " + L("players")); restart($("vSlots"), "swap"); }
 		if (gamemode) { text("vMode", gamemode); restart($("vMode"), "swap"); }
@@ -604,24 +550,37 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0b16; c
 		applyLang();
 		setTarget(4);
 	};
-	window.SetFilesTotal = function (n) { total = Math.max(total, n || 0); };
+	window.SetFilesTotal = function (n) { total = Math.max(total, n || 0); second(); };
 	window.SetFilesNeeded = function (n) {
 		needed = n || 0;
-		if (total > 0) setTarget(8 + (total - needed) / total * 80);
+		if (total > 0) setTarget(18 + (total - needed) / total * 70);
+		second();
 	};
 	window.DownloadingFile = function (f) {
-		var nm = String(f || "").replace(/^.*[\\\/]/, "");
-		var count = total > 0 ? " <b>" + (total - needed) + " / " + total + "</b> " + L("files") + " · " : " ";
-		$("file").innerHTML = L("downloading") + count + esc(nm);
+		var path = String(f || "").replace(/\\/g, "/");
+		var nm = path.replace(/^.*\//, ""), dir = path.indexOf("/") >= 0 ? path.replace(/\/[^\/]*$/, "/") : "";
+		if (!firstFileAt) { firstFileAt = now(); doneAtFirst = total - needed; }
+		if (cur && cur.name !== nm) pushRecent(cur);
+		cur = { name: nm, dir: dir, type: typeOf(nm) };
+		setStep(2);
+		if (lastStatus.toLowerCase().indexOf("download") < 0) { var el = $("stage"); text(el, L("stages").download); }
+		renderNow();
+		restart($("nowTx"), "swap");
 	};
 	window.SetStatusChanged = function (s) { setStatus(String(s || "")); };
 
+	setStep(0);
 	applyLang();
+	second();
 
 	// fonts arrive a moment later: measure again once they are in
-	function refit() { fitTitle(); fitSfx(); if (typeChars.length) fitTip(); }
-	setTimeout(refit, 400); setTimeout(refit, 1500);
-	window.onresize = refit;
+	setTimeout(fitTitle, 400); setTimeout(function () { window.onresize(); }, 1500);
+	window.onresize = function () {
+		fitTitle();
+		renderRecent();
+		var ids = ["vFiles", "vLeft", "vTime", "vEta"];
+		for (var i = 0; i < ids.length; i++) { var e = $(ids[i]); if (e && e._t !== undefined) { var t = e._t; e._t = null; stat(ids[i], t); } }
+	};
 })();
 </script>
 </body>

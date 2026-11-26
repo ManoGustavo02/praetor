@@ -39,7 +39,7 @@ local SECTIONS = {
 	} },
 	{ "scoreboard", {
 		{ "scoreboard", "bool" },
-		{ "tab_music", "bool" }, { "tab_music_url", "text" }, { "tab_music_vol", "number" },
+		{ "tab_music", "bool" }, { "menu_music", "bool" }, { "f4_music", "bool" }, { "tab_music_url", "text" }, { "tab_music_vol", "number" },
 		{ "scoreboard_group", "choice", { "group", "rank", "job", "none" } },
 		{ "scoreboard_title", "text" },
 		{ "scoreboard_darkrp", "bool" },
@@ -51,7 +51,7 @@ local SECTIONS = {
 	{ "overhead", {
 		{ "overhead", "bool" }, { "overhead_dist", "number" }, { "overhead_avatar", "bool" }, { "overhead_rank", "bool" },
 		{ "overhead_title", "bool" }, { "overhead_tag", "bool" }, { "overhead_job", "bool" }, { "overhead_hours", "bool" },
-		{ "overhead_staff", "bool" }, { "overhead_voice", "bool" }, { "overhead_health", "bool" },
+		{ "overhead_staff", "bool" }, { "overhead_voice", "bool" }, { "overhead_health", "bool" }, { "overhead_target", "bool" },
 	} },
 	{ "moderation", {
 		{ "afk_time", "number" }, { "warn_decay_days", "number" }, { "warn_rules", "rules" },
@@ -268,6 +268,8 @@ local function clientSection(sc)
 	cv("praetor_chatbox", P.L("cl_chatbox"), P.L("cl_chatbox_d"))
 	cv("praetor_chat_images", P.L("cl_chat_images"), nil)
 	cv("praetor_tab_music", P.L("cl_tab_music"), nil)
+	cv("praetor_menu_music", P.L("cl_menu_music"), nil)
+	if P.IsDarkRP() then cv("praetor_f4_music", P.L("cl_f4_music"), nil) end
 	if P.IsDarkRP() then cv("praetor_hud", P.L("cl_hud"), nil) end
 	-- interface sounds volume
 	local vrow = vgui.Create("DPanel", sc)

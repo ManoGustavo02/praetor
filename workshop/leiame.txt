@@ -1,5 +1,5 @@
 Praetor Admin System - Admin Mod, Logs, Scoreboard & AutoMod (ULX / SAM Alternative)
-Versão / Version: 1.5.1
+Versão / Version: 1.6.0
 Autor / Author: Mano Gustavo
 
 Instalação / Install

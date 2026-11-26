@@ -55,20 +55,7 @@ function P.ModelPreview(model)
 	local mdl = vgui.Create("DModelPanel", f.body)
 	mdl:Dock(FILL)
 	mdl:SetModel(model)
-	mdl:SetFOV(35)
-	local ent = mdl.Entity
-	if IsValid(ent) then
-		local mn, mx = ent:GetRenderBounds()
-		local center = (mn + mx) / 2
-		local size = math.max(16, (mx - mn):Length())
-		mdl:SetLookAt(center)
-		mdl:SetCamPos(center + Vector(size * 1.1, size * 0.4, size * 0.45))
-	end
-	local yaw = 0
-	mdl.LayoutEntity = function(_, e)
-		yaw = yaw + FrameTime() * 35
-		e:SetAngles(Angle(0, yaw, 0))
-	end
+	UI.FitModel(mdl, 34, 35)
 	local paintMdl = mdl.Paint
 	mdl.Paint = function(s, w, h)
 		UI.Rect(0, 0, w, h, Color(14, 11, 17))

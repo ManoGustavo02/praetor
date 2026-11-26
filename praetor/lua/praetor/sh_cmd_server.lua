@@ -49,6 +49,13 @@ C({ id = "stopsound", cat = "server", def = "admin", aliases = { "stopsounds" },
 		P.Echo(caller, "e_stopsound", {})
 	end })
 
+C({ id = "cleardecals", cat = "server", def = "admin", aliases = { "decals" },
+	args = {},
+	run = function(caller)
+		for _, p in ipairs(player.GetHumans()) do p:ConCommand("r_cleardecals") end
+		P.Echo(caller, "e_cleardecals", {})
+	end })
+
 -- rcon is limited to server owners on purpose: a compromised staff account must
 -- never be able to run console commands.
 C({ id = "rcon", cat = "server", def = "superadmin", owner_only = true,

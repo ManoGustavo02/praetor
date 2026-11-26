@@ -75,7 +75,7 @@ C({ id = "addmoney", cat = "darkrp", def = "superadmin", aliases = { "givemoney"
 	end })
 
 C({ id = "rpname", cat = "darkrp", def = "admin", aliases = { "setname", "forcename" },
-	args = { { type = "player", single = true }, { type = "text", hint = "name", max = 32 } },
+	args = { { type = "player", single = true, self_default = true }, { type = "text", hint = "name", max = 32 } },
 	run = function(caller, t, name)
 		if not rp() then return "err_no_darkrp" end
 		local old = t[1]:Nick()

@@ -147,8 +147,27 @@ function UI.Shadow(x, y, w, h, r, off, a)
 end
 
 -- a comic card: hard shadow + fill + thick border
+-- (a see-through card would show its own shadow through it, darker everywhere
+-- except a light band on the top and left; the stencil keeps the shadow outside)
 function UI.Comic(x, y, w, h, r, fill, border, off, a)
-	UI.Shadow(x, y, w, h, r, off, a)
+	if fill and fill.a and fill.a < 250 then
+		render.ClearStencil()
+		render.SetStencilEnable(true)
+		render.SetStencilWriteMask(255)
+		render.SetStencilTestMask(255)
+		render.SetStencilReferenceValue(1)
+		render.SetStencilFailOperation(STENCIL_KEEP)
+		render.SetStencilZFailOperation(STENCIL_KEEP)
+		render.SetStencilPassOperation(STENCIL_REPLACE)
+		render.SetStencilCompareFunction(STENCIL_ALWAYS)
+		draw.RoundedBox(math.max(0, math.floor(math.min(r or 0, h / 2, w / 2))), math.floor(x), math.floor(y), math.floor(w), math.floor(h), Color(0, 0, 0, 1))
+		render.SetStencilPassOperation(STENCIL_KEEP)
+		render.SetStencilCompareFunction(STENCIL_NOTEQUAL)
+		UI.Shadow(x, y, w, h, r, off, a)
+		render.SetStencilEnable(false)
+	else
+		UI.Shadow(x, y, w, h, r, off, a)
+	end
 	UI.Round(x, y, w, h, r, fill, border)
 end
 
@@ -186,47 +205,64 @@ function UI.EaseBack(t)
 	return 1 + c3 * (t - 1) ^ 3 + c1 * (t - 1) ^ 2
 end
 
--- Makes a panel pop in: fades in and springs up from a little below.
--- Runs on its own DrawOverlay hook (not the panel's Think: it also runs with the
--- game paused), so a screen that sets
--- pnl.Think afterwards can't stop it halfway and leave the panel invisible.
-local pops = {}
-local function popStep()
+-- UI.Tween(pnl, dur, step(pnl, k), done(pnl)): runs `step` every frame with k
+-- going 0 -> 1, then `done`. It runs on its own DrawOverlay hook (not the panel's
+-- Think, which screens replace freely, and it keeps going with the game paused),
+-- so an animation can't stop halfway and leave a panel invisible or out of place.
+local tweens = {}
+local function tweenStep()
 	local now = RealTime()
-	for pnl, a in pairs(pops) do
+	for pnl, a in pairs(tweens) do
 		if not IsValid(pnl) then
-			pops[pnl] = nil
+			tweens[pnl] = nil
 		else
-			local t = (now - a.start) / a.dur
-			if t >= 1 then
-				pnl:SetPos(a.x, a.y)
-				pnl:SetAlpha(255)
-				pops[pnl] = nil
-			elseif t >= 0 then
-				pnl:SetPos(a.x, math.Round(a.y + a.dy * (1 - UI.EaseBack(t))))
-				pnl:SetAlpha(math.min(255, 255 * t * 2))
+			local k = (now - a.start) / a.dur
+			if k >= 1 then
+				tweens[pnl] = nil
+				a.step(pnl, 1)
+				if a.done then a.done(pnl) end
+			elseif k >= 0 then
+				a.step(pnl, k)
 			end
 		end
 	end
-	if next(pops) == nil then hook.Remove("DrawOverlay", "Praetor.PopIn") end
+	if next(tweens) == nil then hook.Remove("DrawOverlay", "Praetor.Tween") end
 end
+function UI.Tween(pnl, dur, step, done, delay)
+	if not IsValid(pnl) then return end
+	-- a new tween on the same panel finishes the old one first
+	local old = tweens[pnl]
+	if old then tweens[pnl] = nil old.step(pnl, 1) if old.done then old.done(pnl) end end
+	tweens[pnl] = { start = RealTime() + (delay or 0), dur = math.max(0.01, dur or 0.3), step = step, done = done }
+	hook.Add("DrawOverlay", "Praetor.Tween", function()
+		local ok, err = pcall(tweenStep)
+		if not ok then
+			-- never leave a panel half animated because of an error: jump to the end
+			local list = tweens
+			tweens = {}
+			hook.Remove("DrawOverlay", "Praetor.Tween")
+			for p, b in pairs(list) do
+				if IsValid(p) then pcall(b.step, p, 1) if b.done then pcall(b.done, p) end end
+			end
+			ErrorNoHalt("[Praetor] animation: " .. tostring(err) .. "\n")
+		end
+	end)
+end
+
+-- Makes a panel pop in: fades in and springs up from a little below.
 function UI.PopIn(pnl, dur, delay)
 	if not IsValid(pnl) then return end
 	local x, y = pnl:GetPos()
-	local a = { start = RealTime() + (delay or 0), dur = dur or 0.32, x = x, y = y, dy = P.S(18) }
+	local dy = P.S(18)
 	pnl:SetAlpha(0)
-	pnl:SetPos(x, y + a.dy)
-	pops[pnl] = a
-	hook.Add("DrawOverlay", "Praetor.PopIn", function()
-		local ok, err = pcall(popStep)
-		if not ok then
-			-- never leave a window invisible because of an error here
-			for p, b in pairs(pops) do if IsValid(p) then p:SetPos(b.x, b.y) p:SetAlpha(255) end end
-			pops = {}
-			hook.Remove("DrawOverlay", "Praetor.PopIn")
-			ErrorNoHalt("[Praetor] PopIn: " .. tostring(err) .. "\n")
-		end
-	end)
+	pnl:SetPos(x, y + dy)
+	UI.Tween(pnl, dur or 0.32, function(p, k)
+		p:SetPos(x, math.Round(y + dy * (1 - UI.EaseBack(k))))
+		p:SetAlpha(math.min(255, 255 * k * 2))
+	end, function(p)
+		p:SetPos(x, y)
+		p:SetAlpha(255)
+	end, delay)
 end
 
 -- thin divider

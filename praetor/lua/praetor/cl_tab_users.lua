@@ -466,7 +466,7 @@ local function showSheet(panel, d)
 				local right = a.ban and P.L("alt_banned") or (a.on and P.L("online") or P.Date(a.last))
 				surface.SetFont("Praetor.Tiny")
 				local rw = surface.GetTextSize(right) + S(16)
-				UI.Text(UI.Fit(a.name or "?", "Praetor.SmallB", w - x - rw - S(8)), UI.FontFor(a.name or "?", "Praetor.SmallB"), x, S(12), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				UI.Name(a.name or "?", "Praetor.SmallB", x, S(12), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - x - rw - S(8))
 				UI.Text(util.SteamIDFrom64(a.sid), "Praetor.Tiny", x, h - S(11), C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 				if a.ban then
 					UI.Round(w - rw - S(6), (h - S(20)) / 2, rw, S(20), S(10), Color(C.crimson.r, C.crimson.g, C.crimson.b, 60), C.crimson)

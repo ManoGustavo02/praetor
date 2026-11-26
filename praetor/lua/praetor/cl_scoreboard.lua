@@ -224,7 +224,7 @@ local function makeRow(parent, ply, onSelect)
 		local off = S(3)
 		w, h = w - off, h - off
 		if s.anim > 0.02 then UI.Round(off, off, w, h, S(12), Color(C.ink.r, C.ink.g, C.ink.b, 210 * s.anim)) end
-		local fill = sel and Color(48, 36, 88) or P.LerpColor(s.anim, C.panel2, C.hover)
+		local fill = sel and Color(48, 36, 88, 235) or P.LerpColor(s.anim, Color(C.panel2.r, C.panel2.g, C.panel2.b, 205), Color(C.hover.r, C.hover.g, C.hover.b, 230))
 		UI.Round(0, 0, w, h, S(12), fill, sel and C.bronze or P.LerpColor(s.anim, C.line, C.lineL))
 		local roleName, roleCol
 		if mode == "ttt" then roleName, roleCol = tttRole(ply) end
@@ -284,7 +284,8 @@ local function makeRow(parent, ply, onSelect)
 		for i, c in ipairs(SB.cols or {}) do
 			local val, vcol, font = c[3](ply)
 			font = font or "Praetor.BodyB"
-			UI.Text(UI.Fit(tostring(val), font, c[2] - S(8)), font, L.cols[i], h / 2, vcol or C.text, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+			-- centred in the column, like its title
+			UI.Text(UI.Fit(tostring(val), font, c[2] - S(8)), font, L.cols[i] - c[2] / 2, h / 2, vcol or C.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		end
 	end
 	row.DoClick = function() onSelect(ply) UI.Sound("click") end
@@ -365,12 +366,12 @@ local function buildCard(card, ply)
 	card.Think = nil
 	if not IsValid(ply) then
 		card.Paint = function(_, w, h)
-			UI.Tablet(0, 0, w, h, C.panel, C.line)
+			UI.Tablet(0, 0, w, h, Color(C.panel.r, C.panel.g, C.panel.b, 215), C.line)
 			UI.Text(P.L("sb_pick"), "Praetor.Small", w / 2, h / 2, C.muted, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		end
 		return
 	end
-	card.Paint = function(_, w, h) UI.Tablet(0, 0, w, h, C.panel, C.line) end
+	card.Paint = function(_, w, h) UI.Tablet(0, 0, w, h, Color(C.panel.r, C.panel.g, C.panel.b, 215), C.line) end
 	-- a new player in the card: it pops in
 	card:SetAlpha(0)
 	card:AlphaTo(255, 0.16)
@@ -584,9 +585,9 @@ function SB.Open()
 	f.Paint = function(_, pw, ph)
 		pw, ph = pw - OFF, ph - OFF
 		local mode = SB.Mode()
-		UI.Window(0, 0, pw, ph, Color(C.bg.r, C.bg.g, C.bg.b, 248))
+		UI.Window(0, 0, pw, ph, Color(C.bg.r, C.bg.g, C.bg.b, 205))
 		local bw = UI.BW()
-		draw.RoundedBoxEx(S(14), bw, bw, pw - bw * 2, HEAD - bw, C.panel, true, true, false, false)
+		draw.RoundedBoxEx(S(14), bw, bw, pw - bw * 2, HEAD - bw, Color(C.panel.r, C.panel.g, C.panel.b, 200), true, true, false, false)
 		UI.Rect(bw, HEAD, pw - bw * 2, bw, C.line)
 		-- left: server name in the display font with a purple drop
 		local name = UI.Fit(GetHostName(), "Praetor.H1", pw * 0.5)
@@ -657,7 +658,7 @@ function SB.Open()
 		UI.Text(P.Upper(P.L("col_name")), "Praetor.Tiny", L.nameX, chh / 2, C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		UI.Text(P.Upper(P.L("col_rank")), "Praetor.Tiny", L.badgeX, chh / 2, C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		for i, c in ipairs(SB.cols or {}) do
-			UI.Text(P.Upper(P.L(c[1])), "Praetor.Tiny", L.cols[i], chh / 2, C.muted, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+			UI.Text(UI.Fit(P.Upper(P.L(c[1])), "Praetor.Tiny", c[2] - S(4)), "Praetor.Tiny", L.cols[i] - c[2] / 2, chh / 2, C.muted, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		end
 	end
 
@@ -766,10 +767,21 @@ function SB.Close()
 	SB.MusicPause()
 end
 
--- ------------------------------------------------------------------ music while the TAB is open
--- Starts where it stopped last time, fades in on open and out on close.
+-- ------------------------------------------------------------------ music (TAB, menu, F4)
+-- One music for the three screens: it fades in when one of them opens, keeps
+-- playing while you go from one to another and fades out when the last closes.
+-- It starts where it stopped last time.
 local musicVar = CreateClientConVar("praetor_tab_music", "1", true, false, "Music while the Praetor TAB is open (0 = off)", 0, 1)
+CreateClientConVar("praetor_menu_music", "1", true, false, "Music while the Praetor menu is open (0 = off)", 0, 1)
+CreateClientConVar("praetor_f4_music", "1", true, false, "Music while the Praetor F4 menu is open (0 = off)", 0, 1)
 local station, stationSrc, fade, want = nil, nil, 0, false
+local owners = {}
+-- screen -> server setting + player option
+local MUSIC = {
+	tab = { "tab_music", "praetor_tab_music" },
+	menu = { "menu_music", "praetor_menu_music" },
+	f4 = { "f4_music", "praetor_f4_music" },
+}
 
 local function musicSrc()
 	local u = P.Trim(tostring(P.Setting("tab_music_url") or ""))
@@ -779,18 +791,29 @@ end
 
 local function musicVol() return math.Clamp((tonumber(P.Setting("tab_music_vol")) or 30) / 100, 0, 1) end
 
-function SB.MusicPlay()
-	want = P.Setting("tab_music") and musicVar:GetBool()
+local function allowed(who)
+	local m = MUSIC[who]
+	if not m or not P.Setting(m[1]) then return false end
+	local cv = GetConVar(m[2])
+	return not cv or cv:GetBool()
+end
+
+local function update()
+	want = false
+	for who in pairs(owners) do
+		if allowed(who) then want = true break end
+	end
 	if not want then return end
 	local src = musicSrc()
 	if IsValid(station) and stationSrc == src then
-		station:Play()
+		if station:GetState() ~= GMOD_CHANNEL_PLAYING then station:Play() end
 		return
 	end
+	if stationSrc == src and not IsValid(station) then return end -- still loading
 	if IsValid(station) then station:Stop() end
 	station, stationSrc = nil, src
 	local cb = function(ch)
-		if not IsValid(ch) then return end
+		if not IsValid(ch) then stationSrc = nil return end
 		if stationSrc ~= src then ch:Stop() return end
 		station = ch
 		ch:EnableLooping(true)
@@ -800,9 +823,19 @@ function SB.MusicPlay()
 	if src:find("^https?://") then sound.PlayURL(src, "noblock noplay", cb) else sound.PlayFile(src, "noplay", cb) end
 end
 
-function SB.MusicPause() want = false end
+-- P.Music("menu", true) when a screen opens, P.Music("menu", false) when it closes
+function P.Music(who, on)
+	owners[who] = on and true or nil
+	update()
+end
+
+function SB.MusicPlay() P.Music("tab", true) end
+function SB.MusicPause() P.Music("tab", false) end
 
 hook.Add("Think", "Praetor.TabMusic", function()
+	-- a screen that went away without saying so (removed by another addon)
+	if owners.menu and not IsValid(P.Menu) then P.Music("menu", false) end
+	if owners.f4 and not (P.F4 and IsValid(P.F4.frame)) then P.Music("f4", false) end
 	if not IsValid(station) then return end
 	local target = want and musicVol() or 0
 	fade = math.Approach(fade, target, FrameTime() * 1.2)
@@ -810,9 +843,9 @@ hook.Add("Think", "Praetor.TabMusic", function()
 	if not want and fade <= 0 and station:GetState() == GMOD_CHANNEL_PLAYING then station:Pause() end
 end)
 
-cvars.AddChangeCallback("praetor_tab_music", function(_, _, v)
-	if v == "0" then want = false end
-end, "Praetor.TabMusic")
+for _, m in pairs(MUSIC) do
+	cvars.AddChangeCallback(m[2], function() update() end, "Praetor.Music")
+end
 
 hook.Add("ScoreboardShow", "Praetor.Scoreboard", function()
 	if not P.Setting("scoreboard") then return end

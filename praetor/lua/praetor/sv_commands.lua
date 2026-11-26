@@ -98,7 +98,8 @@ function P.RunCommand(caller, def, argv, silent)
 	local vals, err, eargs = P.ParseArgs(caller, def, argv or {})
 	if not vals then
 		P.Notify(caller, err, eargs)
-		if err == "err_missing" or err == "err_internal" then P.Notify(caller, "n_usage", { V = P.Usage(def) }) end
+		-- always show how the command is written after a mistake in it
+		if err ~= "err_internal" and err ~= "err_missing_arg" then P.Notify(caller, "n_usage_u", { U = def.id }) end
 		return false
 	end
 

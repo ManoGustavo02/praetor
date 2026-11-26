@@ -2,7 +2,7 @@
 local P = Praetor
 
 P.AddCommand({ id = "screengrab", cat = "player", def = "admin", aliases = { "sg", "printscreen", "screenshot" },
-	args = { { type = "player", single = true } },
+	args = { { type = "player", single = true, self_default = false } },
 	run = function(caller, t)
 		local ply = t and t[1]
 		if not IsValid(ply) then return "err_no_target" end

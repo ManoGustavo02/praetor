@@ -8,7 +8,8 @@ local function rankCheck(caller, rank)
 end
 
 C({ id = "setrank", cat = "users", def = "superadmin", aliases = { "adduser", "giverank", "setgroup" },
-	args = { { type = "player", single = true }, { type = "rank" }, { type = "duration", hint = "time", optional = true, default = 0 } },
+	-- never on yourself by mistake ("!setrank user" must not demote you): ^ for yourself
+	args = { { type = "player", single = true, self_default = false }, { type = "rank" }, { type = "duration", hint = "time", optional = true, default = 0 } },
 	run = function(caller, t, rank, minutes)
 		if not rankCheck(caller, rank) then return "err_rank_authority" end
 		P.SetRankSID(caller, t[1]:SteamID64(), rank, minutes, "command")
@@ -31,14 +32,14 @@ C({ id = "removerank", cat = "users", def = "superadmin", aliases = { "removeuse
 	end })
 
 C({ id = "settitle", cat = "users", def = "moderator", perm = "manage_titles",
-	args = { { type = "offline", hint = "player / steamid" }, { type = "text", hint = "title", max = 32 } },
+	args = { { type = "offline", hint = "player / steamid", self_default = true }, { type = "text", hint = "title", max = 32 } },
 	run = function(caller, who, text)
 		P.SetTitleSID(who.sid, { text = text, c1 = { r = 232, g = 194, b = 122 }, fx = "none" }, caller)
 		P.Echo(caller, "e_settitle", { T = { IsValid(who.ply) and who.ply or who.name }, V = text })
 	end })
 
 C({ id = "cleartitle", cat = "users", def = "moderator", perm = "manage_titles",
-	args = { { type = "offline", hint = "player / steamid" } },
+	args = { { type = "offline", hint = "player / steamid", self_default = true } },
 	run = function(caller, who)
 		P.SetTitleSID(who.sid, nil, caller)
 		P.Echo(caller, "e_cleartitle", { T = { IsValid(who.ply) and who.ply or who.name } })
@@ -47,7 +48,7 @@ C({ id = "cleartitle", cat = "users", def = "moderator", perm = "manage_titles",
 -- settag bob "King of the Hill" ff8800 ff2200 shine
 C({ id = "settag", cat = "users", def = "admin", perm = "manage_tags",
 	args = {
-		{ type = "offline", hint = "player / steamid" },
+		{ type = "offline", hint = "player / steamid", self_default = true },
 		{ type = "text", hint = "tag", rest = false, max = 24 },
 		{ type = "text", hint = "#color", optional = true, default = "", rest = false },
 		{ type = "text", hint = "#color2", optional = true, default = "", rest = false },
@@ -66,7 +67,7 @@ C({ id = "settag", cat = "users", def = "admin", perm = "manage_tags",
 	end })
 
 C({ id = "cleartag", cat = "users", def = "admin", perm = "manage_tags",
-	args = { { type = "offline", hint = "player / steamid" } },
+	args = { { type = "offline", hint = "player / steamid", self_default = true } },
 	run = function(caller, who)
 		P.SetTagSID(who.sid, nil, caller)
 		P.Echo(caller, "e_cleartag", { T = { IsValid(who.ply) and who.ply or who.name } })

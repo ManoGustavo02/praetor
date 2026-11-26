@@ -239,7 +239,8 @@ if SERVER then
 				end
 			end
 			if #ok == 0 then
-				if #list == 1 and list[1] ~= caller then return nil, "err_authority", { S = list[1]:Nick() } end
+				if #list == 1 and list[1] == caller then return nil, "err_self" end
+				if #list == 1 then return nil, "err_authority", { S = list[1]:Nick() } end
 				return nil, "err_no_target", { S = str }
 			end
 			if arg.single and #ok > 1 then return nil, "err_many_targets", { S = str } end
@@ -364,32 +365,60 @@ if SERVER then
 	})
 
 	-- argv: list of strings typed by the caller. Returns the values or nil + error.
+	-- A player argument left out is you (except where it makes no sense, like
+	-- kicking or banning yourself: those say what is missing). "!jail 5m" also
+	-- means you: the first word is not a player but fits the next argument.
+	-- (an offline player / SteamID argument only when the command asks for it:
+	-- !settitle, !settag... but never !jobban or !removerank on yourself by mistake)
+	local function selfDefault(caller, arg)
+		if not IsValid(caller) or arg.notself or arg.noself then return false end
+		if arg.type == "player" then return arg.self_default ~= false end
+		return arg.type == "offline" and arg.self_default == true
+	end
+	local function selfValue(caller, arg)
+		if arg.type == "offline" then return { sid = caller:SteamID64(), ply = caller, name = caller:Nick() } end
+		return { caller }
+	end
 	function P.ParseArgs(caller, def, argv)
 		local out = {}
 		local n = #def.args
+		local k = 1 -- the next typed word
 		for i, arg in ipairs(def.args) do
-			local raw = argv[i]
-			if arg.type == "text" and i == n and arg.rest ~= false and #argv > i then
-				raw = table.concat(argv, " ", i)
-			end
+			local raw = argv[k]
+			local rest = arg.type == "text" and i == n and arg.rest ~= false and #argv > k
+			if rest then raw = table.concat(argv, " ", k) end
 			if raw == nil or raw == "" then
-				if arg.type == "player" and arg.self_default and IsValid(caller) then
-					out[i] = { caller }
+				if selfDefault(caller, arg) then
+					out[i] = selfValue(caller, arg)
 				elseif arg.optional then
-					if istable(arg.default) then
-						out[i] = table.Copy(arg.default)
-					else
-						out[i] = arg.default
-					end
+					if istable(arg.default) then out[i] = table.Copy(arg.default) else out[i] = arg.default end
 				else
-					return nil, "err_missing", { S = P.ArgHint(arg) }
+					return nil, "err_missing_arg", { S = "@arg_" .. P.ArgHint(arg), V = i, U = def.id }
 				end
 			else
 				local t = P.ArgTypes[arg.type]
 				if not t then return nil, "err_internal" end
 				local v, err, eargs = t.parse(caller, raw, arg)
-				if v == nil then return nil, err, eargs end
-				out[i] = v
+				local shifted = false
+				if v == nil and err == "err_no_target" and selfDefault(caller, arg) then
+					local nxt = def.args[i + 1]
+					local nt = nxt and P.ArgTypes[nxt.type]
+					-- a text next (a title, a name) only where the command asked for it
+					local okType = nxt and nxt.type ~= "player" and nxt.type ~= "offline" and (nxt.type ~= "text" or arg.self_default == true)
+					if nt and okType and nt.parse(caller, raw, nxt) ~= nil then
+						out[i] = selfValue(caller, arg)
+						shifted = true
+					end
+				end
+				if not shifted then
+					if v == nil then
+						eargs = istable(eargs) and eargs or {}
+						eargs.U = def.id
+						return nil, err, eargs
+					end
+					out[i] = v
+					k = rest and #argv + 1 or k + 1
+				end
 			end
 		end
 		return out

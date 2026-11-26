@@ -842,7 +842,7 @@ end
 -- the channels of the tabs: who gets the message
 local CHANNELS = {
 	{ id = "all", key = "chat_tab_all", icon = "players", col = function() return C.bronzeL end, ph = "chat_ph_all" },
-	{ id = "team", key = "chat_tab_team", icon = "shield", col = function() return C.laurel end, ph = "chat_ph_team", tip = "chat_tip_team" },
+	{ id = "team", key = "chat_tab_team", icon = "flag", col = function() return C.laurel end, ph = "chat_ph_team", tip = "chat_tip_team" },
 	{ id = "local", key = "chat_tab_local", icon = "bubble", col = function() return C.sky end, ph = "chat_ph_local", tip = "chat_tip_local",
 		can = function() return (P.Setting("chat_local_dist") or 0) > 0 end },
 	{ id = "staff", key = "chat_tab_staff", icon = "shield", col = function() return C.crimsonL end, ph = "chat_ph_staff", tip = "chat_tip_staff",
@@ -902,10 +902,9 @@ local function build()
 		local k = math.min(1, (RealTime() - (CB.openAt or 0)) / 0.16)
 		w, h = w - OFF, h - OFF
 		local bw = UI.BW()
-		UI.Shadow(0, 0, w, h, S(14), OFF, 190 * k)
-		UI.Round(0, 0, w, h, S(14), Color(C.bg.r, C.bg.g, C.bg.b, 232 * k), Color(C.lineL.r, C.lineL.g, C.lineL.b, 255 * k))
+		UI.Comic(0, 0, w, h, S(14), Color(C.bg.r, C.bg.g, C.bg.b, 196 * k), Color(C.lineL.r, C.lineL.g, C.lineL.b, 255 * k), OFF, 190 * k)
 		-- header strip with the channel tabs on the left
-		draw.RoundedBoxEx(S(12), bw, bw, w - bw * 2, S(40) - bw, Color(C.panel.r, C.panel.g, C.panel.b, 245 * k), true, true, false, false)
+		draw.RoundedBoxEx(S(12), bw, bw, w - bw * 2, S(40) - bw, Color(C.panel.r, C.panel.g, C.panel.b, 214 * k), true, true, false, false)
 		UI.Rect(bw, S(40), w - bw * 2, bw, Color(C.line.r, C.line.g, C.line.b, 255 * k))
 		-- players online: a chip with a breathing green dot
 		local txt = #player.GetAll() .. " " .. P.L("online")
@@ -1101,28 +1100,42 @@ local function build()
 		if IsValid(f.entry) then f.entry:RequestFocus() end
 	end
 
-	local entry = UI.Entry(bottom, P.L("chat_ph_all"), "")
+	-- the box: a frame with the channel icon on the left and the text field after
+	-- it (the field used to run under the icon, so the first letters were hidden)
+	local field = vgui.Create("DPanel", bottom)
+	field:Dock(FILL)
+	local entry = UI.Entry(field, P.L("chat_ph_all"), "")
 	entry:Dock(FILL)
-	local basePaint = entry.Paint
-	-- the hint stays while typing nothing (it used to blink when the mouse was held
-	-- on the chat) and the box always looks active while the chat is open
-	entry.keepPlaceholder = true
-	entry.forceFocus = true
-	entry.phX = S(36)
-	-- the channel icon sits inside the box, on a small disc of its colour
-	entry.Paint = function(s, w, h)
-		basePaint(s, w, h)
+	field.Paint = function(s, w, h)
+		local r = math.min(h / 2, S(12))
+		UI.Round(0, 0, w, h, r, Color(C.bronze.r, C.bronze.g, C.bronze.b, 60))
+		UI.Round(0, 0, w, h, r, Color(18, 13, 32), C.bronze)
+		-- the channel icon on a small disc of its colour
 		local col = chanDef(CB.chan).col()
 		local d = h - S(14)
 		UI.Round(S(7), S(7), d, d, d / 2, Color(col.r, col.g, col.b, 255), C.ink)
 		UI.Icon(chanDef(CB.chan).icon, S(7) + (d - 16) / 2, S(7) + (d - 16) / 2, 16)
 	end
-	entry.PerformLayout = function(s) s:SetTextInset(S(36), 0) end
+	field.PerformLayout = function(s, w, h)
+		entry:DockMargin(h - S(14) + S(12), 0, 0, 0)
+	end
+	field.OnMousePressed = function() if IsValid(entry) then entry:RequestFocus() end end
+	-- the hint stays while typing nothing (it used to blink when the mouse was held
+	-- on the chat); the frame is drawn by `field`, the entry only draws the text
+	entry.keepPlaceholder = true
+	entry.phX = S(2)
+	entry.Paint = function(s, w, h)
+		s:DrawTextEntryText(C.ivory, Color(142, 98, 255, 110), C.bronzeL)
+		if s:GetText() == "" then
+			draw.SimpleText(s:GetPlaceholderText() or "", s:GetFont(), S(2), h / 2, C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		end
+	end
+	entry.PerformLayout = function(s) s:SetTextInset(S(2), 0) end
 	entry:SetFont("Praetor.Chat")
 	entry:SetHistoryEnabled(false)
 	f.entry = entry
 	entry.histPos = 0
-	f.clickables = { tabs, bottom, replyBar, cancelReply, sendB, mic, entry, f.lines }
+	f.clickables = { tabs, bottom, replyBar, cancelReply, sendB, mic, field, entry, f.lines }
 	for _, b in ipairs(tabs.btns) do f.clickables[#f.clickables + 1] = b end
 	-- characters left, shown when close to the limit
 	entry.PaintOver = function(s, w, h)

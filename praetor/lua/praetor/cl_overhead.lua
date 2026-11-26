@@ -362,6 +362,80 @@ hook.Add("PostDrawTranslucentRenderables", "Praetor.Overhead", function(depth, s
 	end
 end)
 
+-- ------------------------------------------------------------------ aiming at a player
+-- A small card under the crosshair with the name, health and armor. Numbers are
+-- shortened (1.5K, 2M) and the bars stop at full, so a player with a million
+-- health doesn't push anything out of the card.
+local function shortNum(n)
+	n = math.floor(tonumber(n) or 0)
+	local a, sign = math.abs(n), n < 0 and "-" or ""
+	if a < 10000 then return tostring(n) end
+	local units = { { 1e12, "T" }, { 1e9, "B" }, { 1e6, "M" }, { 1e3, "K" } }
+	for _, u in ipairs(units) do
+		if a >= u[1] then
+			local v = a / u[1]
+			local str = v >= 100 and string.format("%d", math.floor(v)) or string.format("%.1f", math.floor(v * 10) / 10):gsub("%.0$", "")
+			return sign .. str .. u[2]
+		end
+	end
+	return tostring(n)
+end
+P.ShortNum = shortNum
+
+local target, targetAt, targetFade = nil, 0, 0
+hook.Add("HUDPaint", "Praetor.TargetInfo", function()
+	if not enabled:GetBool() or not P.Setting("overhead") or P.Setting("overhead_target") == false or P.HiddenIdentityMode() then return end
+	local me = LocalPlayer()
+	if not IsValid(me) then return end
+	local tr = me:GetEyeTrace()
+	local ent = tr.Entity
+	local maxDist = math.max(100, P.Setting("overhead_dist") or 700)
+	if IsValid(ent) and ent:IsPlayer() and ent:Alive() and not ent:GetNW2Bool("pr_cloak") and ent:GetColor().a > 30
+		and tr.HitPos:DistToSqr(EyePos()) < maxDist * maxDist then
+		target, targetAt = ent, RealTime()
+	end
+	-- stays a moment after you look away, then fades
+	local want = IsValid(target) and target:Alive() and RealTime() - targetAt < 0.6
+	targetFade = math.Approach(targetFade, want and 1 or 0, FrameTime() * 6)
+	if targetFade <= 0 or not IsValid(target) then return end
+	local a = targetFade
+
+	local S = P.S
+	local w, pad = S(250), S(10)
+	local hp, maxHp = target:Health(), math.max(1, target:GetMaxHealth())
+	local ar = target:Armor()
+	local maxAr = math.max(1, target.GetMaxArmor and target:GetMaxArmor() or 100)
+	local rows = { { "heart", hp, maxHp, C.crimson } }
+	if ar > 0 then rows[2] = { "vest", ar, maxAr, C.sky } end
+	local rowH = S(20)
+	local h = pad * 2 + S(22) + #rows * (rowH + S(4))
+	local x = math.floor(ScrW() / 2 - w / 2)
+	local y = math.floor(ScrH() / 2 + S(34) + (1 - a) * S(8))
+
+	UI.Comic(x, y, w, h, S(12), Color(C.panel.r, C.panel.g, C.panel.b, 225 * a), Color(C.lineL.r, C.lineL.g, C.lineL.b, 230 * a), S(3), 180 * a)
+	local nameCol = lighten(target:GetRankColor(), 40)
+	UI.Name(target:Nick(), "Praetor.SmallB", x + pad, y + pad + S(9), Color(nameCol.r, nameCol.g, nameCol.b, 255 * a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - pad * 2)
+	local ry = y + pad + S(22)
+	surface.SetFont("Praetor.SmallB")
+	-- the number column is as wide as "999.9K / 999.9K" would be, so it never runs into the bar
+	local numW = surface.GetTextSize("88888 / 88888")
+	for _, r in ipairs(rows) do
+		UI.Icon(r[1], x + pad, ry + (rowH - 16) / 2, 16, Color(255, 255, 255, 255 * a))
+		local bx = x + pad + S(22)
+		local bw = w - pad * 2 - S(22) - numW - S(8)
+		local frac = math.Clamp(r[2] / r[3], 0, 1)
+		UI.Round(bx, ry + S(5), bw, rowH - S(10), (rowH - S(10)) / 2, Color(C.bg.r, C.bg.g, C.bg.b, 230 * a), Color(C.ink.r, C.ink.g, C.ink.b, 255 * a), 2)
+		if frac > 0 then
+			UI.Round(bx + 2, ry + S(5) + 2, math.max(4, (bw - 4) * frac), rowH - S(10) - 4, (rowH - S(10) - 4) / 2, Color(r[4].r, r[4].g, r[4].b, 255 * a))
+		end
+		-- more than the maximum (admin gave 1 million): a small "+" at the end of the bar
+		if r[2] > r[3] then UI.Text("+", "Praetor.SmallB", bx + bw - S(2), ry + rowH / 2, Color(255, 255, 255, 255 * a), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER) end
+		local label = shortNum(r[2]) .. " / " .. shortNum(r[3])
+		UI.Text(UI.Fit(label, "Praetor.SmallB", numW), "Praetor.SmallB", x + w - pad, ry + rowH / 2, Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+		ry = ry + rowH + S(4)
+	end
+end)
+
 -- hide the default name hints (sandbox target id and DarkRP's info box)
 hook.Add("HUDDrawTargetID", "Praetor.Overhead", function()
 	if enabled:GetBool() and P.Setting("overhead") and not P.HiddenIdentityMode() then return false end

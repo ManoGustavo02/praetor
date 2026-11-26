@@ -66,7 +66,7 @@ local function buildDetail(detail, e)
 		local av = S(52)
 		UI.DrawAvatar(e.sid, IsValid(online) and online or nil, S(14), S(14), av, 255, IsValid(online) and UI.AvatarFrame(online) or nil, e.name)
 		local x = S(14) + av + S(12)
-		UI.Text(UI.Fit(e.name, "Praetor.H2", w - x - S(10)), UI.FontFor(e.name, "Praetor.H2"), x, S(16), C.ivory)
+		UI.Name(e.name, "Praetor.H2", x, S(16), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, w - x - S(10))
 		local style, icon = UI.RankStyle(e.rank)
 		UI.Badge(style, icon, "Praetor.Tiny", x, S(44), S(20))
 		local st = e.on and (e.dutyNow and P.L("st_on_duty") or P.L("online")) or (inactive(e) and P.L("st_inactive") or P.L("st_last", { V = P.Date(e.last) }))
@@ -92,7 +92,7 @@ local function buildDetail(detail, e)
 					UI.Text(d, "Praetor.Tiny", bx + bw / 2, top + gh - S(7), C.dim, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 				end
 			end
-			UI.Text(P.L("st_max_min", { V = maxv }), "Praetor.Tiny", gx + gw - S(6), top + S(8), C.dim, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+			UI.Text(P.L("st_max_min", { V = maxv }), "Praetor.Tiny", gx + gw - S(6), top - S(8), C.dim, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		end
 
 		-- numbers
@@ -115,7 +115,9 @@ local function buildDetail(detail, e)
 			local cy = ry + math.floor((i - 1) / 2) * S(30)
 			UI.Round(cx, cy, colW, S(26), S(5), C.panel2)
 			UI.Icon(r[1], cx + S(6), cy + (S(26) - 16) / 2, 16)
-			UI.Text(UI.Fit(r[2], "Praetor.Tiny", colW - S(70)), "Praetor.Tiny", cx + S(28), cy + S(13), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			surface.SetFont("Praetor.SmallB")
+			local vw = surface.GetTextSize(r[3])
+			UI.Text(UI.Fit(r[2], "Praetor.Tiny", colW - S(28) - vw - S(16)), "Praetor.Tiny", cx + S(28), cy + S(13), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			UI.Text(r[3], "Praetor.SmallB", cx + colW - S(8), cy + S(13), C.ivory, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		end
 		local sy = ry + math.ceil(#rows / 2) * S(30) + S(8)
@@ -205,14 +207,30 @@ P.AddTab("staff", {
 			{ "cmds", P.L("st_h_cmds"), S(70) }, { "pun", P.L("st_h_pun"), S(80) }, { "support", P.L("st_h_support"), S(84) },
 			{ "stars", P.L("st_h_stars"), S(96) }, { "last", P.L("st_h_last"), S(96) },
 		}
+		-- columns that don't fit (narrow screens, detail card open) are left out,
+		-- least important first, so nothing is cut at the right edge
+		local DROP = { 8, 7, 3, 6 }
 		local function colX(w)
-			local fixed = 0
-			for _, c in ipairs(COLS) do if c[3] > 1 then fixed = fixed + c[3] end end
+			local hidden = {}
+			local function fixedW()
+				local f = 0
+				for i, c in ipairs(COLS) do if c[3] > 1 and not hidden[i] then f = f + c[3] end end
+				return f
+			end
+			for _, i in ipairs(DROP) do
+				if w - fixedW() - S(16) >= S(170) then break end
+				hidden[i] = true
+			end
+			local fixed = fixedW()
 			local xs, x = {}, S(8)
 			for i, c in ipairs(COLS) do
-				local cw = c[3] > 1 and c[3] or math.max(S(120), w - fixed - S(16))
-				xs[i] = { x, cw }
-				x = x + cw
+				if hidden[i] then
+					xs[i] = { w + S(600), 0 } -- off the panel: drawn nowhere, never clicked
+				else
+					local cw = c[3] > 1 and c[3] or math.max(S(140), w - fixed - S(16))
+					xs[i] = { x, cw }
+					x = x + cw
+				end
 			end
 			return xs
 		end
@@ -277,7 +295,7 @@ P.AddTab("staff", {
 					local nx = xs[1][1] + av + S(10)
 					local style, icon = UI.RankStyle(e.rank)
 					local bw = UI.BadgeWidth(style, icon, "Praetor.Tiny", S(18))
-					UI.Text(UI.Fit(e.name, "Praetor.SmallB", xs[1][2] - av - S(16)), UI.FontFor(e.name, "Praetor.SmallB"), nx, S(14), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+					UI.Name(e.name, "Praetor.SmallB", nx, S(14), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, xs[1][2] - av - S(20))
 					if bw < xs[1][2] - av - S(16) then UI.Badge(style, icon, "Praetor.Tiny", nx, h - S(24), S(18)) end
 					-- hours with a small bar against the top one
 					UI.Text(hours(e.online), "Praetor.SmallB", xs[2][1], S(16), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)

@@ -10,11 +10,17 @@ function P.AddPhrases(lang, t)
 	for k, v in pairs(t) do P.Lang[lang][k] = v end
 end
 
-local function fill(text, args)
+local function fillLang(lang, text, args)
 	if not args then return text end
 	return (text:gsub("{(%w+)}", function(k)
 		local v = args[k]
 		if v == nil then return "" end
+		-- "@arg_player": a word to translate too (the server doesn't know your language)
+		if isstring(v) and v:sub(1, 1) == "@" and #v > 1 then
+			local key = v:sub(2)
+			local word = (P.Lang[lang] and P.Lang[lang][key]) or P.Lang.en[key]
+			if word then return word end
+		end
 		if istable(v) then
 			if v.n then return tostring(v.n) end
 			local names = {}
@@ -33,7 +39,7 @@ end
 -- text in a given language (used by the server for the console)
 function P.LText(lang, key, args, fallback)
 	local t = (P.Lang[lang] and P.Lang[lang][key]) or P.Lang.en[key] or fallback or key
-	return fill(t, args)
+	return fillLang(lang, t, args)
 end
 
 if CLIENT then
@@ -2826,4 +2832,112 @@ P.AddPhrases("pt", {
 	ic_merged = "O ícone tinha cores demais: {V} parecidas foram juntadas.",
 	cl_sounds_volume = "Volume dos sons da interface",
 	setsecd_darkrpui = "HUD e menu F4 próprios do Praetor para o DarkRP. Cada parte pode ser desligada.",
+})
+
+-- 1.6.0
+P.AddPhrases("en", {
+	set_menu_music = "Music while the menu is open",
+	setd_menu_music = "The same music as the TAB, while the Praetor menu is open. Each player can turn it off in their own options.",
+	set_f4_music = "Music while the F4 menu is open",
+	setd_f4_music = "The same music as the TAB, while the DarkRP F4 menu is open.",
+	cl_menu_music = "Music while the menu is open",
+	cl_f4_music = "Music while the F4 menu is open",
+	set_tab_music_url = "Music of the TAB, menu and F4 (link)",
+	set_tab_music_vol = "Music volume: TAB, menu and F4 (0 - 100)",
+	set_overhead_target = "Health and armor when aiming at a player",
+	setd_overhead_target = "A small card under the crosshair with the name, health and armor of the player you are looking at. Big numbers are shortened (1.5K, 2M).",
+	set_loading_bg = "Background (link)",
+	setd_loading_bg = "A link to a .png, .jpg or .gif, like a screenshot of your map. Empty: an animated night sky. Type none for plain animated colours.",
+	setd_loading_logo = "A link to a square picture (.png or .jpg). On imgur, upload it and paste the link (imgur.com/... works too). Empty: the first letter of the name.",
+	setd_loading_tips = "One tip per line. They change every 8 seconds and the player can skip them. Empty: Praetor's tips.",
+	err_missing_arg = "Missing: {S}. Use: {U}",
+	n_usage_u = "How to use: {U}",
+	err_no_target = "No player found for \"{S}\". Tip: ^ is you and * is everyone.",
+	err_many_targets = "\"{S}\" matches more than one player. Type more of the name.",
+	err_duration = "\"{S}\" is not a time. Examples: 30m, 2h, 1d (0 = forever).",
+	err_self = "You can't use this on yourself.",
+	err_no_ammo = "Nobody there is holding a weapon that uses ammo.",
+	err_no_vehicle = "Nobody there is in a vehicle.",
+	arg_minutes = "minutes",
+	jail_no_reason = "No reason given",
+	jail_perm = "Permanent",
+	jail_perm_sub = "No end time: only the staff can let you out.",
+	jail_sign = "JAILED",
+	jail_hud_title = "You are in jail",
+	jail_by = "Jailed by",
+	jail_total = "Sentence",
+	jail_reason = "Reason",
+	n_jailed = "{S} jailed you with no end time. Reason: {V2}",
+	n_jailed_t = "{S} jailed you for {V}. Reason: {V2}",
+	h_jail = "Locks a player in a cell. Without a time, until someone uses !unjail.",
+	h_jailtp = "Jails the players where you are looking.",
+	h_buddha = "The player takes damage but can't die.",
+	h_unbuddha = "Turns buddha off.",
+	e_buddha = "{A} turned on buddha for {T}",
+	e_unbuddha = "{A} turned off buddha for {T}",
+	h_giveammo = "Gives ammo for the weapon in the player's hands.",
+	e_giveammo = "{A} gave {V} ammo to {T}",
+	h_exitvehicle = "Takes a player out of their vehicle.",
+	e_exitvehicle = "{A} took {T} out of their vehicle",
+	h_setfrags = "Sets a player's kills.",
+	e_setfrags = "{A} set the kills of {T} to {V}",
+	h_setdeaths = "Sets a player's deaths.",
+	e_setdeaths = "{A} set the deaths of {T} to {V}",
+	h_steamid = "Shows a player's SteamID (only to you).",
+	n_steamid = "{S}: {V}",
+	h_cleardecals = "Clears blood and bullet marks for everyone.",
+	e_cleardecals = "{A} cleared the decals",
+})
+P.AddPhrases("pt", {
+	set_menu_music = "Música enquanto o menu está aberto",
+	setd_menu_music = "A mesma música do TAB, enquanto o menu do Praetor está aberto. Cada jogador pode desligar nas próprias opções.",
+	set_f4_music = "Música enquanto o menu F4 está aberto",
+	setd_f4_music = "A mesma música do TAB, enquanto o menu F4 do DarkRP está aberto.",
+	cl_menu_music = "Música enquanto o menu está aberto",
+	cl_f4_music = "Música enquanto o menu F4 está aberto",
+	set_tab_music_url = "Música do TAB, menu e F4 (link)",
+	set_tab_music_vol = "Volume da música: TAB, menu e F4 (0 - 100)",
+	set_overhead_target = "Vida e colete ao mirar num jogador",
+	setd_overhead_target = "Um cartão pequeno embaixo da mira com o nome, a vida e o colete do jogador que você está olhando. Números grandes são encurtados (1.5K, 2M).",
+	set_loading_bg = "Fundo (link)",
+	setd_loading_bg = "Um link de .png, .jpg ou .gif, tipo um print do seu mapa. Vazio: céu noturno animado. Escreva none para só as cores animadas.",
+	setd_loading_logo = "Um link de uma imagem quadrada (.png ou .jpg). No imgur, é só enviar a imagem e colar o link (imgur.com/... também funciona). Vazio: a primeira letra do nome.",
+	setd_loading_tips = "Uma dica por linha. Trocam a cada 8 segundos e o jogador pode pular. Vazio: as dicas do Praetor.",
+	err_missing_arg = "Faltou informar: {S}. Use assim: {U}",
+	n_usage_u = "Como usar: {U}",
+	err_no_target = "Nenhum jogador encontrado para \"{S}\". Dica: ^ é você e * são todos.",
+	err_many_targets = "\"{S}\" bate com mais de um jogador. Escreva mais do nome.",
+	err_duration = "\"{S}\" não é um tempo. Exemplos: 30m, 2h, 1d (0 = para sempre).",
+	err_self = "Você não pode usar isso em si mesmo.",
+	err_no_ammo = "Ninguém ali está segurando uma arma que usa munição.",
+	err_no_vehicle = "Ninguém ali está em um veículo.",
+	arg_minutes = "minutos",
+	jail_no_reason = "Sem motivo informado",
+	jail_perm = "Permanente",
+	jail_perm_sub = "Sem tempo para acabar: só a staff pode te soltar.",
+	jail_sign = "PRESO",
+	jail_hud_title = "Você está preso",
+	jail_by = "Preso por",
+	jail_total = "Pena",
+	jail_reason = "Motivo",
+	n_jailed = "{S} te prendeu sem tempo para acabar. Motivo: {V2}",
+	n_jailed_t = "{S} te prendeu por {V}. Motivo: {V2}",
+	h_jail = "Prende o jogador numa cela. Sem tempo, fica preso até alguém usar !unjail.",
+	h_jailtp = "Prende os jogadores no lugar para onde você está olhando.",
+	h_buddha = "O jogador leva dano, mas não morre.",
+	h_unbuddha = "Desliga o buddha.",
+	e_buddha = "{A} ativou o buddha em {T}",
+	e_unbuddha = "{A} desativou o buddha em {T}",
+	h_giveammo = "Dá munição para a arma que o jogador está segurando.",
+	e_giveammo = "{A} deu {V} de munição para {T}",
+	h_exitvehicle = "Tira o jogador do veículo.",
+	e_exitvehicle = "{A} tirou {T} do veículo",
+	h_setfrags = "Muda as kills do jogador.",
+	e_setfrags = "{A} mudou as kills de {T} para {V}",
+	h_setdeaths = "Muda as mortes do jogador.",
+	e_setdeaths = "{A} mudou as mortes de {T} para {V}",
+	h_steamid = "Mostra a SteamID de um jogador (só para você).",
+	n_steamid = "{S}: {V}",
+	h_cleardecals = "Limpa sangue e marcas de tiro para todos.",
+	e_cleardecals = "{A} limpou as marcas do mapa",
 })

@@ -7,7 +7,7 @@ local function reasonArg() return { type = "text", hint = "reason", optional = t
 -- ------------------------------------------------------------------ moderation
 
 C({ id = "kick", cat = "moderation", def = "moderator", preset = true,
-	args = { { type = "player", single = true }, reasonArg() },
+	args = { { type = "player", single = true, noself = true }, reasonArg() },
 	run = function(caller, t, reason)
 		local ply = t[1]
 		P.Echo(caller, reason ~= "" and "e_kick_r" or "e_kick", { T = t, V = reason })
@@ -17,7 +17,8 @@ C({ id = "kick", cat = "moderation", def = "moderator", preset = true,
 	end })
 
 C({ id = "ban", cat = "moderation", def = "admin", preset = true,
-	args = { { type = "player", single = true }, { type = "duration", hint = "time", optional = true, default = 0 }, reasonArg() },
+	-- banning yourself would lock you out: never, not even with ^
+	args = { { type = "player", single = true, notself = true }, { type = "duration", hint = "time", optional = true, default = 0 }, reasonArg() },
 	run = function(caller, t, minutes, reason)
 		local ply = t[1]
 		if ply:IsBot() then return "err_bot" end
@@ -52,7 +53,7 @@ C({ id = "unban", cat = "moderation", def = "admin",
 	end })
 
 C({ id = "warn", cat = "moderation", def = "moderator", preset = true,
-	args = { { type = "player", single = true }, { type = "text", hint = "reason" } },
+	args = { { type = "player", single = true, noself = true }, { type = "text", hint = "reason" } },
 	run = function(caller, t, reason)
 		P.AddWarn(t[1]:SteamID64(), t[1]:Nick(), reason, 1, caller)
 		P.Echo(caller, "e_warn", { T = t, V = reason })
@@ -87,10 +88,30 @@ C({ id = "ungag", cat = "moderation", def = "moderator",
 	end })
 
 C({ id = "jail", cat = "moderation", def = "moderator", preset = true,
-	args = { { type = "player" }, { type = "duration", hint = "time", optional = true, default = 5 }, reasonArg() },
+	-- no time = until someone uses !unjail
+	args = { { type = "player" }, { type = "duration", hint = "time", optional = true, default = 0 }, reasonArg() },
 	run = function(caller, t, minutes, reason)
-		for _, p in ipairs(t) do P.Jail(p, minutes, caller) end
-		P.Echo(caller, minutes > 0 and "e_jail_t" or "e_jail", { T = t, V = P.FormatDuration(minutes), V2 = reason })
+		for _, p in ipairs(t) do P.Jail(p, minutes, caller, nil, reason) end
+		P.Echo(caller, minutes > 0 and "e_jail_t" or "e_jail", { T = t, V = P.FormatDuration(minutes), V2 = reason ~= "" and reason or "@jail_no_reason" })
+	end })
+
+-- jails the players where you are looking (one cell each, side by side)
+C({ id = "jailtp", cat = "moderation", def = "admin", aliases = { "tpjail" },
+	args = { { type = "player" }, { type = "duration", hint = "time", optional = true, default = 0 }, reasonArg() },
+	run = function(caller, t, minutes, reason)
+		if not IsValid(caller) then return "err_console" end
+		local tr = util.TraceLine({ start = caller:EyePos(), endpos = caller:EyePos() + caller:GetAimVector() * 32768, filter = caller, mask = MASK_PLAYERSOLID_BRUSHONLY })
+		-- a little away from what you aimed at (a wall), then down to the floor
+		local base = tr.HitPos + tr.HitNormal * 64
+		local right = caller:GetRight()
+		right.z = 0
+		right:Normalize()
+		for i, p in ipairs(t) do
+			local off = (i - 1 - (#t - 1) / 2) * 120
+			P.SaveReturn(p)
+			P.Jail(p, minutes, caller, base + right * off, reason)
+		end
+		P.Echo(caller, minutes > 0 and "e_jail_t" or "e_jail", { T = t, V = P.FormatDuration(minutes), V2 = reason ~= "" and reason or "@jail_no_reason" })
 	end })
 
 C({ id = "unjail", cat = "moderation", def = "moderator",
@@ -157,7 +178,7 @@ C({ id = "goto", cat = "teleport", def = "moderator", preset = true,
 	end })
 
 C({ id = "bring", cat = "teleport", def = "moderator", preset = true,
-	args = { { type = "player" } },
+	args = { { type = "player", notself = true } },
 	run = function(caller, t)
 		if not IsValid(caller) then return "err_console" end
 		for _, p in ipairs(t) do

@@ -81,12 +81,14 @@ do
 		end
 		if not en then fill = ColorAlpha(fill, 90) txt = ColorAlpha(txt, 90) iconCol = Color(255, 255, 255, 90) end
 		-- room for the shadow under the button
+		-- (and room above it: the button lifts on hover and used to lose its top edge)
 		local off = flat and 0 or math.max(2, S(3))
-		local bh = h - off
-		local lift = en and math.floor(self.hov * 1.5 + 0.5) or 0
-		local dy = math.floor(self.prs * off + 0.5) - lift * (1 - self.prs)
+		local top = flat and 0 or 2
+		local bh = h - off - top
+		local lift = en and math.floor(self.hov * 2 + 0.5) or 0
+		local dy = top + math.floor(self.prs * off + 0.5) - math.floor(lift * (1 - self.prs) + 0.5)
 		local r = bh <= S(42) and bh / 2 or S(12)
-		if not flat then UI.Round(0, off, w, bh, r, Color(C.ink.r, C.ink.g, C.ink.b, en and 210 or 90)) end
+		if not flat then UI.Round(0, top + off, w, bh, r, Color(C.ink.r, C.ink.g, C.ink.b, en and 210 or 90)) end
 		-- on / off buttons: a small switch in front of the label says the state
 		if k == "toggle_on" or k == "toggle_off" then
 			local on = k == "toggle_on"
@@ -1041,4 +1043,36 @@ function UI.FramedAvatar(parent, size, ply, sid)
 	a:SetMouseInputEnabled(false)
 	holder.avatar = a
 	return holder
+end
+
+-- Points a DModelPanel at its model: the model turns around its own centre (speed
+-- in degrees per second) and the camera is far enough back to always show all of it.
+function UI.FitModel(mp, fov, speed)
+	local ent = mp:GetEntity()
+	if not IsValid(ent) then return false end
+	local mn, mx = ent:GetRenderBounds()
+	local center = (mn + mx) / 2
+	local radius = math.max((mx - mn):Length() / 2, 4)
+	fov = fov or 34
+	mp:SetFOV(fov)
+	mp:SetLookAt(Vector(0, 0, 0))
+	speed = speed or 30
+	local dir = Vector(1, 0.9, 0.5):GetNormalized()
+	local tf = math.tan(math.rad(fov / 2))
+	mp.LayoutEntity = function(s2, e)
+		-- the fov is horizontal; the vertical half angle follows the panel's shape.
+		-- the tighter of the two (also read as a 4:3 fov, to be safe) decides the distance
+		local w, h = s2:GetSize()
+		local asp = math.max(w, 1) / math.max(h, 1)
+		local half = math.min(math.atan(tf), math.atan(tf / asp), math.atan(tf * 0.75), math.atan(tf * 0.75 * asp))
+		local dist = radius / math.sin(half) * 1.18
+		s2:SetCamPos(dir * dist)
+		s2.FarZ = dist * 4 + 512
+		local a = Angle(0, RealTime() * speed % 360, 0)
+		e:SetAngles(a)
+		local c = Vector(center.x, center.y, center.z)
+		c:Rotate(a)
+		e:SetPos(-c)
+	end
+	return true
 end

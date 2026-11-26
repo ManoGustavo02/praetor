@@ -38,7 +38,7 @@ function P.AddWarn(sid, name, reason, points, actor)
 				P.Echo(nil, "e_autokick", { T = { target }, V = after })
 				target:Kick(why)
 			elseif rule.act == "jail" then
-				P.Jail(target, rule.min, nil)
+				P.Jail(target, rule.min, nil, nil, why)
 				P.Echo(nil, "e_autojail", { T = { target }, V = after, V2 = P.FormatDuration(rule.min) })
 			elseif rule.act == "mute" then
 				P.SetMute(target, rule.min, nil)

@@ -27,22 +27,17 @@ local function drawItemIcon(info, kind, x, y, size, alpha)
 	UI.Icon(P.RestrictKindIcon[kind] or "box", x + (size - isz) / 2, y + (size - isz) / 2, isz, Color(255, 255, 255, alpha or 255))
 end
 
--- a model preview that fits the camera to the model and turns slowly
+-- a model preview that turns slowly around its own centre, with the camera far
+-- enough back that the whole model is always in view (with some room around it)
 local function modelPreview(parent, mdl)
 	local mp = vgui.Create("DModelPanel", parent)
 	mp:SetModel(mdl)
 	local ent = mp:GetEntity()
 	if not IsValid(ent) then mp:Remove() return nil end
-	local mn, mx = ent:GetRenderBounds()
-	local size = math.max(mx.x - mn.x, mx.y - mn.y, mx.z - mn.z, 1)
-	local center = (mn + mx) / 2
-	mp:SetFOV(40)
-	mp:SetCamPos(center + Vector(size * 1.25, size * 1.25, size * 0.6))
-	mp:SetLookAt(center)
+	UI.FitModel(mp, 34, 30)
 	mp:SetAmbientLight(Color(80, 80, 90))
 	mp:SetDirectionalLight(BOX_TOP, Color(255, 255, 255))
 	mp:SetDirectionalLight(BOX_FRONT, Color(170, 170, 190))
-	mp.LayoutEntity = function(s2, e) e:SetAngles(Angle(0, RealTime() * 30 % 360, 0)) end
 	return mp
 end
 

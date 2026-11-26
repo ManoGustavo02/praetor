@@ -1,3 +1,40 @@
+[h2]1.6.0[/h2]
+[b]English[/b]
+A real jail, smarter commands, a new loading screen and a careful pass over the whole interface.
+[list]
+[*][b]Jail[/b]: the player is locked in a real cell (bars that block players and shots). It can't be moved or removed and comes back after a map cleanup. The jailed player sees a card with the time left counting down live (or [b]Permanent[/b]), who jailed them, the sentence and the reason. Everyone else sees a sign over the cell with the name, the time and the reason. Without a time the jail only ends with !unjail.
+[*][b]!jailtp[/b]: jails the players where you are looking.
+[*][b]Commands without a name are on you[/b]: !jail, !god, !hp 500, !jail 5m spam... Commands where that makes no sense (kick, ban, warn) tell you what is missing. !setrank always asks for the name, so nobody changes their own rank by mistake.
+[*]Using your own name on !goto, !bring, !spectate or !pm now says you can't use it on yourself, instead of "player not found".
+[*][b]Clearer errors[/b]: they say what is missing and how the command is written, for example "Missing: player. Use: !kick <player> [reason]". The "not found" message reminds that ^ is you and * is everyone.
+[*][b]New commands[/b] (from SAM / ULX): !buddha and !unbuddha (takes damage but doesn't die), !giveammo, !exitvehicle, !setfrags, !setdeaths, !steamid and !cleardecals.
+[*][b]Health and armor[/b] of the player you are looking at, in a small card under the crosshair. Big numbers are shortened (1.5K, 2M) and never run out of the card. It can be turned off in Settings.
+[*][b]Loading screen redone[/b]: an animated starry sky as the default background; the step you are in, the file being downloaded and its type, files done out of the total, files left, time spent, an estimate of the time left and the last files downloaded. It fits any screen size: big numbers get a smaller font and long names are cut with "...". The logo and the background accept imgur links (the imgur.com/... page link works too).
+[*][b]Music[/b]: the TAB music also plays while the menu or the F4 menu is open. Each one can be turned off.
+[*]Fixed in the menu and F4: content cut on the left under the category bar, buttons losing their top edge on hover, the "Save this spot as a room" button cut, columns of the staff panel running into each other (columns hide when there is no room) and the "Close to going up" title over its subtitle.
+[*]TAB: column titles lined up with their values (K/D, played, ping) and a more see-through background.
+[*]Chat: the icon in the text box no longer covers what you type, the Team tab has its own icon and the background is more see-through.
+[*]Restrictions and Logs: the prop preview now shows the whole model, turning around its own centre.
+[/list]
+
+[b]Português[/b]
+Jail de verdade, comandos mais espertos, tela de loading nova e uma revisão cuidadosa da interface inteira.
+[list]
+[*][b]Jail[/b]: o jogador fica preso numa cela de verdade (grades que bloqueiam jogadores e tiros). Ela não pode ser movida nem removida e volta depois de uma limpeza do mapa. Quem está preso vê um cartão com o tempo que falta contando ao vivo (ou [b]Permanente[/b]), quem prendeu, a pena e o motivo. Os outros veem uma placa em cima da cela com o nome, o tempo e o motivo. Sem tempo, a jail só acaba com !unjail.
+[*][b]!jailtp[/b]: prende os jogadores no lugar para onde você está olhando.
+[*][b]Comando sem nome é em você[/b]: !jail, !god, !hp 500, !jail 5m spam... Comandos em que isso não faz sentido (kick, ban, warn) dizem o que faltou. O !setrank sempre pede o nome, para ninguém mudar o próprio cargo sem querer.
+[*]Usar o próprio nome no !goto, !bring, !spectate ou !pm agora avisa que não dá para usar em si mesmo, em vez de "jogador não encontrado".
+[*][b]Erros mais claros[/b]: dizem o que faltou e como o comando é escrito, por exemplo "Faltou informar: jogador. Use assim: !kick <jogador> [motivo]". O aviso de "não encontrado" lembra que ^ é você e * são todos.
+[*][b]Comandos novos[/b] (do SAM / ULX): !buddha e !unbuddha (leva dano, mas não morre), !giveammo, !exitvehicle, !setfrags, !setdeaths, !steamid e !cleardecals.
+[*][b]Vida e colete[/b] do jogador que você está olhando, num cartão pequeno embaixo da mira. Números grandes são encurtados (1.5K, 2M) e nunca saem do cartão. Dá para desligar nas Configurações.
+[*][b]Tela de loading refeita[/b]: céu estrelado animado como fundo padrão; a etapa em que você está, o arquivo que está baixando e o tipo dele, arquivos baixados do total, quantos faltam, tempo passado, estimativa do tempo restante e os últimos arquivos baixados. Se adapta a qualquer tamanho de tela: números grandes ganham fonte menor e nomes compridos são cortados com "...". A logo e o fundo aceitam link do imgur (o link da página imgur.com/... também funciona).
+[*][b]Música[/b]: a música do TAB também toca com o menu ou o menu F4 aberto. Cada um pode ser desligado.
+[*]Corrigido no menu e no F4: conteúdo cortado à esquerda embaixo da barra de categorias, botões perdendo a borda de cima ao passar o mouse, o botão "Salvar este lugar como sala" cortado, colunas do painel da staff entrando umas nas outras (colunas somem quando não há espaço) e o título "Perto de subir" por cima do subtítulo.
+[*]TAB: títulos das colunas alinhados com os valores (K/D, jogado, ping) e fundo mais transparente.
+[*]Chat: o ícone na caixa de texto não cobre mais o que você digita, a aba Time tem ícone próprio e o fundo está mais transparente.
+[*]Restrições e Logs: a prévia de props agora mostra o modelo inteiro, girando em torno do próprio centro.
+[/list]
+
 [h2]1.5.1[/h2]
 [b]English[/b]
 [list]

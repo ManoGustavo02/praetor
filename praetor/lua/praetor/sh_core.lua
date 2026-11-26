@@ -60,6 +60,7 @@ P.Defaults = {
 	overhead_hours    = true,
 	overhead_staff    = true,       -- show the "on duty" seal
 	overhead_voice    = true,       -- microphone when the player talks
+	overhead_target   = true,       -- aiming at a player shows their health and armor under the crosshair
 	-- moderation
 	afk_time          = 300,
 	warn_decay_days   = 30,
@@ -145,6 +146,8 @@ P.Defaults = {
 	loading_vol       = 40,         -- 0 - 100
 	-- scoreboard music
 	tab_music         = true,       -- music while the TAB is open (each player can turn it off)
+	menu_music        = true,       -- the same music while the Praetor menu is open
+	f4_music          = true,       -- and while the DarkRP F4 menu is open
 	tab_music_url     = "",         -- empty = Praetor's music; or a link to an .mp3 / .ogg
 	tab_music_vol     = 30,         -- 0 - 100
 	ac_net            = true,       -- net message flood

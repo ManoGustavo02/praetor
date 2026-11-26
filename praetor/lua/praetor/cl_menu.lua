@@ -242,6 +242,7 @@ function P.OpenMenu(tabId, data)
 	end
 	f:Show()
 	f:MakePopup()
+	if P.Music then P.Music("menu", true) end
 	local id = tabId
 	if not id or not P.Tabs[id] or (P.Tabs[id].can and not P.Tabs[id].can()) then id = f.current or "players" end
 	f:SelectTab(id, data)
@@ -252,6 +253,7 @@ function P.CloseMenu()
 		UI.Sound("close")
 		P.Menu:Remove()
 	end
+	if P.Music then P.Music("menu", false) end
 	P.Request("logs_watch", { on = false })
 end
 
@@ -385,7 +387,7 @@ function P.BuildMenu()
 							UI.Round(grow, 0, bw - grow * 2, bh, bh / 2, Color(C.bronze.r, C.bronze.g, C.bronze.b, a), Color(C.ink.r, C.ink.g, C.ink.b, a))
 						end
 						if s.anim > 0.01 and not on then
-							UI.Round(0, 0, bw, bh, bh / 2, Color(255, 255, 255, 14 * s.anim))
+							UI.Round(0, 0, bw, bh, bh / 2, Color(C.bronze.r, C.bronze.g, C.bronze.b, 46 * s.anim))
 						end
 						local nudge = math.floor(s.anim * S(3))
 						UI.Icon(t.icon, S(12) + nudge, (bh - 20) / 2, 20, on and color_white or Color(255, 255, 255, 200))
@@ -420,20 +422,20 @@ function P.BuildMenu()
 		panel.Paint = nil
 		self.tab = panel
 		local ok, err = pcall(t.build, panel, data or {})
-		-- the new tab slides in from the right and fades in
+		-- the new tab slides in from the right and fades in. Runs on its own hook
+		-- (tabs may set panel.Think) and never overshoots: a negative margin left the
+		-- left edge of some tabs cut under the sidebar.
 		panel:SetAlpha(0)
-		local born = RealTime()
-		local oldThink = panel.Think
-		panel.Think = function(s2, ...)
-			local k = math.min(1, (RealTime() - born) / 0.24)
-			s2:SetAlpha(255 * math.min(1, k * 1.6))
-			s2:DockMargin(math.floor((1 - UI.EaseBack(k)) * S(28)), 0, 0, 0)
-			if k >= 1 then
-				s2:DockMargin(0, 0, 0, 0)
-				s2.Think = oldThink
-			end
-			if oldThink then return oldThink(s2, ...) end
-		end
+		panel:DockMargin(S(24), 0, 0, 0)
+		UI.Tween(panel, 0.22, function(p2, k)
+			local e = 1 - (1 - k) ^ 3
+			p2:SetAlpha(255 * math.min(1, k * 1.6))
+			p2:DockMargin(math.max(0, math.floor((1 - e) * S(24))), 0, 0, 0)
+		end, function(p2)
+			p2:SetAlpha(255)
+			p2:DockMargin(0, 0, 0, 0)
+			if IsValid(content) then content:InvalidateLayout(true) end
+		end)
 		if not ok then
 			ErrorNoHalt("[Praetor] tab '" .. id .. "': " .. tostring(err) .. "\n")
 			local l = UI.Label(panel, "Error: " .. tostring(err), "Praetor.Small", C.crimsonL)

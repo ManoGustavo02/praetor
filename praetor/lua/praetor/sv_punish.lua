@@ -46,35 +46,129 @@ hook.Add("PlayerCanHearPlayersVoice", "Praetor.Gag", function(listener, talker)
 end)
 
 -- ------------------------------------------------------------------ jail
+-- A real cell (the praetor_jail entity) around the player. Without a time the
+-- jail has no end: only !unjail lets the player out. The player sees how long is
+-- left (live), who jailed them and why; the others see it on a sign over the cell.
+-- Who and why are kept in data/praetor/jail_info.txt, so they survive a reconnect.
+
+local INFO_FILE = "praetor/jail_info.txt"
+local jailInfo
+local function infoTable()
+	if not jailInfo then
+		jailInfo = util.JSONToTable(file.Read(INFO_FILE, "DATA") or "") or {}
+	end
+	return jailInfo
+end
+local function saveInfo()
+	file.CreateDir("praetor")
+	file.Write(INFO_FILE, util.TableToJSON(infoTable()))
+end
 
 function P.IsJailed(ply) return ply.PraetorJail ~= nil end
 
-function P.Jail(ply, minutes, actor, pos)
+local function removeCell(ply)
+	local j = ply.PraetorJail
+	if j and IsValid(j.cell) then j.cell:Remove() end
+end
+
+local function buildCell(ply)
+	local j = ply.PraetorJail
+	if not j then return end
+	if IsValid(j.cell) then j.cell:Remove() end
+	local cell = ents.Create("praetor_jail")
+	if not IsValid(cell) then return end
+	cell:SetPos(j.pos)
+	cell:SetAngles(Angle(0, 0, 0))
+	cell:Spawn()
+	cell:SetPrisoner(ply)
+	j.cell = cell
+	-- anyone else standing where the bars go is pushed out, so nobody ends up inside a wall
+	for _, o in ipairs(player.GetAll()) do
+		if o ~= ply and o:Alive() and not o.PraetorJail then
+			local d = o:GetPos() - j.pos
+			if math.abs(d.x) < 74 and math.abs(d.y) < 74 and d.z > -40 and d.z < 120 then
+				local out = Vector(d.x, d.y, 0)
+				if out:LengthSqr() < 1 then out = Vector(1, 0, 0) end
+				out:Normalize()
+				o:SetPos(j.pos + out * 110 + Vector(0, 0, 4))
+			end
+		end
+	end
+end
+
+-- the cell stands on the ground below the spot (not in the air if they were jumping)
+function P.JailGround(pos, ignore)
+	local tr = util.TraceLine({ start = pos + Vector(0, 0, 16), endpos = pos - Vector(0, 0, 2048), filter = ignore, mask = MASK_PLAYERSOLID_BRUSHONLY })
+	return tr.Hit and tr.HitPos or pos
+end
+
+local function actorName(actor)
+	if actor == false then return "" end
+	if actor == nil then return "Praetor" end -- automatic (warning points, custom commands)
+	if IsValid(actor) and actor:IsPlayer() then return actor:Nick() end
+	return "Console"
+end
+
+function P.Jail(ply, minutes, actor, pos, reason)
 	if ply:InVehicle() then ply:ExitVehicle() end
 	if ply:GetMoveType() == MOVETYPE_NOCLIP then ply:SetMoveType(MOVETYPE_WALK) end
-	pos = pos or ply:GetPos()
+	local restoring = actor == false
+	pos = P.JailGround(pos or ply:GetPos(), ply)
 	local u = untilFrom(minutes or 0)
+	removeCell(ply)
+	local sid = ply:SteamID64()
+	local info = infoTable()[sid or ""] or {}
+	if not restoring then
+		info = { by = actorName(actor), r = P.Str(tostring(reason or ""), 120), len = (minutes or 0) * 60 }
+		if sid and not ply:IsBot() then infoTable()[sid] = info saveInfo() end
+	end
 	ply.PraetorJail = { pos = pos, u = u }
 	ply:SetNW2Vector("pr_jailpos", pos)
 	ply:SetNW2Bool("pr_jailed", true)
 	ply:SetNW2Int("pr_jailu", u)
+	-- the time left goes as CurTime (the same clock on every side), not os.time
+	local left = u > 0 and (u - os.time()) or 0
+	ply:SetNW2Float("pr_jailend", u > 0 and (CurTime() + left) or 0)
+	ply:SetNW2Float("pr_jaillen", u > 0 and math.max(left, tonumber(info.len) or 0) or 0)
+	ply:SetNW2String("pr_jailby", tostring(info.by or ""))
+	ply:SetNW2String("pr_jailr", tostring(info.r or ""))
+	ply:SetVelocity(-ply:GetVelocity())
+	ply:SetPos(pos)
 	ply:StripWeapons()
+	buildCell(ply)
 	if not ply:IsBot() then P.DB.Query("UPDATE praetor_users SET jail_until = ? WHERE sid = ?", u, ply:SteamID64()) end
-	if actor ~= false then
+	if not restoring then
 		P.Log("punish", "l_jail", { A = P.LogPly(actor), T = P.LogPly(ply), V = minutes and minutes > 0 and P.FormatDuration(minutes) or nil }, { actor, ply })
+		P.Notify(ply, u > 0 and "n_jailed_t" or "n_jailed", { S = info.by ~= "" and info.by or "?", V = minutes and minutes > 0 and P.FormatDuration(minutes) or "", V2 = info.r ~= "" and info.r or "@jail_no_reason" }, "warn")
 	end
 end
 
 function P.Unjail(ply, actor)
 	if not ply.PraetorJail then return end
+	removeCell(ply)
 	ply.PraetorJail = nil
 	ply:SetNW2Bool("pr_jailed", false)
+	local sid = ply:SteamID64()
+	if sid and infoTable()[sid] then infoTable()[sid] = nil saveInfo() end
 	if not ply:IsBot() then P.DB.Query("UPDATE praetor_users SET jail_until = 0 WHERE sid = ?", ply:SteamID64()) end
 	P.Log("punish", "l_unjail", { A = P.LogPly(actor), T = P.LogPly(ply) }, { actor, ply })
 	if ply:Alive() then
 		hook.Run("PlayerLoadout", ply)
 	end
 end
+
+-- the cell can't be touched, and comes back after a map cleanup
+local function isCell(ent) return IsValid(ent) and ent:GetClass() == "praetor_jail" end
+hook.Add("PhysgunPickup", "Praetor.JailCell", function(_, ent) if isCell(ent) then return false end end)
+hook.Add("CanTool", "Praetor.JailCell", function(_, tr) if tr and isCell(tr.Entity) then return false end end)
+hook.Add("CanProperty", "Praetor.JailCell", function(_, _, ent) if isCell(ent) then return false end end)
+hook.Add("GravGunPickupAllowed", "Praetor.JailCell", function(_, ent) if isCell(ent) then return false end end)
+hook.Add("PostCleanupMap", "Praetor.JailCell", function()
+	for _, ply in ipairs(player.GetAll()) do
+		if ply.PraetorJail then buildCell(ply) end
+	end
+end)
+hook.Add("PlayerDisconnected", "Praetor.JailCell", function(ply) removeCell(ply) end)
 
 local function jailBlock(ply) if ply.PraetorJail then return false end end
 for _, h in ipairs({ "PlayerSpawnProp", "PlayerSpawnSENT", "PlayerSpawnSWEP", "PlayerSpawnVehicle", "PlayerSpawnNPC",
