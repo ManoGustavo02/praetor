@@ -50,7 +50,7 @@ timer.Create("Praetor.StaffTime", 30, 0, function()
 		if P.IsStaff(p) then
 			local sid = p:SteamID64()
 			P.StaffAdd(sid, "online", 30)
-			if p:GetNW2Bool("pr_duty", false) then P.StaffAdd(sid, "duty", 30) end
+			if P.DutyTick then P.DutyTick(p) end
 		end
 	end
 end)
@@ -95,6 +95,8 @@ end)
 local function dayAgo(n) return tonumber(os.date("%Y%m%d", os.time() - n * 86400)) end
 
 P.Receive("staff_stats", { perm = "staff_stats", rate = 1 }, function(ply, data)
+	-- the time on duty up to this second
+	if P.DutyTick then for _, p in ipairs(player.GetHumans()) do P.DutyTick(p) end end
 	flush()
 	local days = math.floor(tonumber(data.days) or 7)
 	if days ~= 1 and days ~= 7 and days ~= 30 and days ~= 0 then days = 7 end

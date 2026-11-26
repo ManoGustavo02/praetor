@@ -156,11 +156,21 @@ C({ id = "clearprops", cat = "moderation", def = "moderator", aliases = { "clean
 		P.Echo(caller, "e_clearprops", { T = t, V = n })
 	end })
 
+-- !spectate <player> = their eyes; !spectate alone = free camera; !unspectate (or Backspace) = back
 C({ id = "spectate", cat = "moderation", def = "moderator", aliases = { "spec" }, preset = true,
-	args = { { type = "player", single = true, higher = true, notself = true } },
+	args = { { type = "player", single = true, higher = true, notself = true, optional = true } },
 	run = function(caller, t)
 		if not IsValid(caller) then return "err_console" end
-		P.StartSpectate(caller, t[1])
+		if not caller:Alive() then return "err_dead" end
+		P.StartSpectate(caller, t and t[1] or nil)
+	end })
+
+C({ id = "unspectate", cat = "moderation", def = "moderator", aliases = { "unspec", "specoff" }, perm = "spectate",
+	args = {},
+	run = function(caller)
+		if not IsValid(caller) then return "err_console" end
+		if not P.IsSpectating(caller) then return "err_not_spectating" end
+		P.StopSpectate(caller)
 	end })
 
 -- ------------------------------------------------------------------ teleport

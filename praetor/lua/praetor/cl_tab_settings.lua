@@ -55,7 +55,8 @@ local SECTIONS = {
 	} },
 	{ "moderation", {
 		{ "afk_time", "number" }, { "warn_decay_days", "number" }, { "warn_rules", "rules" },
-		{ "physgun_players", "bool" }, { "physgun_freeze", "bool" },
+		{ "physgun_players", "bool" }, { "physgun_freeze", "bool" }, { "duty_strip", "bool" }, { "duty_baton", "bool" },
+		{ "duty_cloak", "bool" }, { "esp_block", "bool" },
 	} },
 	{ "logs", {
 		{ "log_days", "number" }, { "log_damage", "bool" }, { "log_props", "bool" },

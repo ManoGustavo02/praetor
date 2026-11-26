@@ -274,6 +274,15 @@ local function buildEditor(right, it, canManage, onDeleted)
 	end
 
 	-- buttons
+	-- it needs a title, a text or a link (a valid one): otherwise say what is missing
+	local function empty()
+		local link = P.Trim(it.link or "")
+		if P.Trim(it.title or "") ~= "" or P.Trim(it.text or "") ~= "" or link:match("^https?://%S+$") then return false end
+		UI.Sound("error")
+		P.Toast(P.L("an_empty_t"), P.L("an_empty"), "warn", 4)
+		title:RequestFocus()
+		return true
+	end
 	local function cleanCopy()
 		local c = table.Copy(it)
 		c.link = P.Trim(c.link or "") ~= "" and P.Trim(c.link) or nil
@@ -281,14 +290,14 @@ local function buildEditor(right, it, canManage, onDeleted)
 	end
 	if canManage then
 		local save = UI.Button(foot, P.L("ui_save"), "primary", "check", function()
-			if P.Trim(it.title) == "" and P.Trim(it.text) == "" then UI.Sound("error") text:RequestFocus() return end
+			if empty() then return end
 			P.Request("ann_save", { it = cleanCopy() })
 		end)
 		save:Dock(RIGHT)
 		save:SetWide(S(130))
 	end
 	local send = UI.Button(foot, P.L("an_send"), "ghost", "send", function()
-		if P.Trim(it.title) == "" and P.Trim(it.text) == "" then UI.Sound("error") text:RequestFocus() return end
+		if empty() then return end
 		UI.Confirm(P.L("an_send"), P.L("an_send_q"), function() P.Request("ann_send", { it = cleanCopy() }) end)
 	end)
 	send:Dock(RIGHT)

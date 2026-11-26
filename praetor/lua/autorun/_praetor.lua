@@ -22,6 +22,7 @@ local shared = {
 	"sh_cmd_sits.lua",
 	"sh_cmd_votes.lua",
 	"sh_cmd_screen.lua",
+	"sh_espguard.lua",
 }
 
 local server = {
@@ -49,6 +50,7 @@ local server = {
 	"sv_webhook.lua",
 	"sv_reports.lua",
 	"sv_staffstats.lua",
+	"sv_duty.lua",
 	"sv_alts.lua",
 	"sv_promote.lua",
 	"sv_sits.lua",
@@ -80,6 +82,7 @@ local client = {
 	"cl_chatbox.lua",
 	"cl_overhead.lua",
 	"cl_jail.lua",
+	"cl_duty.lua",
 	"cl_scoreboard.lua",
 	"cl_hud.lua",
 	"cl_f4.lua",

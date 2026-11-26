@@ -21,9 +21,10 @@ local function clean(d)
 	it.id = isstring(d.id) and d.id:match("^[%w]+$") and #d.id <= 16 and d.id or nil
 	it.title = P.Trim(P.Str(d.title, 60))
 	it.text = P.Trim(P.Str(d.text, 300))
-	if it.title == "" and it.text == "" then return nil end
 	local link = P.Trim(P.Str(d.link, 200))
 	it.link = link:match("^https?://[%w%-%._~:/%?#%[%]@!%$&'%(%)%*%+,;=%%]+$") and link or nil
+	-- an empty announcement can't be saved or sent: it needs a title, a text or a link
+	if it.title == "" and it.text == "" and not it.link then return nil end
 	it.where = WHERE[d.where] and d.where or "popup"
 	it.when = WHEN[d.when] and d.when or "timer"
 	it.who = WHO[d.who] and d.who or "all"
@@ -102,7 +103,7 @@ P.Receive("ann_list", { perm = "manage_announce", rate = 2 }, function(ply) send
 
 P.Receive("ann_save", { perm = "manage_announce", rate = 3, max = 8192 }, function(ply, data)
 	local it = clean(data.it)
-	if not it then P.Notify(ply, "err_missing") return end
+	if not it then P.Notify(ply, "an_empty", nil, "warn") return end
 	local idx
 	if it.id then
 		for i, o in ipairs(P.AnnList) do if o.id == it.id then idx = i end end
@@ -148,7 +149,7 @@ end)
 -- sends a message now (saved or not) to its audience
 P.Receive("ann_send", { perm = { "announce", "manage_announce" }, rate = 1, max = 8192 }, function(ply, data)
 	local it = clean(data.it)
-	if not it then P.Notify(ply, "err_missing") return end
+	if not it then P.Notify(ply, "an_empty", nil, "warn") return end
 	P.ShowAnnouncement(it, nil, P.NameOf(ply))
 	P.Log("chat", "l_announce", { A = P.LogPly(ply), V = it.title ~= "" and (it.title .. ": " .. it.text) or it.text }, { ply })
 	P.Notify(ply, "an_sent", nil, "ok")

@@ -1,6 +1,6 @@
 [h2]1.6.0[/h2]
 [b]English[/b]
-A real jail, smarter commands, a new loading screen and a careful pass over the whole interface.
+A real jail, a full staff mode with its own baton, a new spectate, smarter commands, a new loading screen and a careful pass over the whole interface.
 [list]
 [*][b]Jail[/b]: the player is locked in a real cell (bars that block players and shots). It can't be moved or removed and comes back after a map cleanup. The jailed player sees a card with the time left counting down live (or [b]Permanent[/b]), who jailed them, the sentence and the reason. Everyone else sees a sign over the cell with the name, the time and the reason. Without a time the jail only ends with !unjail.
 [*][b]!jailtp[/b]: jails the players where you are looking.
@@ -8,6 +8,12 @@ A real jail, smarter commands, a new loading screen and a careful pass over the 
 [*]Using your own name on !goto, !bring, !spectate or !pm now says you can't use it on yourself, instead of "player not found".
 [*][b]Clearer errors[/b]: they say what is missing and how the command is written, for example "Missing: player. Use: !kick <player> [reason]". The "not found" message reminds that ^ is you and * is everyone.
 [*][b]New commands[/b] (from SAM / ULX): !buddha and !unbuddha (takes damage but doesn't die), !giveammo, !exitvehicle, !setfrags, !setdeaths, !steamid and !cleardecals.
+[*][b]Staff mode[/b] (!staffmode, also !duty or !expediente): starts the shift clock (time on duty in the staff panel, now counted to the second; before, it could stay at zero), puts away weapons that hurt (guns with ammo and melee weapons) and gives them back when the shift ends. Physgun, gravity gun, tool gun and other harmless tools stay. A card on the left of the screen shows the time of the shift. TAB and the tag over the head show [b]ON DUTY[/b]. Optional: be invisible while on duty (Settings).
+[*][b]Staff baton[/b]: given by staff mode, never hurts anyone. R switches the mode and the list of modes shows on screen with what each button does: hold and throw players or props, freeze / unfreeze, push / pull, teleport to where you aim or bring a player, info (rank, SteamID, health; right click copies the SteamID), remove props and turn invisibility on / off. Each action checks the same permission as its command and goes to the logs.
+[*][b]Hidden from E2 and Starfall[/b]: staff on duty and invisible players don't show up in E2 / Starfall searches and their position reads as 0,0,0, so ESP chips can't find or follow them. Wiremod and Starfall are not changed. Can be turned off in Settings.
+[*][b]Spectate redone[/b]: your character stays still and hidden (clicks don't hit anything) and you watch in first person by default. R switches to third person, E goes to a free camera (WASD, Space / Ctrl, Shift to go faster); from the free camera, click any player to watch them. Left / right click goes to the next / previous player and Backspace (or !unspectate) leaves. The panel shows health, armor, weapon and ammo, what the player is looking at and how far, speed and ping. In third person a line shows where they aim.
+[*][b]Physgun[/b]: a quick left click on a player frozen with the right click unfreezes them. Holding to move them keeps them frozen.
+[*][b]Announcements[/b]: can't be published empty. A title, a text or a link is enough (the link is still optional).
 [*][b]Health and armor[/b] of the player you are looking at, in a small card under the crosshair. Big numbers are shortened (1.5K, 2M) and never run out of the card. It can be turned off in Settings.
 [*][b]Loading screen redone[/b]: an animated starry sky as the default background; the step you are in, the file being downloaded and its type, files done out of the total, files left, time spent, an estimate of the time left and the last files downloaded. It fits any screen size: big numbers get a smaller font and long names are cut with "...". The logo and the background accept imgur links (the imgur.com/... page link works too).
 [*][b]Music[/b]: the TAB music also plays while the menu or the F4 menu is open. Each one can be turned off.
@@ -18,7 +24,7 @@ A real jail, smarter commands, a new loading screen and a careful pass over the 
 [/list]
 
 [b]Português[/b]
-Jail de verdade, comandos mais espertos, tela de loading nova e uma revisão cuidadosa da interface inteira.
+Jail de verdade, modo staff completo com bastão próprio, spectate novo, comandos mais espertos, tela de loading nova e uma revisão cuidadosa da interface inteira.
 [list]
 [*][b]Jail[/b]: o jogador fica preso numa cela de verdade (grades que bloqueiam jogadores e tiros). Ela não pode ser movida nem removida e volta depois de uma limpeza do mapa. Quem está preso vê um cartão com o tempo que falta contando ao vivo (ou [b]Permanente[/b]), quem prendeu, a pena e o motivo. Os outros veem uma placa em cima da cela com o nome, o tempo e o motivo. Sem tempo, a jail só acaba com !unjail.
 [*][b]!jailtp[/b]: prende os jogadores no lugar para onde você está olhando.
@@ -26,6 +32,12 @@ Jail de verdade, comandos mais espertos, tela de loading nova e uma revisão cui
 [*]Usar o próprio nome no !goto, !bring, !spectate ou !pm agora avisa que não dá para usar em si mesmo, em vez de "jogador não encontrado".
 [*][b]Erros mais claros[/b]: dizem o que faltou e como o comando é escrito, por exemplo "Faltou informar: jogador. Use assim: !kick <jogador> [motivo]". O aviso de "não encontrado" lembra que ^ é você e * são todos.
 [*][b]Comandos novos[/b] (do SAM / ULX): !buddha e !unbuddha (leva dano, mas não morre), !giveammo, !exitvehicle, !setfrags, !setdeaths, !steamid e !cleardecals.
+[*][b]Modo staff[/b] (!staffmode, também !duty ou !expediente): liga o relógio do turno (tempo em serviço no painel da staff, agora contado no segundo; antes podia ficar zerado), guarda as armas que machucam (armas com munição e armas brancas) e devolve quando o turno acaba. Physgun, arma de gravidade, tool gun e outras ferramentas que não machucam ficam. Um cartão na esquerda da tela mostra o tempo do turno. O TAB e a tag em cima da cabeça mostram [b]EM SERVIÇO[/b]. Opcional: ficar invisível em serviço (Configurações).
+[*][b]Bastão da staff[/b]: vem com o modo staff e não machuca ninguém. O R troca o modo e a lista de modos aparece na tela com o que cada botão faz: segurar e arremessar jogadores ou props, congelar / descongelar, empurrar / puxar, teleportar para onde está mirando ou trazer um jogador, informações (cargo, SteamID, vida; o botão direito copia o SteamID), apagar props e ligar / desligar a invisibilidade. Cada ação checa a mesma permissão do comando dela e vai para os logs.
+[*][b]Escondido do E2 e do Starfall[/b]: staff em serviço e jogadores invisíveis não aparecem nas buscas de E2 / Starfall e a posição deles vem como 0,0,0, então chips de ESP não conseguem achar nem seguir. O Wiremod e o Starfall não são alterados. Dá para desligar nas Configurações.
+[*][b]Spectate refeito[/b]: seu personagem fica parado e escondido (os cliques não acertam nada) e você assiste em primeira pessoa por padrão. O R troca para terceira pessoa, o E vai para a câmera livre (WASD, Espaço / Ctrl, Shift para ir mais rápido); na câmera livre, clique em qualquer jogador para assistir ele. Botão esquerdo / direito vai para o próximo / anterior e o Backspace (ou !unspectate) sai. O painel mostra vida, colete, arma e munição, o que o jogador está olhando e a distância, velocidade e ping. Em terceira pessoa uma linha mostra para onde ele mira.
+[*][b]Physgun[/b]: um clique rápido com o botão esquerdo num jogador congelado pelo botão direito descongela ele. Segurar para mover mantém congelado.
+[*][b]Anúncios[/b]: não dá para publicar vazio. Um título, um texto ou um link já basta (o link continua opcional).
 [*][b]Vida e colete[/b] do jogador que você está olhando, num cartão pequeno embaixo da mira. Números grandes são encurtados (1.5K, 2M) e nunca saem do cartão. Dá para desligar nas Configurações.
 [*][b]Tela de loading refeita[/b]: céu estrelado animado como fundo padrão; a etapa em que você está, o arquivo que está baixando e o tipo dele, arquivos baixados do total, quantos faltam, tempo passado, estimativa do tempo restante e os últimos arquivos baixados. Se adapta a qualquer tamanho de tela: números grandes ganham fonte menor e nomes compridos são cortados com "...". A logo e o fundo aceitam link do imgur (o link da página imgur.com/... também funciona).
 [*][b]Música[/b]: a música do TAB também toca com o menu ou o menu F4 aberto. Cada um pode ser desligado.

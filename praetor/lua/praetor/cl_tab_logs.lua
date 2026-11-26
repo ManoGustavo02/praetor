@@ -15,7 +15,7 @@ local state = { cat = "all", q = "", sid = "", page = 0, live = true, sess = nil
 
 local function parts(k, a)
 	local args = isstring(a) and (util.JSONToTable(a) or {}) or (a or {})
-	return P.TemplateParts(P.L(k), args)
+	return P.TemplateParts(P.L(k), P.LocalArgs and P.LocalArgs(args) or args)
 end
 
 local function drawParts(list, x, y, w, font)

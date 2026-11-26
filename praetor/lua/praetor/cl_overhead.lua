@@ -390,7 +390,7 @@ hook.Add("HUDPaint", "Praetor.TargetInfo", function()
 	local tr = me:GetEyeTrace()
 	local ent = tr.Entity
 	local maxDist = math.max(100, P.Setting("overhead_dist") or 700)
-	if IsValid(ent) and ent:IsPlayer() and ent:Alive() and not ent:GetNW2Bool("pr_cloak") and ent:GetColor().a > 30
+	if IsValid(ent) and ent:IsPlayer() and ent:Alive() and not ent:GetNoDraw() and not ent:GetNW2Bool("pr_cloak") and ent:GetColor().a > 30
 		and tr.HitPos:DistToSqr(EyePos()) < maxDist * maxDist then
 		target, targetAt = ent, RealTime()
 	end

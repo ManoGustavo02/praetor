@@ -67,6 +67,10 @@ P.Defaults = {
 	warn_rules        = { { pts = 3, act = "kick", min = 0 }, { pts = 5, act = "ban", min = 1440 }, { pts = 8, act = "ban", min = 10080 } },
 	physgun_players   = true,
 	physgun_freeze    = true,       -- right click while holding a player freezes them
+	duty_strip        = true,       -- !duty puts away the weapons that hurt (given back after)
+	duty_baton        = true,       -- !duty gives the staff baton
+	duty_cloak        = false,      -- !duty also makes the staff invisible (taken off when duty ends)
+	esp_block         = true,       -- E2 / Starfall chips can't find or follow staff on duty or invisible players
 	-- logs & reports
 	log_days          = 21,
 	log_damage        = true,

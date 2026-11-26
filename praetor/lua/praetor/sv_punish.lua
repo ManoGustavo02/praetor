@@ -350,39 +350,142 @@ function P.ClearProps(ply)
 end
 
 -- ------------------------------------------------------------------ spectate
+-- A separate mode, like watching a replay: the staff's own body stays where it was,
+-- hidden, not solid and without taking damage, and nothing they press reaches it
+-- (no shooting, no using, no moving). The camera is on the client: the eyes of the
+-- player (first person), around them (third person) or a free camera that can fly
+-- anywhere and jump into any player.
 
+local function saveBody(ply)
+	if ply.PraetorSpecBody then return end
+	ply.PraetorSpecBody = {
+		pos = ply:GetPos(), ang = ply:EyeAngles(), mt = ply:GetMoveType(),
+		nodraw = ply:GetNoDraw(), god = ply:HasGodMode(),
+	}
+	if ply:InVehicle() then ply:ExitVehicle() end
+	ply:SetMoveType(MOVETYPE_NONE)
+	ply:SetLocalVelocity(vector_origin)
+	ply:SetNoDraw(true)
+	ply:DrawShadow(false)
+	ply:SetNotSolid(true)
+	ply:GodEnable()
+	local w = ply:GetActiveWeapon()
+	if IsValid(w) then w:SetNoDraw(true) end
+end
+
+local function restoreBody(ply)
+	local b = ply.PraetorSpecBody
+	if not b then return end
+	ply.PraetorSpecBody = nil
+	local w = ply:GetActiveWeapon()
+	if IsValid(w) then w:SetNoDraw(false) end
+	ply:SetNotSolid(false)
+	ply:SetMoveType(b.mt == MOVETYPE_NONE and MOVETYPE_WALK or b.mt)
+	if not ply.PraetorCloak then
+		ply:SetNoDraw(b.nodraw and true or false)
+		ply:DrawShadow(not b.nodraw)
+	end
+	if not b.god and not ply.PraetorGod then ply:GodDisable() end
+	ply:SetPos(b.pos)
+	ply:SetEyeAngles(b.ang)
+end
+
+-- target nil = free camera
 function P.StartSpectate(ply, target)
-	ply.PraetorSpec = target
-	ply:SetNW2Entity("pr_spec", target)
-	P.Log("cmd", "l_spectate", { A = P.LogPly(ply), T = P.LogPly(target) }, { ply, target })
+	if not IsValid(ply) then return end
+	local was = ply.PraetorSpecOn
+	saveBody(ply)
+	ply.PraetorSpecOn = true
+	ply.PraetorSpec = IsValid(target) and target or nil
+	ply:SetNW2Bool("pr_specon", true)
+	ply:SetNW2Entity("pr_spec", ply.PraetorSpec or NULL)
+	if ply.PraetorSpec then
+		ply.PraetorSpecCam = nil
+		P.Log("cmd", "l_spectate", { A = P.LogPly(ply), T = P.LogPly(target) }, { ply, target })
+	elseif not was then
+		ply.PraetorSpecCam = ply:EyePos()
+	end
 end
 
 function P.StopSpectate(ply)
-	ply.PraetorSpec = nil
+	if not ply.PraetorSpecOn then return end
+	ply.PraetorSpecOn, ply.PraetorSpec, ply.PraetorSpecCam = nil, nil, nil
+	ply:SetNW2Bool("pr_specon", false)
 	ply:SetNW2Entity("pr_spec", NULL)
+	restoreBody(ply)
+end
+
+function P.IsSpectating(ply) return ply.PraetorSpecOn == true end
+
+-- a camera position sent by the client as x, y, z numbers (nil if not valid)
+local function camPos(data)
+	local x, y, z = tonumber(data.x), tonumber(data.y), tonumber(data.z)
+	if not (x and y and z) then return nil end
+	if math.abs(x) > 65536 or math.abs(y) > 65536 or math.abs(z) > 65536 then return nil end
+	return Vector(x, y, z)
 end
 
 P.Receive("spec_stop", { rate = 4 }, function(ply) P.StopSpectate(ply) end)
-P.Receive("spec_next", { rate = 4, perm = "spectate" }, function(ply, data)
+P.Receive("spec_next", { rate = 6, perm = "spectate" }, function(ply, data)
+	if not ply.PraetorSpecOn then return end
 	local list = {}
 	for _, p in ipairs(player.GetAll()) do if p ~= ply then list[#list + 1] = p end end
 	if #list == 0 then return end
 	local cur = ply.PraetorSpec
-	local idx = 1
+	local idx = 0
 	for i, p in ipairs(list) do if p == cur then idx = i end end
 	idx = idx + ((tonumber(data.dir) or 1) >= 0 and 1 or -1)
 	if idx > #list then idx = 1 elseif idx < 1 then idx = #list end
 	P.StartSpectate(ply, list[idx])
 end)
+-- free camera, or jump into the player the free camera clicked
+P.Receive("spec_free", { rate = 4, perm = "spectate" }, function(ply, data)
+	if not ply.PraetorSpecOn then return end
+	ply.PraetorSpecCam = camPos(data) or ply.PraetorSpecCam or ply:EyePos()
+	P.StartSpectate(ply, nil)
+end)
+P.Receive("spec_set", { rate = 6, perm = "spectate" }, function(ply, data)
+	if not ply.PraetorSpecOn then return end
+	local t = Entity(tonumber(data.e) or 0)
+	if IsValid(t) and t:IsPlayer() and t ~= ply then P.StartSpectate(ply, t) end
+end)
+-- where the free camera is, so the server sends what is around it
+P.Receive("spec_cam", { rate = 8 }, function(ply, data)
+	local pos = camPos(data)
+	if ply.PraetorSpecOn and not ply.PraetorSpec and pos then ply.PraetorSpecCam = pos end
+end)
 
 hook.Add("SetupPlayerVisibility", "Praetor.Spectate", function(ply)
+	if not ply.PraetorSpecOn then return end
 	local t = ply.PraetorSpec
-	if IsValid(t) then AddOriginToPVS(t:GetPos()) end
+	if IsValid(t) then AddOriginToPVS(t:GetPos())
+	elseif ply.PraetorSpecCam then AddOriginToPVS(ply.PraetorSpecCam) end
 end)
+
+-- nothing pressed reaches the body: no moving, shooting, using or switching weapons
+hook.Add("StartCommand", "Praetor.Spectate", function(ply, cmd)
+	if ply.PraetorSpecOn then
+		cmd:ClearMovement()
+		cmd:ClearButtons()
+		cmd:SetImpulse(0)
+	end
+end)
+local function specBlock(ply) if ply.PraetorSpecOn then return false end end
+for _, h in ipairs({ "PlayerSpawnProp", "PlayerSpawnSENT", "PlayerSpawnSWEP", "PlayerSpawnVehicle", "PlayerSpawnNPC",
+	"PlayerSpawnRagdoll", "PlayerSpawnEffect", "PlayerSpawnObject", "PlayerUse", "CanTool", "PlayerNoClip",
+	"PlayerSwitchWeapon", "PhysgunPickup", "GravGunPickupAllowed", "CanPlayerSuicide" }) do
+	hook.Add(h, "Praetor.Spectate", specBlock)
+end
+hook.Add("PlayerDeath", "Praetor.Spectate", function(ply) if ply.PraetorSpecOn then P.StopSpectate(ply) end end)
+hook.Add("PlayerSpawn", "Praetor.Spectate", function(ply) if ply.PraetorSpecOn then P.StopSpectate(ply) end end)
 
 hook.Add("PlayerDisconnected", "Praetor.Spectate", function(ply)
 	for _, p in ipairs(player.GetAll()) do
-		if p.PraetorSpec == ply then P.StopSpectate(p) end
+		if p.PraetorSpec == ply then
+			-- the watched player left: the camera stays free where they were
+			p.PraetorSpecCam = ply:EyePos()
+			P.StartSpectate(p, nil)
+		end
 	end
 end)
 
@@ -393,13 +496,16 @@ hook.Add("PhysgunPickup", "Praetor.Physgun", function(ply, ent)
 	if not P.Setting("physgun_players") or not P.Has(ply, "physgun_players") then return end
 	if not P.CanTarget(ply, ent) then return false end -- lower ranks can't hold higher ranks
 	ent.PraetorHeldBy = ply
+	ent.PraetorPickAt, ent.PraetorPickPos = CurTime(), ent:GetPos()
 	ent:SetMoveType(MOVETYPE_NONE)
 	ent:SetVelocity(-ent:GetVelocity())
 	return true
 end)
 
 -- Right click while holding = freeze in place (in the air too), like a prop. Right click again
--- on a held frozen player = unfreeze. No chat line: it is the physgun, not the !freeze command.
+-- on a held frozen player = unfreeze, and so does a quick left click on them (pick up and let
+-- go without moving them). Holding to drag them keeps them frozen where they are dropped.
+-- No chat line: it is the physgun, not the !freeze command.
 -- While frozen by the physgun the player takes no damage and can't move, shoot or use.
 hook.Add("PhysgunDrop", "Praetor.Physgun", function(ply, ent)
 	if not IsValid(ent) or not ent:IsPlayer() or ent.PraetorHeldBy ~= ply then return end
@@ -414,7 +520,9 @@ hook.Add("PhysgunDrop", "Praetor.Physgun", function(ply, ent)
 		return
 	end
 	if ent.PraetorPhysFrozen then
-		if not right then -- just moved while frozen: stays frozen where it was dropped
+		local quick = ent.PraetorPickAt and CurTime() - ent.PraetorPickAt < 0.3
+			and ent.PraetorPickPos and ent:GetPos():DistToSqr(ent.PraetorPickPos) < 12 * 12
+		if not right and not quick then -- dragged while frozen: stays frozen where it was dropped
 			ent:SetMoveType(MOVETYPE_NONE)
 			ent:SetLocalVelocity(vector_origin)
 			return
