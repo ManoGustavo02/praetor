@@ -216,6 +216,9 @@ P.Defaults = {
 	webhook_money       = false,
 	webhook_player      = false,
 	webhook_round       = false,
+	webhook_weekly      = true,     -- weekly summary (sv_weekly)
+	webhook_weekly_day  = "mon",
+	webhook_weekly_hour = 12,
 }
 
 function P.Setting(k)

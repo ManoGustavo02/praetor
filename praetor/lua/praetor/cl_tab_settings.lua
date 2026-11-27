@@ -96,6 +96,7 @@ local SECTIONS = {
 		{ "webhook_rank", "bool" }, { "webhook_security", "bool" }, { "webhook_settings", "bool" }, { "webhook_chat", "bool" },
 		{ "webhook_conn", "bool" }, { "webhook_kill", "bool" }, { "webhook_rp", "bool" }, { "webhook_money", "bool" },
 		{ "webhook_player", "bool" }, { "webhook_round", "bool" },
+		{ "webhook_weekly", "bool" }, { "webhook_weekly_day", "choice", { "mon", "tue", "wed", "thu", "fri", "sat", "sun" } }, { "webhook_weekly_hour", "number" },
 	} },
 	{ "spawning", {
 		{ "dupe_max_ents", "number" }, { "dupe_max_cons", "number" }, { "dupe_cooldown", "number" }, { "dupe_bypass", "bool" },
@@ -271,6 +272,10 @@ local function webhookButtons(sc)
 	clear:Dock(LEFT)
 	clear:SetWide(S(170))
 	clear:DockMargin(S(8), 0, 0, 0)
+	local weekly = UI.Button(bar, P.L("wh_weekly_btn"), "ghost", "calendar", function() P.Request("webhook_weekly_now") end)
+	weekly:Dock(LEFT)
+	weekly:SetWide(S(250))
+	weekly:DockMargin(S(8), 0, 0, 0)
 end
 
 local function clientSection(sc)

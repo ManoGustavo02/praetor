@@ -135,3 +135,28 @@ P.Receive("jobs_remove", { perm = "manage_jobs", rate = 4 }, function(ply, data)
 	P.RemoveJobEntry(row.sid, row.job, row.kind, ply)
 	P.Notify(ply, "ok_removed", nil, "ok")
 end)
+
+-- ------------------------------------------------------------------ wanted list (F4 City tab)
+-- DarkRP keeps who is wanted and why. The list in the City tab also shows who
+-- asked for it and the time left, so the server keeps those two on the player.
+hook.Add("playerWanted", "Praetor.WantedInfo", function(ply, actor, reason)
+	if not IsValid(ply) then return end
+	ply:SetNW2String("pr_wantedby", IsValid(actor) and actor:IsPlayer() and actor:Nick() or "")
+	ply:SetNW2Float("pr_wantedat", CurTime())
+	ply:SetNW2Float("pr_wantedend", 0)
+	-- DarkRP starts its timer right after this hook: read the exact time from it
+	timer.Simple(0, function()
+		if not IsValid(ply) then return end
+		local left = timer.TimeLeft(ply:SteamID64() .. " wantedtimer")
+		if not left then
+			local cfg = GAMEMODE and GAMEMODE.Config
+			left = cfg and tonumber(cfg.wantedtime) or 0
+		end
+		ply:SetNW2Float("pr_wantedend", left > 0 and CurTime() + left or 0)
+	end)
+end)
+hook.Add("playerUnWanted", "Praetor.WantedInfo", function(ply)
+	if not IsValid(ply) then return end
+	ply:SetNW2String("pr_wantedby", "")
+	ply:SetNW2Float("pr_wantedend", 0)
+end)

@@ -401,8 +401,9 @@ local function catHead(parent, name, col, count)
 		UI.Comic(0, S(2), tw, h - S(8), (h - S(8)) / 2, col, C.ink, S(3))
 		draw.SimpleText(t, "Praetor.SmallB", S(12), S(2) + (h - S(8)) / 2, inkOn(col), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		local x = tw + S(10)
-		if count then
-			local n = tostring(count)
+		local cnt = head.count or count
+		if cnt then
+			local n = tostring(cnt)
 			surface.SetFont("Praetor.Tiny")
 			local nw = surface.GetTextSize(n) + S(14)
 			UI.Round(x, (h - S(4) - S(18)) / 2, nw, S(18), S(9), C.panel3, C.line)
@@ -985,6 +986,211 @@ local function cmdGrid(parent, cmds, tint, start)
 	return grid
 end
 
+-- ------------------------------------------------------------------ city tab: wanted list
+-- Everyone the police is after: the model as the player looks right now (skin,
+-- bodygroups and colour), the picture, name, job, the reason, who asked for it
+-- and the time left. The police and the mayor take someone off with a right click.
+
+local function wantedNow()
+	local out = {}
+	for _, p in player.Iterator() do
+		if p.getDarkRPVar and p:getDarkRPVar("wanted") then out[#out + 1] = p end
+	end
+	table.sort(out, function(a, b) return a:GetNW2Float("pr_wantedat", 0) > b:GetNW2Float("pr_wantedat", 0) end)
+	return out
+end
+
+local function clock(sec)
+	sec = math.max(0, math.ceil(sec))
+	return string.format("%d:%02d", math.floor(sec / 60), sec % 60)
+end
+
+-- copies what the player looks like right now onto the preview
+local function dressLike(st, ply)
+	st:SetModel(ply:GetModel(), ply:GetSkin(), true)
+	local ent = st.mdl.Entity
+	if not IsValid(ent) then return end
+	for i = 0, ply:GetNumBodyGroups() - 1 do ent:SetBodygroup(i, ply:GetBodygroup(i)) end
+	local col = ply:GetPlayerColor()
+	ent.GetPlayerColor = function() return col end
+end
+
+local WANTED_MODEL_W = 104
+
+local function wantedCardH()
+	local tinyH, smallH = UI.FontH("Praetor.Tiny"), UI.FontH("Praetor.Small")
+	return S(12) + tinyH + S(8) + S(38) + S(8) + (smallH * 2 + S(10)) + S(8) + tinyH + S(6) + S(4) + S(12) + S(3)
+end
+
+local function wantedCard(parent, ply)
+	local card = vgui.Create("DPanel", parent)
+	local st = stage(card, C.crimson)
+	st.mdl.spin = 16
+	local AV = S(38)
+	local av = vgui.Create("AvatarImage", card)
+	av:SetSize(AV, AV)
+	av:SetMouseInputEnabled(false)
+	av:SetPlayer(ply, 64)
+	local function textX() return S(12) + S(WANTED_MODEL_W) + S(14) end
+	card.PerformLayout = function(_, _, h)
+		st:SetPos(S(12), S(12))
+		st:SetSize(S(WANTED_MODEL_W), h - S(3) - S(24))
+		av:SetPos(textX(), S(12) + UI.FontH("Praetor.Tiny") + S(8))
+	end
+	card.Think = function(s)
+		if not IsValid(ply) then return end
+		local look = ply:GetModel() .. "/" .. ply:GetSkin()
+		if look ~= s.look then
+			s.look = look
+			dressLike(st, ply)
+		end
+	end
+	card.OnMousePressed = function(_, code)
+		if code ~= MOUSE_RIGHT or not IsValid(ply) then return end
+		local items = {
+			{ P.L("f4_wanted_copy"), "copy", function() SetClipboardText(ply:Nick()) end },
+		}
+		if isCP() or isMayor() then
+			items[#items + 1] = false
+			items[#items + 1] = { P.L("f4_unwant"), "wanted", function() darkrp("unwanted", tostring(ply:UserID())) end }
+		end
+		UI.Popup(items)
+	end
+	card.Paint = function(s, w, h)
+		if not IsValid(ply) then return end
+		local off = S(3)
+		w, h = w - off, h - off
+		UI.Round(off, off, w, h, S(14), C.ink)
+		UI.Round(0, 0, w, h, S(14), C.panel2, C.crimson)
+		local tx = textX()
+		local tw = w - tx - S(14)
+		local tinyH, bodyH, smallH = UI.FontH("Praetor.Tiny"), UI.FontH("Praetor.BodyB"), UI.FontH("Praetor.Small")
+		local y = S(12)
+
+		-- "WANTED" on the left, the time left on the right
+		local left = ply:GetNW2Float("pr_wantedend", 0) - CurTime()
+		local rightW = 0
+		if left > 0 then
+			local t = P.L("f4_wanted_left", { V = clock(left) })
+			surface.SetFont("Praetor.Tiny")
+			rightW = surface.GetTextSize(t) + S(22)
+			UI.Icon("clock", w - S(14) - rightW, y + (tinyH - 16) / 2, 16, Color(255, 255, 255, 170))
+			UI.Text(t, "Praetor.Tiny", w - S(14), y, C.text, TEXT_ALIGN_RIGHT)
+			rightW = rightW + S(8)
+		end
+		UI.Icon("wanted", tx, y + (tinyH - 16) / 2, 16)
+		UI.Text(UI.Fit(P.Upper(P.L("sb_wanted")), "Praetor.Tiny", tw - S(22) - rightW), "Praetor.Tiny", tx + S(22), y, C.crimsonL)
+		y = y + tinyH + S(8)
+
+		-- picture, name and job
+		local AV = S(38)
+		UI.Round(tx - S(2), y - S(2), AV + S(4), AV + S(4), S(8), C.crimson)
+		local nx = tx + AV + S(10)
+		local nw = tw - AV - S(10)
+		local by = y + math.floor((AV - (bodyH + smallH)) / 2)
+		UI.Name(ply:Nick(), "Praetor.BodyB", nx, by, C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, nw)
+		local job = team.GetName(ply:Team()) or ""
+		local jc = team.GetColor(ply:Team()) or C.muted
+		UI.Text(UI.Fit(job, "Praetor.Small", nw), "Praetor.Small", nx, by + bodyH, Color(jc.r, jc.g, jc.b))
+		y = y + AV + S(8)
+
+		-- the reason, two lines at most
+		local reason = P.Trim(tostring(ply:getDarkRPVar("wantedReason") or ""))
+		if reason == "" then reason = P.L("f4_wanted_noreason") end
+		if s.wrapW ~= tw or s.wrapR ~= reason then
+			s.wrapW, s.wrapR = tw, reason
+			local lines = UI.Wrap(reason, "Praetor.Small", tw - S(16))
+			if #lines > 2 then
+				lines[2] = UI.Fit(lines[2] .. " " .. table.concat(lines, " ", 3), "Praetor.Small", tw - S(16))
+				for i = #lines, 3, -1 do lines[i] = nil end
+			end
+			s.lines = lines
+		end
+		local boxH = smallH * 2 + S(10)
+		UI.Round(tx, y, tw, boxH, S(8), C.bg, C.line)
+		for i, l in ipairs(s.lines or {}) do UI.Text(l, "Praetor.Small", tx + S(8), y + S(5) + (i - 1) * smallH, C.text) end
+		y = y + boxH + S(8)
+
+		-- who asked for it, and the time as a bar
+		local by2 = ply:GetNW2String("pr_wantedby", "")
+		local who = by2 ~= "" and P.L("f4_wanted_by", { S = UI.PlainName and UI.PlainName(by2) or by2 }) or P.L("f4_wanted_by_unknown")
+		UI.Text(UI.Fit(who, "Praetor.Tiny", tw), "Praetor.Tiny", tx, y, C.muted)
+		y = y + tinyH + S(6)
+		local total = ply:GetNW2Float("pr_wantedend", 0) - ply:GetNW2Float("pr_wantedat", 0)
+		UI.Round(tx, y, tw, S(4), S(2), C.bg)
+		if left > 0 and total > 0 then
+			UI.Round(tx, y, math.max(S(4), tw * math.Clamp(left / total, 0, 1)), S(4), S(2), C.crimsonL)
+		end
+	end
+	return card
+end
+
+local function wantedSection(parent)
+	local head = catHead(parent, P.L("f4_wanted"), C.crimson, 0)
+	local grid = vgui.Create("DPanel", parent)
+	grid:Dock(TOP)
+	grid:DockMargin(0, 0, S(6), S(6))
+	grid.Paint = nil
+	grid.cards = {}
+	local function rebuild(list)
+		for _, c in ipairs(grid.cards) do if IsValid(c) then c:Remove() end end
+		grid.cards = {}
+		if #list == 0 then
+			local e = vgui.Create("DPanel", grid)
+			e.empty = true
+			e.Paint = function(_, w, h)
+				UI.Round(0, 0, w, h, S(14), C.panel, C.line)
+				UI.Icon("wanted", S(16), (h - 24) / 2, 24, Color(255, 255, 255, 90))
+				UI.Text(UI.Fit(P.L("f4_wanted_none"), "Praetor.Small", w - S(66)), "Praetor.Small", S(52), h / 2, C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			end
+			grid.cards[1] = e
+		else
+			for i, p in ipairs(list) do
+				grid.cards[i] = wantedCard(grid, p)
+				appear(grid.cards[i], i)
+			end
+		end
+		head.count = #list
+		grid:InvalidateLayout()
+	end
+	grid.Think = function(s)
+		if RealTime() < (s.next or 0) then return end
+		s.next = RealTime() + 0.5
+		local list = wantedNow()
+		local key = {}
+		for _, p in ipairs(list) do key[#key + 1] = p:EntIndex() end
+		key = table.concat(key, ",")
+		if key ~= s.key then
+			s.key = key
+			rebuild(list)
+		end
+	end
+	grid.PerformLayout = function(s, w)
+		local first = s.cards[1]
+		if IsValid(first) and first.empty then
+			first:SetPos(0, 0)
+			first:SetSize(w, S(56))
+			if s:GetTall() ~= S(56) then s:SetTall(S(56)) end
+			return
+		end
+		local gap = S(10)
+		local cols = math.Clamp(math.floor((w + gap) / (S(360) + gap)), 1, 3)
+		local cw = math.floor((w - gap * (cols - 1)) / cols)
+		local ch = wantedCardH()
+		for i, card in ipairs(s.cards) do
+			local col = (i - 1) % cols
+			local row = math.floor((i - 1) / cols)
+			card:SetPos(col * (cw + gap), row * (ch + gap))
+			card:SetSize(cw, ch)
+		end
+		local rows = math.ceil(#s.cards / cols)
+		local th = rows * ch + math.max(0, rows - 1) * gap
+		if s:GetTall() ~= th then s:SetTall(th) end
+	end
+	grid:Think()
+	return grid
+end
+
 local function buildCity(panel)
 	local laws = lawsPanel(panel)
 	laws:Dock(RIGHT)
@@ -996,6 +1202,7 @@ local function buildCity(panel)
 	local function fill()
 		sc:Clear()
 		mayorCard(sc)
+		wantedSection(sc)
 		local vis = F4.VisibleCommands()
 		local n = 0
 		for _, g in ipairs(F4.CommandGroups) do

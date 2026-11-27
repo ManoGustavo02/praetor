@@ -61,6 +61,8 @@ DARKRP = {
     "broadcast": (["broadcast", "antenna"], "orange"), "gavel": (["gavel", "hammer"], "brown"),
     "notebook": (["notebook", "notes"], "bone"), "receipt": (["receipt", "file-dollar"], "green"),
     "crosshair": (["crosshair", "target"], "red"), "lockdown": (["home-lock", "lock"], "red"),
+    # relatório semanal no Discord
+    "calendar": (["calendar-stats", "calendar"], "violet"),
 }
 BASE.update(DARKRP)
 

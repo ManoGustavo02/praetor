@@ -49,6 +49,7 @@ local server = {
 	"sv_automod.lua",
 	"sv_chat.lua",
 	"sv_webhook.lua",
+	"sv_weekly.lua",
 	"sv_reports.lua",
 	"sv_staffstats.lua",
 	"sv_duty.lua",

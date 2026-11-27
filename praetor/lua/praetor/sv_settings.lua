@@ -19,6 +19,7 @@ P.SettingChoices = {
 	dupe_announce = { all = true, staff = true, none = true },
 	automod_action = { block = true, warn = true, mute = true, kick = true },
 	webhook_lang = { en = true, pt = true },
+	webhook_weekly_day = { mon = true, tue = true, wed = true, thu = true, fri = true, sat = true, sun = true },
 	alt_action = { alert = true, kick = true, ban = true },
 	perm_announce = { all = true, staff = true, none = true },
 	ban_announce = { all = true, staff = true, none = true },

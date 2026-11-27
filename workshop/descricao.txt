@@ -12,10 +12,10 @@ Praetor is a complete admin mod for Garry's Mod. It replaces SAM or ULX on its o
 [h2]Moderation[/h2]
 [list]
 [*][b]Ranks[/b] with inheritance and permissions you switch on or off with one click, each with its own colour and icon.
-[*][b]Over 90 commands[/b] (kick, ban, jail, bring, freeze, spectate...) by chat, menu or TAB. Click a command to fill its arguments, or build your own with blocks, no code needed.
+[*][b]Over 90 commands[/b] by chat, menu or TAB. Click a command to fill its arguments, or build your own with blocks, no code needed.
 [*][b]Player history[/b]: warnings, bans, notes and linked accounts of every player, even offline.
 [*][b]Reports[/b] with a screenshot and a chat between the player and the staff member who takes it.
-[*][b]Logs[/b] of kills, damage, props, connections, DarkRP and TTT, with a Discord webhook per category.
+[*][b]Logs[/b] of kills, damage, props, connections, DarkRP and TTT, with a Discord webhook per category and a weekly report.
 [*][b]Staff tools[/b]: staff panel, support rooms (!sit), promotions by play time and a clean ESP for the staff.
 [/list]
 
@@ -31,7 +31,7 @@ Praetor is a complete admin mod for Garry's Mod. It replaces SAM or ULX on its o
 [h2]DarkRP[/h2]
 [list]
 [*][b]HUD[/b] with picture, name, job, health, armor, hunger, money and gun license.
-[*][b]F4 menu[/b] read from your DarkRP: jobs, shop and a City tab with the mayor, the laws and every RP command you can use.
+[*][b]F4 menu[/b] read from your DarkRP: jobs, shop and a City tab with the mayor, the laws, the wanted list and every RP command you can use.
 [*][b]RP commands drawer[/b] on the edge of the screen, and commands that also work in Portuguese (/procurar, /soltardinheiro...).
 [*][b]Job over the head[/b], with gun license, wanted and arrested seals.
 [/list]
@@ -64,10 +64,10 @@ O Praetor é um admin mod completo para Garry's Mod. Substitui o SAM ou o ULX so
 [h2]Moderação[/h2]
 [list]
 [*][b]Cargos[/b] com herança e permissões que você liga ou desliga com um clique, cada um com sua cor e ícone.
-[*][b]Mais de 90 comandos[/b] (kick, ban, jail, bring, freeze, spectate...) pelo chat, menu ou TAB. Clique num comando para preencher os argumentos, ou monte os seus com blocos, sem programar.
+[*][b]Mais de 90 comandos[/b] pelo chat, menu ou TAB. Clique num comando para preencher os argumentos, ou monte os seus com blocos, sem programar.
 [*][b]Histórico do jogador[/b]: avisos, bans, anotações e contas ligadas de cada jogador, mesmo offline.
 [*][b]Denúncias[/b] com print e um chat entre o jogador e o staff que pegar o caso.
-[*][b]Logs[/b] de mortes, dano, props, conexões, DarkRP e TTT, com webhook do Discord por categoria.
+[*][b]Logs[/b] de mortes, dano, props, conexões, DarkRP e TTT, com webhook do Discord por categoria e um relatório semanal.
 [*][b]Ferramentas da staff[/b]: painel, salas de atendimento (!sit), promoção por tempo de jogo e um ESP limpo para a staff.
 [/list]
 
@@ -83,7 +83,7 @@ O Praetor é um admin mod completo para Garry's Mod. Substitui o SAM ou o ULX so
 [h2]DarkRP[/h2]
 [list]
 [*][b]HUD[/b] com foto, nome, profissão, vida, colete, fome, dinheiro e porte de armas.
-[*][b]Menu F4[/b] lido do seu DarkRP: profissões, loja e uma aba Cidade com o prefeito, as leis e todos os comandos de RP que você pode usar.
+[*][b]Menu F4[/b] lido do seu DarkRP: profissões, loja e uma aba Cidade com o prefeito, as leis, os procurados e todos os comandos de RP que você pode usar.
 [*][b]Gaveta de comandos de RP[/b] na borda da tela, e comandos que também funcionam em português (/procurar, /soltardinheiro...).
 [*][b]Profissão em cima da cabeça[/b], com selos de porte, procurado e preso.
 [/list]

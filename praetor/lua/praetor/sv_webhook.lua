@@ -79,6 +79,8 @@ local function post(embeds, done)
 	if ok == false and done then done(0, "HTTP refused") end
 end
 
+P.WebhookPost = post
+
 timer.Create("Praetor.Webhook", 2.5, 0, function()
 	if #queue == 0 or CurTime() < busyUntil or CurTime() < waitUntil then return end
 	if P.Setting("webhook_url") == "" then queue = {} return end
