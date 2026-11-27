@@ -630,6 +630,11 @@ end
 -- { label, icon, nil, nil, { ...items } } opens a sub menu; { label, kind = "title" } is a heading
 local function fillMenu(menu, items)
 	for _, it in ipairs(items) do
+		-- named items ({ label =, icon =, fn =, danger = }) work too
+		if istable(it) and it.label and not it[1] then
+			it = { it.label, it.icon, it.fn, it.danger, it.sub, kind = it.kind }
+		end
+		if istable(it) and it[1] == nil and it.kind ~= "title" then it = false end
 		if it == false then
 			menu:AddSpacer()
 		elseif it.kind == "title" then

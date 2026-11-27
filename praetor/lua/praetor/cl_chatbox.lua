@@ -591,6 +591,11 @@ function LINES:Paint(w, h)
 			elseif line.staff then
 				UI.Round(S(2), y - S(1), w - S(4), L.h + S(2), S(8), Color(C.crimson.r, C.crimson.g, C.crimson.b, 26 * alpha))
 				UI.Round(S(2), y + S(2), S(4), L.h - S(4), S(2), Color(C.crimsonL.r, C.crimsonL.g, C.crimsonL.b, a))
+			elseif line.ann and line.annCol then
+				-- announcement: a band in its own colour, like the staff messages
+				local ac = line.annCol
+				UI.Round(S(2), y - S(1), w - S(4), L.h + S(2), S(8), Color(ac.r, ac.g, ac.b, 34 * alpha))
+				UI.Round(S(2), y + S(2), S(4), L.h - S(4), S(2), Color(ac.r, ac.g, ac.b, a))
 			elseif hovering and my >= y and my < y + L.h then
 				UI.Round(S(2), y - S(1), w - S(4), L.h + S(2), S(8), Color(255, 255, 255, 12))
 			end

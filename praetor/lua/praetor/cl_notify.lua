@@ -202,12 +202,23 @@ hook.Add("HUDPaint", "Praetor.Toasts", function()
 	end
 end)
 
--- DarkRP (and other addons) send their notices with notification.AddLegacy:
--- while the Praetor HUD is on they show up as Praetor toasts
+-- DarkRP sends its notices (money, jobs, laws, "you can't afford"...) with
+-- notification.AddLegacy: while the Praetor HUD is on, those show up as Praetor
+-- toasts. Only DarkRP's own: the game's notices (undo with Z, cleanup, hints) and
+-- other addons keep the normal GMod look.
 local legacyKind = { [0] = "info", [1] = "alert", [2] = "info", [3] = "ok", [4] = "info" }
+local function fromDarkRP()
+	for lvl = 3, 8 do
+		local info = debug.getinfo(lvl, "S")
+		if not info then return false end
+		local src = (info.short_src or ""):lower()
+		if src:find("darkrp", 1, true) then return true end
+	end
+	return false
+end
 P.OrigAddLegacy = P.OrigAddLegacy or notification.AddLegacy
 function notification.AddLegacy(text, kind, len)
-	if P.HUD and P.HUD.On and P.HUD.On() then
+	if kind ~= NOTIFY_UNDO and kind ~= NOTIFY_CLEANUP and P.HUD and P.HUD.On and P.HUD.On() and fromDarkRP() then
 		P.Toast(P.L(kind == 1 and "hud_notice_err" or "hud_notice"), tostring(text or ""), legacyKind[kind or 0] or "info", tonumber(len) or 5)
 		return
 	end

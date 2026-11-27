@@ -1,6 +1,6 @@
 -- Praetor: announcements and pop-ups on screen. Four looks: a line in the chat
--- (stays the chosen time), a pop-up card in a corner, a bar at the top and big
--- text in the middle of the screen. The same drawing is used by the preview in
+-- (stays the chosen time, with a band in the announcement colour), a pop-up card
+-- in a corner, a bar at the top and a big card in the middle of the screen. The same drawing is used by the preview in
 -- the Announcements tab.
 local P = Praetor
 local UI = P.UI
@@ -30,120 +30,184 @@ end
 local D = {}
 P.AnnDraw = D
 
--- pop-up card. Returns its height. frac = time left (0-1)
+local function fontH(f)
+	surface.SetFont(f)
+	local _, h = surface.GetTextSize("ÁgjM")
+	return h
+end
+
+local function wrapCached(it, slot, text, font, w)
+	it[slot] = it[slot] or {}
+	local key = w .. font .. (text or "")
+	if it[slot].key ~= key then it[slot] = { key = key, lines = UI.Wrap(text or "", font, w) } end
+	return it[slot].lines
+end
+
+local function ca(c, a) return Color(c.r, c.g, c.b, a) end
+
+-- time left: a thin track with the coloured part going down, inside the card
+local function timeBar(x, y, w, frac, col, a)
+	local th = math.max(2, S(4))
+	UI.Round(x, y, w, th, th / 2, Color(0, 0, 0, 110 * a))
+	if frac then
+		local fw = math.floor(w * math.Clamp(frac, 0, 1))
+		if fw > 0 then UI.Round(x, y, math.max(th, fw), th, th / 2, ca(col, 230 * a)) end
+	end
+	return th
+end
+
+-- "by Name" in small muted text
+local function byLine(it)
+	if not it.by or it.by == "" then return nil end
+	return P.L("ann_by", { S = it.by })
+end
+
+-- pop-up card in a corner. Returns its height. frac = time left (0-1)
+-- icon tile | title, text (up to 5 lines), link | time bar at the bottom
 function D.popup(it, x, y, w, a, frac, measureOnly)
 	local col = colOf(it)
-	local tx = x + S(66)
-	local tw = w - S(66) - S(12)
-	it._pl = it._pl or {}
-	local key = tw .. (it.text or "")
-	if it._pl.key ~= key then it._pl = { key = key, lines = UI.Wrap(it.text or "", "Praetor.Small", tw) } end
-	local lines = it._pl.lines
+	local pad, tile = S(12), S(42)
+	local tx = x + pad + tile + S(12)
+	local tw = w - (tx - x) - pad
+	local lines = wrapCached(it, "_pl", it.text, "Praetor.Small", tw)
 	local nl = math.min(#lines, 5)
 	local hasTitle = (it.title or "") ~= ""
-	local h = S(14) + (hasTitle and S(22) or 0) + nl * S(17) + (it.link and S(22) or 0) + S(14)
-	h = math.max(h, S(70))
+	local titleH, lh, linkH = fontH("Praetor.BodyB"), fontH("Praetor.Small"), fontH("Praetor.SmallB")
+	local bodyH = (hasTitle and (titleH + S(2)) or 0) + nl * lh + (it.link and (S(4) + linkH) or 0)
+	local h = pad + math.max(tile, bodyH) + S(10) + S(4) + pad
 	if measureOnly then return h end
-	UI.Round(x + S(4), y + S(4), w, h, math.max(S(10), S(12)), Color(C.ink.r, C.ink.g, C.ink.b, (242 * a) * 0.8)) UI.Round(x, y, w, h, math.max(S(10), S(12)), Color(C.panel.r, C.panel.g, C.panel.b, 242 * a), Color(col.r, col.g, col.b, 150 * a))
-	-- soft glow of the colour on the left
-	UI.Round(x + 1, y + 1, S(58), h - 2, S(9), Color(col.r, col.g, col.b, 26 * a))
-	UI.Round(x + S(10), y + (h - S(44)) / 2, S(44), S(44), S(10), Color(col.r, col.g, col.b, 60 * a), Color(col.r, col.g, col.b, 200 * a))
-	UI.Icon(it.icon or "megaphone", x + S(10) + (S(44) - 32) / 2, y + (h - 32) / 2, 32, Color(255, 255, 255, 255 * a))
-	local cy = y + S(14)
+	UI.Round(x + S(4), y + S(4), w, h, S(12), ca(C.ink, 190 * a))
+	UI.Round(x, y, w, h, S(12), ca(C.panel, 242 * a), ca(col, 170 * a))
+	local ty = y + pad
+	local iy = ty + math.floor((math.max(tile, bodyH) - tile) / 2)
+	UI.Round(x + pad, iy, tile, tile, S(10), ca(col, 70 * a), ca(col, 220 * a))
+	UI.Icon(it.icon or "megaphone", x + pad + (tile - 28) / 2, iy + (tile - 28) / 2, 28, Color(255, 255, 255, 255 * a))
+	local cy = ty + math.floor((math.max(tile, bodyH) - bodyH) / 2)
 	if hasTitle then
-		UI.Text(UI.Fit(it.title, "Praetor.BodyB", tw), "Praetor.BodyB", tx, cy, Color(light(col, 0.35).r, light(col, 0.35).g, light(col, 0.35).b, 255 * a))
-		cy = cy + S(22)
+		UI.Text(UI.Fit(it.title, "Praetor.BodyB", tw), "Praetor.BodyB", tx, cy, ca(light(col, 0.4), 255 * a))
+		cy = cy + titleH + S(2)
 	end
 	for i = 1, nl do
-		UI.Text(lines[i], "Praetor.Small", tx, cy, Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a))
-		cy = cy + S(17)
+		UI.Text(lines[i], "Praetor.Small", tx, cy, ca(C.ivory, 255 * a))
+		cy = cy + lh
 	end
 	if it.link then
-		UI.Icon("send", tx, cy + S(3), 16, Color(255, 255, 255, 200 * a))
-		UI.Text(UI.Fit(shortLink(it.link), "Praetor.SmallB", tw - 22), "Praetor.SmallB", tx + 22, cy + S(3), Color(110, 170, 255, 255 * a))
+		cy = cy + S(4)
+		UI.Icon("send", tx, cy + (linkH - 14) / 2, 14, Color(255, 255, 255, 200 * a))
+		UI.Text(UI.Fit(shortLink(it.link), "Praetor.SmallB", tw - S(20)), "Praetor.SmallB", tx + S(20), cy, Color(110, 170, 255, 255 * a))
 	end
-	if frac then
-		UI.Round(x + S(10), y + h - S(4), (w - S(20)) * math.Clamp(frac, 0, 1), S(2), S(1), Color(col.r, col.g, col.b, 200 * a))
-	end
+	timeBar(x + pad, y + h - pad - S(4), w - pad * 2, frac, col, a)
 	return h
 end
 
 -- bar at the top of the screen
+-- icon tile | TITLE ............ by Name | text (up to 4 lines) | link | time bar
 function D.banner(it, x, y, w, a, frac, measureOnly)
 	local col = colOf(it)
-	local tw = w - S(110)
-	it._bl = it._bl or {}
-	local key = tw .. (it.text or "")
-	if it._bl.key ~= key then it._bl = { key = key, lines = UI.Wrap(it.text or "", "Praetor.Big", tw) } end
-	local lines = it._bl.lines
+	local pad, tile = S(16), S(56)
+	local tx = x + pad + tile + S(16)
+	local tw = w - (tx - x) - pad
+	local lines = wrapCached(it, "_bl", it.text, "Praetor.Big", tw)
 	local nl = math.min(#lines, 4)
 	local hasTitle = (it.title or "") ~= ""
-	local h = S(20) + (hasTitle and S(24) or 0) + nl * S(27) + (it.link and S(24) or 0) + S(16)
-	h = math.max(h, S(84))
+	local by = byLine(it)
+	local headH, lh, linkH = fontH("Praetor.SmallB"), fontH("Praetor.Big"), fontH("Praetor.BodyB")
+	local hasHead = hasTitle or by ~= nil
+	local bodyH = (hasHead and (headH + S(4)) or 0) + nl * lh + (it.link and (S(6) + linkH) or 0)
+	local inner = math.max(tile, bodyH)
+	local h = pad + inner + S(12) + S(4) + pad
 	if measureOnly then return h end
-	UI.Round(x + S(4), y + S(4), w, h, math.max(S(10), S(12)), Color(C.ink.r, C.ink.g, C.ink.b, (245 * a) * 0.8)) UI.Round(x, y, w, h, math.max(S(10), S(12)), Color(C.panel.r, C.panel.g, C.panel.b, 245 * a), Color(col.r, col.g, col.b, 140 * a))
-	UI.Round(x, y, w, S(4), S(2), Color(col.r, col.g, col.b, 255 * a))
-	UI.Round(x + S(18), y + (h - S(60)) / 2, S(60), S(60), S(12), Color(col.r, col.g, col.b, 55 * a), Color(col.r, col.g, col.b, 210 * a))
-	UI.Icon(it.icon or "megaphone", x + S(18) + (S(60) - 32) / 2, y + (h - 32) / 2, 32, Color(255, 255, 255, 255 * a))
-	local tx = x + S(94)
-	local cy = y + S(18)
-	if hasTitle then
-		local lc = light(col, 0.4)
-		UI.Text(P.Upper(UI.Fit(it.title, "Praetor.SmallB", tw)), "Praetor.SmallB", tx, cy, Color(lc.r, lc.g, lc.b, 255 * a))
-		cy = cy + S(24)
+	UI.Round(x + S(5), y + S(5), w, h, S(14), ca(C.ink, 200 * a))
+	UI.Round(x, y, w, h, S(14), ca(C.panel, 245 * a), ca(col, 190 * a))
+	local iy = y + pad + math.floor((inner - tile) / 2)
+	UI.Round(x + pad, iy, tile, tile, S(12), ca(col, 70 * a), ca(col, 230 * a))
+	UI.Icon(it.icon or "megaphone", x + pad + (tile - 32) / 2, iy + (tile - 32) / 2, 32, Color(255, 255, 255, 255 * a))
+	local cy = y + pad + math.floor((inner - bodyH) / 2)
+	if hasHead then
+		local byW = 0
+		if by then
+			surface.SetFont("Praetor.Tiny")
+			byW = surface.GetTextSize(by)
+			UI.Text(by, "Praetor.Tiny", x + w - pad, cy + headH / 2, ca(C.muted, 255 * a), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+		end
+		if hasTitle then
+			UI.Text(P.Upper(UI.Fit(it.title, "Praetor.SmallB", tw - byW - S(16))), "Praetor.SmallB", tx, cy, ca(light(col, 0.45), 255 * a))
+		end
+		cy = cy + headH + S(4)
 	end
 	for i = 1, nl do
-		UI.Text(lines[i], "Praetor.Big", tx, cy, Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a))
-		cy = cy + S(27)
+		UI.Text(lines[i], "Praetor.Big", tx, cy, ca(C.ivory, 255 * a))
+		cy = cy + lh
 	end
 	if it.link then
-		UI.Icon("send", tx, cy + S(4), 16, Color(255, 255, 255, 200 * a))
-		UI.Text(UI.Fit(shortLink(it.link), "Praetor.BodyB", tw - 22), "Praetor.BodyB", tx + 22, cy + S(3), Color(110, 170, 255, 255 * a))
+		cy = cy + S(6)
+		UI.Icon("send", tx, cy + (linkH - 16) / 2, 16, Color(255, 255, 255, 200 * a))
+		UI.Text(UI.Fit(shortLink(it.link), "Praetor.BodyB", tw - S(22)), "Praetor.BodyB", tx + S(22), cy, Color(110, 170, 255, 255 * a))
 	end
-	if it.by then UI.Text("- " .. it.by, "Praetor.Tiny", x + w - S(14), y + h - S(14), Color(C.muted.r, C.muted.g, C.muted.b, 255 * a), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER) end
-	if frac then UI.Round(x + S(12), y + h - S(4), (w - S(24)) * math.Clamp(frac, 0, 1), S(2), S(1), Color(col.r, col.g, col.b, 160 * a)) end
+	timeBar(tx, y + h - pad - S(4), x + w - pad - tx, frac, col, a)
 	return h
 end
 
--- big text in the middle of the screen (w = width of the area)
-local gradU = Material("gui/gradient_up")
-local gradD = Material("gui/gradient_down")
+-- big announcement in the middle of the screen (w = width of the area).
+-- A centred card: the icon on a medal half out of the top, the title, a short
+-- line in the colour, the text, the link and who sent it, and the time left as a
+-- bar at the bottom of the card. Nothing crosses the whole screen.
 function D.center(it, x, y, w, a, frac, measureOnly, small)
 	local col = colOf(it)
 	local titleFont = small and "Praetor.H2" or "Praetor.Logo"
 	local textFont = small and "Praetor.Body" or "Praetor.Big"
-	local lh = small and S(20) or S(28)
-	it._cl = it._cl or {}
-	local key = w .. textFont .. (it.text or "")
-	if it._cl.key ~= key then it._cl = { key = key, lines = UI.Wrap(it.text or "", textFont, w - S(80)) } end
-	local lines = it._cl.lines
-	local nl = math.min(#lines, 4)
-	local isz = small and 32 or 64
+	local pad = small and S(16) or S(26)
+	local maxText = math.min(w - S(80) - pad * 2, small and S(420) or S(640))
+	local lines = wrapCached(it, "_cl", it.text, textFont, maxText)
+	local nl = math.min(#lines, 5)
 	local hasTitle = (it.title or "") ~= ""
-	local h = S(24) + isz + S(12) + (hasTitle and S(40) or 0) + nl * lh + (it.link and S(28) or 0) + S(24)
-	if measureOnly then return h end
-	-- dark band across the area, fading at the top and bottom
-	local band = Color(8, 6, 16, 200 * a)
-	surface.SetDrawColor(band)
-	surface.DrawRect(x, y + h * 0.2, w, h * 0.6)
-	surface.SetMaterial(gradU)
-	surface.DrawTexturedRect(x, y, w, h * 0.2)
-	surface.SetMaterial(gradD)
-	surface.DrawTexturedRect(x, y + h * 0.8, w, h * 0.2)
-	local cx = x + w / 2
-	local cy = y + S(24)
-	UI.Icon(it.icon or "megaphone", cx - isz / 2, cy, isz, Color(255, 255, 255, 255 * a))
-	cy = cy + isz + S(12)
+	local by = byLine(it)
+	local titleH, lh, linkH, byH = fontH(titleFont), fontH(textFont), fontH("Praetor.SmallB"), fontH("Praetor.Tiny")
+	-- width from the content, between a minimum and the max
+	local cw = small and S(240) or S(380)
+	surface.SetFont(textFont)
+	for i = 1, nl do cw = math.max(cw, surface.GetTextSize(lines[i]) + pad * 2) end
 	if hasTitle then
-		UI.TextShadow(it.title, titleFont, cx, cy + S(16), Color(col.r, col.g, col.b, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-		cy = cy + S(40)
+		surface.SetFont(titleFont)
+		cw = math.max(cw, math.min(surface.GetTextSize(it.title), maxText) + pad * 2)
+	end
+	cw = math.min(cw, maxText + pad * 2)
+	local medal = small and S(46) or S(72)
+	local ch = medal / 2 + S(10) + (hasTitle and (titleH + S(8) + S(3) + S(10)) or 0) + nl * lh
+		+ (it.link and (S(8) + linkH) or 0) + (by and (S(8) + byH) or 0) + S(16) + S(4) + pad
+	local h = medal / 2 + ch
+	if measureOnly then return h end
+	local cx = x + w / 2
+	local x0, y0 = math.floor(cx - cw / 2), y + medal / 2
+	UI.Round(x0 + S(6), y0 + S(6), cw, ch, S(18), ca(C.ink, 190 * a))
+	UI.Round(x0, y0, cw, ch, S(18), ca(C.panel, 240 * a), ca(col, 200 * a))
+	-- medal with the icon, half out of the top edge
+	local mx, my = math.floor(cx - medal / 2), y
+	UI.Round(mx - S(4), my - S(4), medal + S(8), medal + S(8), (medal + S(8)) / 2, ca(C.ink, 235 * a))
+	UI.Round(mx, my, medal, medal, medal / 2, ca(col, 255 * a))
+	local isz = small and 28 or 44
+	UI.Icon(it.icon or "megaphone", cx - isz / 2, my + (medal - isz) / 2, isz, Color(255, 255, 255, 255 * a))
+	local cy = y0 + medal / 2 + S(10)
+	if hasTitle then
+		UI.TextShadow(UI.Fit(it.title, titleFont, cw - pad * 2), titleFont, cx, cy, ca(light(col, 0.3), 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+		cy = cy + titleH + S(8)
+		UI.Round(cx - S(26), cy, S(52), S(3), S(1), ca(col, 230 * a))
+		cy = cy + S(3) + S(10)
 	end
 	for i = 1, nl do
-		UI.TextShadow(lines[i], textFont, cx, cy + lh / 2, Color(C.ivory.r, C.ivory.g, C.ivory.b, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		UI.TextShadow(lines[i], textFont, cx, cy, ca(C.ivory, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 		cy = cy + lh
 	end
-	if it.link then UI.TextShadow(shortLink(it.link), small and "Praetor.SmallB" or "Praetor.BodyB", cx, cy + S(14), Color(110, 170, 255, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) end
-	if frac then UI.Round(cx - S(80), y + h - S(10), S(160) * math.Clamp(frac, 0, 1), S(3), S(1), Color(col.r, col.g, col.b, 200 * a)) end
+	if it.link then
+		cy = cy + S(8)
+		UI.TextShadow(UI.Fit(shortLink(it.link), "Praetor.SmallB", cw - pad * 2), "Praetor.SmallB", cx, cy, Color(110, 170, 255, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+		cy = cy + linkH
+	end
+	if by then
+		cy = cy + S(8)
+		UI.Text(UI.Fit(by, "Praetor.Tiny", cw - pad * 2), "Praetor.Tiny", cx, cy, ca(C.muted, 255 * a), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+	end
+	timeBar(x0 + pad, y0 + ch - pad - S(4), cw - pad * 2, frac, col, a)
 	return h
 end
 
@@ -169,6 +233,7 @@ function D.chat(it)
 		l.life = math.max(it.life or 12, 4)
 		l.annIcon = it.icon
 		l.annCol = col
+		l.ann = true
 	end
 end
 
@@ -241,7 +306,8 @@ hook.Add("HUDPaint", "Praetor.Announcements", function()
 		local a, age = fade(center, now)
 		if age > center.life then center = nil else
 			local h = D.center(center, 0, 0, ScrW(), a, nil, true)
-			D.center(center, 0, ScrH() * 0.42 - h / 2, ScrW(), a, 1 - age / center.life)
+			local pop = UI.EaseBack(math.min(1, age * 3.2))
+			D.center(center, 0, ScrH() * 0.36 - h / 2 + math.floor((1 - pop) * S(30)), ScrW(), a, 1 - age / center.life)
 		end
 	end
 end)

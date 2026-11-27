@@ -1,8 +1,10 @@
 -- Praetor: what staff see that players don't.
 --  * Staff ESP (on duty, permission esp, Settings > staff_esp): every player through
---    walls with a box, health and armor bars and a card with the avatar, name, rank,
---    distance, weapon and state (invisible, on duty, AFK, jailed...). Chips (E2 /
---    Starfall) and sprays show too. Turned on / off with the baton or praetor_esp.
+--    walls. Minimal on purpose: the player model in the rank colour behind walls
+--    (esp_chams / praetor_esp_chams), corner brackets, the full name over the box,
+--    SteamID and distance under the name, and thin health / armor bars with the
+--    numbers under the box. Chips (E2 / Starfall) and sprays show too. Turned on /
+--    off with the baton or praetor_esp.
 --  * Invisible players are drawn as see-through ghosts for staff (see_cloaked).
 --  * Looking at a spray says whose it is (spray_info).
 local P = Praetor
@@ -11,6 +13,7 @@ local C = UI.C
 local S = P.S
 
 local espVar = CreateClientConVar("praetor_esp", "1", true, false, "Praetor staff ESP while on duty (0 = off)", 0, 1)
+local chamsVar = CreateClientConVar("praetor_esp_chams", "1", true, false, "Praetor staff ESP: player models through walls (0 = off)", 0, 1)
 P.EspVar = espVar
 
 local function lighten(col, k)
@@ -104,33 +107,40 @@ local function corners(x, y, w, h, col)
 	end
 end
 
-local function vbar(x, y, h, frac, col)
-	surface.SetDrawColor(INK)
-	surface.DrawRect(x - 1, y - 1, S(3) + 2, h + 2)
-	local fh = math.floor(h * math.Clamp(frac, 0, 1))
-	surface.SetDrawColor(col)
-	surface.DrawRect(x, y + h - fh, S(3), fh)
-end
-
 local function meters(units) return math.floor(units * 0.01905 + 0.5) .. "m" end
 
-local function weaponName(p)
-	local w = p:GetActiveWeapon()
-	if not IsValid(w) then return nil end
-	local n = w.GetPrintName and w:GetPrintName() or w:GetClass()
-	return language.GetPhrase(n or "")
+-- text with a soft dark shadow, so it reads over anything without a card behind it
+local function label(text, font, x, y, col, ax, ay)
+	draw.SimpleText(text, font, x + 1, y + 1, Color(0, 0, 0, math.min(200, col.a or 255)), ax, ay)
+	draw.SimpleText(text, font, x, y, col, ax, ay)
 end
 
-local function stateTags(p)
-	local t = {}
-	if p:GetNW2Bool("pr_cloak", false) then t[#t + 1] = { P.L("esp_cloaked"), C.bronzeL } end
-	if p:GetNW2Bool("pr_duty", false) then t[#t + 1] = { P.L("on_duty"), C.bronzeL } end
-	if p:GetNW2Bool("pr_jailed", false) then t[#t + 1] = { P.L("esp_jailed"), C.crimsonL } end
-	if p:GetNW2Bool("pr_frozen", false) then t[#t + 1] = { P.L("esp_frozen"), C.sky } end
-	if p:GetNW2Bool("pr_afk", false) then t[#t + 1] = { "AFK", C.amber } end
-	if p:GetNW2Bool("pr_god", false) then t[#t + 1] = { "GOD", C.amber } end
-	if p:InVehicle() then t[#t + 1] = { P.L("esp_vehicle"), C.muted } end
-	return t
+local function fontH(f)
+	surface.SetFont(f)
+	local _, h = surface.GetTextSize("ÁgjM")
+	return h
+end
+
+-- thin horizontal bar with a dark frame
+local function hbar(x, y, w, frac, col)
+	local th = math.max(2, S(3))
+	surface.SetDrawColor(INK)
+	surface.DrawRect(x - 1, y - 1, w + 2, th + 2)
+	surface.SetDrawColor(30, 30, 38, col.a or 255)
+	surface.DrawRect(x, y, w, th)
+	surface.SetDrawColor(col)
+	surface.DrawRect(x, y, math.floor(w * math.Clamp(frac, 0, 1)), th)
+	return th
+end
+
+local function hpColor(f, a)
+	f = math.Clamp(f, 0, 1)
+	return Color(math.floor(235 - 150 * f), math.floor(70 + 160 * f), 80, a)
+end
+
+local function rankCol(p, a)
+	local rc = p:GetNW2Bool("pr_cloak", false) and C.bronzeL or lighten(p:GetRankColor(), 40)
+	return Color(rc.r, rc.g, rc.b, a)
 end
 
 -- ------------------------------------------------------------------ the ESP
@@ -144,72 +154,101 @@ local function drawPlayer(p, me, eye)
 	local bh = math.max(S(10), bot.y - top.y)
 	local bw = math.max(S(6), bh * 0.5)
 	local x, y = math.floor(top.x - bw / 2), math.floor(top.y)
+	local cx = math.floor(top.x)
 	local far = dist > 3000
 	local a = far and 170 or 255
-	local rc = lighten(p:GetRankColor(), 40)
-	local col = Color(rc.r, rc.g, rc.b, a)
-	if p:GetNW2Bool("pr_cloak", false) then col = Color(C.bronzeL.r, C.bronzeL.g, C.bronzeL.b, a) end
+	local col = rankCol(p, a)
 
 	corners(x, y, bw, bh, col)
-	-- health and armor bars on the left of the box
-	local hp, maxHp = p:Health(), math.max(1, p:GetMaxHealth())
-	local hf = hp / maxHp
-	vbar(x - S(6), y, bh, hf, Color(255 * (1 - math.min(hf, 1)) + 40, 60 + 180 * math.min(hf, 1), 80, a))
-	local ar = p:Armor()
-	if ar > 0 then vbar(x - S(11), y, bh, ar / math.max(1, p.GetMaxArmor and p:GetMaxArmor() or 100), Color(C.sky.r, C.sky.g, C.sky.b, a)) end
 
-	-- close and in sight: the tag over the head already shows the name
+	-- name + SteamID / distance over the box. Close and in sight, the tag over the
+	-- head already shows the name, so only the box and the bars are drawn.
 	local overhead = math.max(100, P.Setting("overhead_dist") or 700)
+	local showText = true
 	if dist < overhead and P.Setting("overhead") ~= false then
 		local tr = util.TraceLine({ start = eye, endpos = p:EyePos(), filter = { me, p }, mask = MASK_VISIBLE })
-		if not tr.Hit then return end
+		if not tr.Hit then showText = false end
 	end
+	if showText then
+		local sub = far and meters(dist) or ((p:IsBot() and "BOT" or p:SteamID()) .. "  ·  " .. meters(dist))
+		local subH = fontH("Praetor.Tiny")
+		local ty = y - S(4)
+		label(sub, "Praetor.Tiny", cx, ty, Color(205, 205, 215, a), TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+		ty = ty - subH
+		-- the whole name, never shortened
+		UI.Name(p:Nick(), far and "Praetor.Tiny" or "Praetor.SmallB", cx, ty, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, nil, true)
+	end
+	if far then return end
 
-	-- the card on the right of the box
-	local cx = x + bw + S(6)
-	local name = p:Nick()
-	if far then
-		local txt = name .. "  ·  " .. meters(dist)
-		surface.SetFont("Praetor.Tiny")
-		local tw = surface.GetTextSize(txt)
-		UI.Round(cx, y, tw + S(12), S(18), S(5), Color(C.panel.r, C.panel.g, C.panel.b, 190))
-		UI.Text(txt, "Praetor.Tiny", cx + S(6), y + S(9), col, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-		return
-	end
-	local av = S(26)
-	local style = UI.RankStyle(p:GetUserGroup())
-	local rank = style and style.text or p:GetUserGroup()
-	local info = rank .. "  ·  " .. meters(dist)
-	local wep = weaponName(p)
-	local tags = stateTags(p)
-	surface.SetFont("Praetor.SmallB")
-	local nw = math.min(S(170), surface.GetTextSize(name))
-	surface.SetFont("Praetor.Tiny")
-	local iw = math.min(S(170), surface.GetTextSize(info))
-	local ww = wep and math.min(S(170), surface.GetTextSize(wep)) or 0
-	local tagW = 0
-	for _, t in ipairs(tags) do tagW = tagW + surface.GetTextSize(t[1]) + S(14) end
-	local textW = math.max(nw, iw, ww, math.min(tagW, S(200)))
-	local w = av + S(8) + textW + S(12)
-	local lines = 2 + (wep and 1 or 0)
-	local h = math.max(av + S(8), S(6) + lines * S(14) + S(4)) + (#tags > 0 and S(18) or 0)
-	UI.Round(cx, y, w, h, S(6), Color(C.panel.r, C.panel.g, C.panel.b, 205), Color(col.r, col.g, col.b, 120), 1)
-	UI.DrawAvatar(p:SteamID64(), p, cx + S(4), y + S(4), av, 255, nil, name)
-	local tx = cx + av + S(10)
-	UI.Name(name, "Praetor.SmallB", tx, y + S(11), col, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, textW)
-	UI.Text(UI.Fit(info, "Praetor.Tiny", textW), "Praetor.Tiny", tx, y + S(25), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-	if wep then UI.Text(UI.Fit(wep, "Praetor.Tiny", textW), "Praetor.Tiny", tx, y + S(38), C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
-	if #tags > 0 then
-		local tgx, tgy = cx + S(4), y + h - S(18)
-		for _, t in ipairs(tags) do
-			local tw = surface.GetTextSize(t[1]) + S(10)
-			if tgx + tw > cx + w - S(2) then break end
-			UI.Round(tgx, tgy, tw, S(14), S(7), Color(t[2].r, t[2].g, t[2].b, 45), t[2], 1)
-			UI.Text(t[1], "Praetor.Tiny", tgx + tw / 2, tgy + S(7), t[2], TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-			tgx = tgx + tw + S(4)
+	-- health and armor under the box, numbers under the bars
+	local hp, maxHp = math.max(0, p:Health()), math.max(1, p:GetMaxHealth())
+	local ar = math.max(0, p:Armor())
+	local maxAr = math.max(1, p.GetMaxArmor and p:GetMaxArmor() or 100)
+	local barW = math.max(math.floor(bw), S(46))
+	local bx = cx - math.floor(barW / 2)
+	local by = y + bh + S(5)
+	by = by + hbar(bx, by, barW, hp / maxHp, hpColor(hp / maxHp, a)) + S(3)
+	if ar > 0 then by = by + hbar(bx, by, barW, ar / maxAr, Color(C.sky.r, C.sky.g, C.sky.b, a)) + S(3) end
+	local nums = hp .. " HP" .. (ar > 0 and ("  ·  " .. ar .. " AR") or "")
+	label(nums, "Praetor.Tiny", cx, by, Color(225, 225, 232, a), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+end
+
+-- ------------------------------------------------------------------ models through walls
+-- The model is drawn once ignoring the depth (flat, in the rank colour, see-through)
+-- and once more normally on top, so where the player is in sight they look as usual.
+local chamsMat = CreateMaterial("praetor_esp_chams_v1", "UnlitGeneric", {
+	["$basetexture"] = "models/debug/debugwhite",
+	["$ignorez"] = "1",
+	["$model"] = "1",
+	["$translucent"] = "1",
+	["$vertexalpha"] = "1",
+	["$vertexcolor"] = "1",
+})
+
+local function chamsOn()
+	return chamsVar:GetBool() and P.Setting("esp_chams") ~= false and P.EspActive()
+end
+
+local function drawCham(ent, r, g, b, alpha)
+	render.SetColorModulation(r, g, b)
+	render.SetBlend(alpha)
+	render.MaterialOverride(chamsMat)
+	ent:DrawModel()
+	render.MaterialOverride(nil)
+	render.SetBlend(1)
+	render.SetColorModulation(1, 1, 1)
+end
+
+hook.Add("PostDrawOpaqueRenderables", "Praetor.EspChams", function(depth, sky)
+	if depth or sky or not chamsOn() then return end
+	local me = LocalPlayer()
+	local eye = EyePos()
+	local ghosts = seesGhosts()
+	render.SuppressEngineLighting(true)
+	for _, p in player.Iterator() do
+		if p ~= me and p:Alive() and not p:IsDormant() and not p:GetNW2Bool("pr_specon", false)
+			and eye:DistToSqr(p:GetPos()) < 5000 * 5000 then
+			local cloaked = p:GetNW2Bool("pr_cloak", false)
+			-- invisible players already have their ghost
+			if not (cloaked and ghosts) then
+				local c = rankCol(p, 255)
+				drawCham(p, c.r / 255, c.g / 255, c.b / 255, 0.55)
+				local wep = p:GetActiveWeapon()
+				if IsValid(wep) and not p:InVehicle() then drawCham(wep, c.r / 255, c.g / 255, c.b / 255, 0.55) end
+			end
 		end
 	end
-end
+	render.SuppressEngineLighting(false)
+	-- the normal pass on top: in sight they look like themselves again
+	for _, p in player.Iterator() do
+		if p ~= me and p:Alive() and not p:IsDormant() and not p:GetNW2Bool("pr_cloak", false)
+			and not p:GetNW2Bool("pr_specon", false) and eye:DistToSqr(p:GetPos()) < 5000 * 5000 then
+			p:DrawModel()
+			local wep = p:GetActiveWeapon()
+			if IsValid(wep) and not p:InVehicle() then wep:DrawModel() end
+		end
+	end
+end)
 
 local function drawChips(eye)
 	if not P.MyHas("chips") then return end

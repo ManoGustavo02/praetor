@@ -222,9 +222,13 @@ local function showSheet(panel, d)
 	if d.owner then frame = C.amber end
 
 	-- ---------------------------------------------------------- header
+	-- name, then the badges, then the SteamIDs, each from the real height of the line above
+	local nameTop = S(10)
+	local badgeY = nameTop + math.max(UI.FontH("Praetor.H1"), UI.NameH(name, "Praetor.H1")) + S(6)
+	local sidY = badgeY + S(22) + S(8)
 	local head = vgui.Create("DPanel", panel)
 	head:Dock(TOP)
-	head:SetTall(S(112))
+	head:SetTall(math.max(S(112), sidY + S(22) + S(10)))
 	head:DockMargin(0, 0, 0, S(8))
 	local AV = S(80)
 	head.Paint = function(_, w, h)
@@ -237,11 +241,13 @@ local function showSheet(panel, d)
 			UI.Round(S(18) + AV - S(9), (h - AV) / 2 + AV - S(9), S(10), S(10), S(5), C.laurel)
 		end
 		local x = S(18) + AV + S(18)
-		UI.Name(name, "Praetor.H1", x, S(10), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, w - x - S(230), true)
-		local bx = x + UI.Badge(rankStyle, rankIcon, "Praetor.Tag", x, S(46), S(22)) + S(6)
-		if d.owner then bx = bx + UI.Badge({ text = P.L("owner"), c1 = { r = 240, g = 176, b = 64 }, c2 = { r = 255, g = 222, b = 140 }, fx = "shine" }, "crown", "Praetor.Tag", bx, S(46), S(22)) + S(6) end
+		UI.Name(name, "Praetor.H1", x, nameTop, C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, w - x - S(230), true)
+		local bx = x + UI.Badge(rankStyle, rankIcon, "Praetor.Tag", x, badgeY, S(22)) + S(6)
+		local ownerStyle = { text = P.L("owner"), c1 = { r = 240, g = 176, b = 64 }, c2 = { r = 255, g = 222, b = 140 }, fx = "shine" }
+		local maxX = w - S(230)
+		if d.owner and bx + UI.BadgeWidth(ownerStyle, "crown", "Praetor.Tag", S(22)) <= maxX then bx = bx + UI.Badge(ownerStyle, "crown", "Praetor.Tag", bx, badgeY, S(22)) + S(6) end
 		local tag = util.JSONToTable(row.tag or "") or nil
-		if istable(tag) and tag.text then UI.Badge(tag, tag.icon, "Praetor.Tag", bx, S(46), S(22)) end
+		if istable(tag) and tag.text and bx + UI.BadgeWidth(tag, tag.icon, "Praetor.Tag", S(22)) <= maxX then UI.Badge(tag, tag.icon, "Praetor.Tag", bx, badgeY, S(22)) end
 		-- right side: status pill and dates
 		local rx = w - S(16)
 		local st = d.online and P.L("usr_online") or P.L("usr_offline")
@@ -265,7 +271,7 @@ local function showSheet(panel, d)
 		surface.SetFont("Praetor.Mono")
 		local tw = surface.GetTextSize(v)
 		b:SetSize(tw + S(30), S(22))
-		b:SetPos(x0, S(78))
+		b:SetPos(x0, sidY)
 		x0 = x0 + tw + S(38)
 		b:SetTooltip(P.L("usr_copy_tip"))
 		b.Paint = function(s2, w, h)
@@ -455,7 +461,7 @@ local function showSheet(panel, d)
 			local r = vgui.Create("DButton", ab)
 			r:SetText("")
 			r:Dock(TOP)
-			r:SetTall(S(38))
+			r:SetTall(S(44))
 			r:DockMargin(0, 0, 0, S(4))
 			r:SetTooltip(P.L("alt_open"))
 			r.Paint = function(s2, w, h)
@@ -466,8 +472,8 @@ local function showSheet(panel, d)
 				local right = a.ban and P.L("alt_banned") or (a.on and P.L("online") or P.Date(a.last))
 				surface.SetFont("Praetor.Tiny")
 				local rw = surface.GetTextSize(right) + S(16)
-				UI.Name(a.name or "?", "Praetor.SmallB", x, S(12), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - x - rw - S(8))
-				UI.Text(util.SteamIDFrom64(a.sid), "Praetor.Tiny", x, h - S(11), C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				UI.Name(a.name or "?", "Praetor.SmallB", x, S(13), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - x - rw - S(8))
+				UI.Text(util.SteamIDFrom64(a.sid), "Praetor.Tiny", x, h - S(12), C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 				if a.ban then
 					UI.Round(w - rw - S(6), (h - S(20)) / 2, rw, S(20), S(10), Color(C.crimson.r, C.crimson.g, C.crimson.b, 60), C.crimson)
 					UI.Text(right, "Praetor.Tiny", w - S(6) - rw / 2, h / 2, C.crimsonL, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)

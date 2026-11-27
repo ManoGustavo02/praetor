@@ -259,9 +259,9 @@ P.AddTab("shots", {
 				end
 				row.DoRightClick = function()
 					UI.Popup({
-						{ label = P.L("sg_open"), icon = "image", fn = row.DoClick },
-						{ label = P.L("copy_steamid"), icon = "copy", fn = function() SetClipboardText(util.SteamIDFrom64(r.sid or "0") or "") end },
-						{ label = P.L("sg_delete"), icon = "trash", fn = function()
+						{ P.L("sg_open"), "image", row.DoClick },
+						{ P.L("copy_steamid"), "copy", function() SetClipboardText(util.SteamIDFrom64(r.sid or "0") or "") end },
+						{ P.L("sg_delete"), "trash", function()
 							UI.Confirm(P.L("sg_delete"), P.L("sg_delete_q"), function()
 								P.Request("sg_del", { id = r.id })
 								timer.Simple(0.3, function() if P.ShotsRefresh then P.ShotsRefresh() end end)

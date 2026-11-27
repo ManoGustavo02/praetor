@@ -120,11 +120,11 @@ local function personCard(parent, label, sid, name, online, col)
 			return
 		end
 		local pl = P.BySID(sid)
-		UI.DrawAvatar(sid, IsValid(pl) and pl or nil, S(10), S(24), S(34), 255, C.line)
-		UI.Text(UI.Fit(IsValid(pl) and pl:Nick() or tostring(name or "?"), "Praetor.SmallB", w - S(60)), "Praetor.SmallB", S(52), S(33), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		UI.DrawAvatar(sid, IsValid(pl) and pl or nil, S(10), S(26), S(36), 255, C.line)
+		UI.Name(IsValid(pl) and pl:Nick() or tostring(name or "?"), "Praetor.SmallB", S(54), S(35), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - S(64))
 		local on = IsValid(pl)
-		UI.Round(S(52), S(47), S(7), S(7), S(3), on and C.laurel or C.dim)
-		UI.Text((on and P.L("rp_online") or P.L("rp_offline")) .. "  ·  " .. P.SID32(sid), "Praetor.Tiny", S(64), S(50), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		UI.Round(S(54), S(52), S(7), S(7), S(3), on and C.laurel or C.dim)
+		UI.Text(UI.Fit((on and P.L("rp_online") or P.L("rp_offline")) .. "  ·  " .. P.SID32(sid), "Praetor.Tiny", w - S(76)), "Praetor.Tiny", S(66), S(55), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	end
 	return p
 end
@@ -199,7 +199,7 @@ local function buildDetail(pane, r)
 	-- the two players
 	local people = vgui.Create("DPanel", sc)
 	people:Dock(TOP)
-	people:SetTall(S(64))
+	people:SetTall(S(70))
 	people:DockMargin(0, 0, S(6), 0)
 	people.Paint = nil
 	local a = personCard(people, P.L("rep_from"), r.sid, r.name, r.ron, C.sky)

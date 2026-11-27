@@ -112,8 +112,8 @@ function P.ScreenGrab(caller, target)
 		jobs[target] = nil
 		if not IsValid(target) then return end
 		if IsValid(caller) then P.Notify(caller, "err_sg_noanswer", { S = target:Nick() }, "warn") end
-		P.Log("security", "l_sg_noanswer", { T = P.LogPly(target) }, { target })
-		if P.Security then P.Security(target, "sg_noanswer", job.got > 0 and ("partial " .. job.got .. "/" .. tostring(job.n)) or "", true) end
+		-- a minimized game takes no picture: not a security event, only a log line
+		P.Log("cmd", "l_sg_noanswer", { T = P.LogPly(target) }, { target })
 	end)
 	return true
 end

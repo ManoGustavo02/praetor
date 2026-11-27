@@ -193,6 +193,11 @@ hook.Add("PlayerSay", "Praetor.Commands", function(ply, text, teamChat)
 	end
 
 	local def = P.FindCommand(name)
+	-- DarkRP commands typed in Portuguese (/soltardinheiro, /procurar...)
+	if not def and not silent and P.RPAlias and P.RPAlias(ply, name, body:match("^%S+%s*(.*)$") or "") then
+		P.Log("chat", "l_chat", { A = P.LogPly(ply), V = P.Str(text, 300) }, { ply })
+		return ""
+	end
 	if not def then
 		if P.ChatBlocked and P.ChatBlocked(ply, text) then return "" end
 		-- "//ooc", "/advert", "/pm"... of DarkRP and other addons still go to the chat log

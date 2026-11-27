@@ -172,41 +172,101 @@ end
 -- ------------------------------------------------------------------ RP commands
 
 local function amount(key) return { { "v", "number", P.L(key or "f4_amount"), "" } } end
+local function isCP() local p = me() return p.isCP and p:isCP() or false end
+local function isMayor() local p = me() return p.isMayor and p:isMayor() or false end
+
+-- my job manages an agenda (police chief, gang leader...)
+local function agendaManager()
+	local p = me()
+	local ag = p.getAgendaTable and p:getAgendaTable()
+	if not istable(ag) then return false end
+	local t = p:Team()
+	if istable(ag.ManagersByKey) then return ag.ManagersByKey[t] == true end
+	if istable(ag.Manager) then return table.HasValue(ag.Manager, t) end
+	return ag.Manager == t
+end
+
+-- [1] id (also the key of P.RPCmds: chat names in both languages), [2] icon.
+-- cp / mayor / job = the group in the City tab and in the drawer.
 F4.Commands = {
-	{ "dropmoney", "coin", ask = amount(), run = function(v) darkrp("dropmoney", tostring(v.v)) end },
-	{ "give", "coin_plus", ask = amount(), hint = "f4c_give_hint", run = function(v) darkrp("give", tostring(v.v)) end },
+	{ "dropmoney", "moneybag", ask = amount(), run = function(v) darkrp("dropmoney", tostring(v.v)) end },
+	{ "give", "coin_plus", ask = amount(), run = function(v) darkrp("give", tostring(v.v)) end },
+	{ "cheque", "receipt", ask = { { "ply", "player", P.L("arg_player"), "" }, { "v", "number", P.L("f4_amount"), "" } },
+		run = function(v) darkrp("cheque", v.ply, tostring(v.v)) end },
 	{ "drop", "gun", run = function() darkrp("drop") end },
 	{ "selldoors", "door", confirm = true, run = function() darkrp("unownalldoors") end },
 	{ "demote", "brief_minus", ask = { { "ply", "player", P.L("arg_player"), "" }, { "reason", "text", P.L("arg_reason"), "" } },
 		run = function(v) darkrp("demote", v.ply, v.reason) end },
 	{ "advert", "megaphone", ask = { { "text", "text", P.L("f4_text"), "" } }, run = function(v) darkrp("advert", v.text) end },
 	{ "jobname", "tag", ask = { { "text", "text", P.L("f4_jobname"), "" } }, run = function(v) darkrp("job", v.text) end },
-	{ "license", "license", run = function() darkrp("requestlicense") end, can = function() return not rp("HasGunlicense") end },
+	{ "license", "permit", run = function() darkrp("requestlicense") end, can = function() return not rp("HasGunlicense") and not isCP() end },
+	{ "cr", "siren", ask = { { "text", "text", P.L("f4_text"), "" } }, run = function(v) darkrp("cr", v.text) end, can = function() return not isCP() end },
+	-- my job
+	{ "agenda", "notebook", job = true, ask = { { "text", "text", P.L("f4_text"), "" } }, run = function(v) darkrp("agenda", v.text) end, can = agendaManager },
+	{ "hitprice", "crosshair", job = true, ask = amount(), run = function(v) darkrp("hitprice", tostring(v.v)) end,
+		can = function() local p = me() return p.isHitman and p:isHitman() or false end },
 	-- police
-	{ "wanted", "flag", cp = true, ask = { { "ply", "player", P.L("arg_player"), "" }, { "reason", "text", P.L("arg_reason"), "" } },
+	{ "wanted", "wanted", cp = true, ask = { { "ply", "player", P.L("arg_player"), "" }, { "reason", "text", P.L("arg_reason"), "" } },
 		run = function(v) darkrp("wanted", v.ply, v.reason) end },
 	{ "unwanted", "flag", cp = true, ask = { { "ply", "player", P.L("arg_player"), "" } }, run = function(v) darkrp("unwanted", v.ply) end },
 	{ "warrant", "scroll", cp = true, ask = { { "ply", "player", P.L("arg_player"), "" }, { "reason", "text", P.L("arg_reason"), "" } },
 		run = function(v) darkrp("warrant", v.ply, v.reason) end },
+	{ "givelicense", "permit", cp = true, run = function() darkrp("givelicense") end },
 	-- mayor
-	{ "lockdown", "warn", mayor = true, run = function() darkrp("lockdown") end, can = function() return not GetGlobalBool("DarkRP_LockDown") end },
+	{ "lockdown", "lockdown", mayor = true, run = function() darkrp("lockdown") end, can = function() return not GetGlobalBool("DarkRP_LockDown") end },
 	{ "unlockdown", "check", mayor = true, run = function() darkrp("unlockdown") end, can = function() return GetGlobalBool("DarkRP_LockDown") end },
-	{ "addlaw", "scale", mayor = true, ask = { { "text", "text", P.L("f4_law"), "" } }, run = function(v) darkrp("addlaw", v.text) end },
+	{ "addlaw", "gavel", mayor = true, ask = { { "text", "text", P.L("f4_law"), "" } }, run = function(v) darkrp("addlaw", v.text) end },
 	{ "removelaw", "trash", mayor = true, ask = amount("f4_lawnum"), run = function(v) darkrp("removelaw", tostring(v.v)) end },
+	{ "resetlaws", "trash", mayor = true, confirm = true, run = function() darkrp("resetlaws") end },
 	{ "placelaws", "clipboard", mayor = true, run = function() darkrp("placelaws") end },
+	{ "broadcast", "broadcast", mayor = true, ask = { { "text", "text", P.L("f4_text"), "" } }, run = function(v) darkrp("broadcast", v.text) end },
+	{ "lottery", "ticket", mayor = true, ask = amount(), run = function(v) darkrp("lottery", tostring(v.v)) end },
 }
+
+-- the groups, in the order they are shown
+F4.CommandGroups = {
+	{ "f4_cmd_job", "job", function(c) return c.job end },
+	{ "f4_cmd_police", "cp", function(c) return c.cp end },
+	{ "f4_cmd_mayor", "mayor", function(c) return c.mayor end },
+	{ "f4_cmd_all", "all", function(c) return not c.cp and not c.mayor and not c.job end },
+}
+function F4.GroupColor(kind)
+	return (kind == "cp" and C.sky) or (kind == "mayor" and C.amber) or (kind == "job" and C.laurel) or C.bronze
+end
+
+-- DarkRP knows the command and lets me use it (its own condition, when it has one)
+local function darkrpAllows(c)
+	local d = P.RPCmds and P.RPCmds[c[1]]
+	if not d or not DarkRP or not DarkRP.getChatCommand then return true end
+	local def = DarkRP.getChatCommand(d[1])
+	if not def then return DarkRP.getChatCommands == nil end
+	if isfunction(def.condition) then
+		local ok, res = pcall(def.condition, me())
+		if ok and res == false then return false end
+	end
+	return true
+end
 
 function F4.VisibleCommands()
 	local out = {}
-	local ply = me()
 	for _, c in ipairs(F4.Commands) do
 		local ok = true
-		if c.cp and not (ply.isCP and ply:isCP()) then ok = false end
-		if c.mayor and not (ply.isMayor and ply:isMayor()) then ok = false end
+		if c.cp and not isCP() then ok = false end
+		if c.mayor and not isMayor() then ok = false end
 		if ok and c.can and not c.can() then ok = false end
+		if ok and not darkrpAllows(c) then ok = false end
 		if ok then out[#out + 1] = c end
 	end
 	return out
+end
+
+-- the chat command shown for a command, in the player's language ("/soltardinheiro <valor>")
+function F4.ChatLine(c, lang)
+	lang = lang or P.CurrentLang()
+	local name = P.RPCmdName and P.RPCmdName(c[1], lang)
+	if not name then return nil end
+	local args = P.RPCmdArgs(c[1], lang)
+	return "/" .. name .. (args ~= "" and (" " .. args) or "")
 end
 
 function F4.RunCommand(c)
@@ -435,29 +495,47 @@ local function buildJobs(panel, f)
 			end
 		end
 
-		-- name, chips
+		-- name, chips. Placed from the real font heights; the chips wrap to a new
+		-- line instead of running out of the panel, and the panel grows to fit.
 		local head = vgui.Create("DPanel", inner)
 		head:Dock(TOP)
-		head:SetTall(S(84))
 		head:DockMargin(0, S(10), 0, 0)
-		head.Paint = function(_, w, h)
-			local name = UI.Fit(job.name or "?", "Praetor.H1", w)
-			draw.SimpleText(name, "Praetor.H1", S(3), S(3), C.ink)
-			draw.SimpleText(name, "Praetor.H1", 0, 0, col)
-			local x = 0
-			local y = S(34)
-			x = x + chip(x, y, money(job.salary or 0) .. P.L("f4_per_pay"), "Praetor.Tiny", C.laurel, "coin")
+		local function headChips()
 			local max = jobMax(job)
-			x = x + S(4) + chip(x, y, team.NumPlayers(job.team) .. (max > 0 and (" / " .. max) or "") .. " " .. P.L("f4_slots"), "Praetor.Tiny", C.panel3, "players")
-			local y2 = y + S(28)
-			x = 0
-			local flags = {}
-			if job.vote then flags[#flags + 1] = { P.L("f4_vote"), C.amber, "ballot" } end
-			if job.hasLicense then flags[#flags + 1] = { P.L("sb_license"), C.sky, "license" } end
-			if (job.admin or 0) == 1 then flags[#flags + 1] = { P.L("f4_admin_only"), C.crimson, "shield" } end
-			if (job.admin or 0) >= 2 then flags[#flags + 1] = { P.L("f4_superadmin_only"), C.crimson, "crown" } end
-			for _, fl in ipairs(flags) do
-				x = x + S(4) + chip(x, y2, fl[1], "Praetor.Tiny", fl[2], fl[3], S(22))
+			local list = {
+				{ money(job.salary or 0) .. P.L("f4_per_pay"), C.laurel, "coin" },
+				{ team.NumPlayers(job.team) .. (max > 0 and (" / " .. max) or "") .. " " .. P.L("f4_slots"), C.panel3, "players" },
+			}
+			if job.vote then list[#list + 1] = { P.L("f4_vote"), C.amber, "ballot" } end
+			if job.hasLicense then list[#list + 1] = { P.L("sb_license"), C.sky, "permit" } end
+			if (job.admin or 0) == 1 then list[#list + 1] = { P.L("f4_admin_only"), C.crimson, "shield" } end
+			if (job.admin or 0) >= 2 then list[#list + 1] = { P.L("f4_superadmin_only"), C.crimson, "crown" } end
+			return list
+		end
+		local CH = S(24)
+		local function headLayout(w)
+			local nameH = UI.FontH("Praetor.H1")
+			local x, y = 0, nameH + S(8)
+			local pos = {}
+			surface.SetFont("Praetor.Tiny")
+			for i, c in ipairs(headChips()) do
+				local cw = surface.GetTextSize(c[1]) + S(18) + S(22) + S(2)
+				if x > 0 and x + cw > w then x = 0 y = y + CH + S(6) end
+				pos[i] = { x, y, c }
+				x = x + cw + S(4)
+			end
+			return pos, y + CH + S(4)
+		end
+		head.PerformLayout = function(s, w)
+			local _, h = headLayout(w)
+			if s:GetTall() ~= h then s:SetTall(h) end
+		end
+		head.Paint = function(_, w, h)
+			local name = UI.Fit(job.name or "?", "Praetor.H1", w - S(4))
+			draw.SimpleText(name, "Praetor.H1", S(2), S(2), C.ink)
+			draw.SimpleText(name, "Praetor.H1", 0, 0, col)
+			for _, pc in ipairs((headLayout(w))) do
+				chip(pc[1], pc[2], pc[3][1], "Praetor.Tiny", pc[3][2], pc[3][3], CH)
 			end
 		end
 
@@ -488,7 +566,8 @@ local function buildJobs(panel, f)
 			for part in (text ~= "" and text or P.L("f4_no_desc")):gmatch("[^\n]+") do
 				for _, l in ipairs(UI.Wrap(P.Trim(part), "Praetor.Small", w - S(28))) do s.lines[#s.lines + 1] = l end
 			end
-			local h = S(40) + #s.lines * S(18) + S(10)
+			s.lh = UI.FontH("Praetor.Small") + S(2)
+			local h = S(38) + #s.lines * s.lh + S(12)
 			if s:GetTall() ~= h then s:SetTall(h) end
 		end
 		desc.Paint = function(s, w, h)
@@ -496,7 +575,7 @@ local function buildJobs(panel, f)
 			UI.Icon("scroll", S(12), S(9), 20)
 			UI.Text(P.L("f4_about"), "Praetor.SmallB", S(38), S(19), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			for i, l in ipairs(s.lines or {}) do
-				UI.Text(l, "Praetor.Small", S(14), S(36) + (i - 1) * S(18), C.text)
+				UI.Text(l, "Praetor.Small", S(14), S(36) + (i - 1) * (s.lh or S(18)), C.text)
 			end
 		end
 		local wl = vgui.Create("DPanel", sc)
@@ -716,75 +795,217 @@ local function buildShop(panel, kind)
 	panel.Refresh = fill
 end
 
--- ------------------------------------------------------------------ city tab: laws + every command
+-- ------------------------------------------------------------------ city tab: mayor, laws, every command
+-- Left: the current mayor, then the commands I can use in a grid that fills the
+-- width (2, 3 or 4 columns, as many as fit). Each card: icon, name, what it does
+-- (two lines) and the chat command in my language. Right: the laws.
 
-local function buildCity(panel)
-	local laws = vgui.Create("DPanel", panel)
-	laws:Dock(RIGHT)
-	laws:SetWide(math.Clamp(math.floor(panel:GetParent():GetWide() * 0.42), S(320), S(440)))
-	laws:DockMargin(S(12), 0, 0, 0)
+local function currentMayor()
+	for _, p in player.Iterator() do
+		if p.isMayor and p:isMayor() then return p end
+	end
+end
+
+local function lawsPanel(parent)
+	local laws = vgui.Create("DPanel", parent)
 	laws.Paint = function(_, w, h)
 		UI.Tablet(0, 0, w, h, C.panel, C.line)
 		w, h = w - S(4), h - S(4)
-		UI.Icon("scale", S(14), S(12), 24)
-		draw.SimpleText(P.L("f4_laws"), "Praetor.H1", S(46) + S(2), S(10) + S(2), C.ink)
-		draw.SimpleText(P.L("f4_laws"), "Praetor.H1", S(46), S(10), C.ivory)
+		local h1 = UI.FontH("Praetor.H1")
+		UI.Icon("scale", S(14), S(12) + (h1 - 24) / 2, 24)
+		draw.SimpleText(P.L("f4_laws"), "Praetor.H1", S(46) + S(2), S(12) + S(2), C.ink)
+		draw.SimpleText(P.L("f4_laws"), "Praetor.H1", S(46), S(12), C.ivory)
 		local list = DarkRP.getLaws and DarkRP.getLaws() or {}
-		local y = S(50)
+		local lh = UI.FontH("Praetor.Small")
+		local y = S(12) + h1 + S(10)
+		UI.Rect(S(14), y - S(4), w - S(28), 2, Color(C.line.r, C.line.g, C.line.b, 150))
+		y = y + S(6)
 		for i, law in ipairs(list) do
 			local lines = UI.Wrap(tostring(law), "Praetor.Small", w - S(66))
-			if y + #lines * S(18) > h - S(10) then break end
+			local rowH = math.max(S(26), #lines * lh)
+			if y + rowH > h - S(8) then
+				UI.Text(P.L("f4_laws_more", { V = #list - i + 1 }), "Praetor.Tiny", S(14), h - S(14), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+				break
+			end
 			UI.Round(S(14), y, S(26), S(26), S(13), C.bronze, C.ink)
 			UI.Text(i, "Praetor.SmallB", S(27), y + S(13), color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-			for li, l in ipairs(lines) do UI.Text(l, "Praetor.Small", S(50), y + S(4) + (li - 1) * S(18), C.text) end
-			y = y + math.max(S(30), #lines * S(18) + S(10))
+			local ty = y + math.floor((S(26) - lh) / 2)
+			for li, l in ipairs(lines) do UI.Text(l, "Praetor.Small", S(50), ty + (li - 1) * lh, C.text) end
+			y = y + rowH + S(10)
 		end
-		if #list == 0 then UI.Text(P.L("f4_no_laws"), "Praetor.Small", S(14), S(56), C.muted) end
+		if #list == 0 then UI.Text(P.L("f4_no_laws"), "Praetor.Small", S(14), y, C.muted) end
 	end
+	return laws
+end
+
+local function mayorCard(parent)
+	local mc = vgui.Create("DPanel", parent)
+	mc:Dock(TOP)
+	mc:SetTall(S(90))
+	mc:DockMargin(0, 0, S(6), S(10))
+	local AV = S(58)
+	local av = vgui.Create("AvatarImage", mc)
+	av:SetSize(AV, AV)
+	av:SetMouseInputEnabled(false)
+	mc.PerformLayout = function(_, _, h) av:SetPos(S(18), math.floor((h - AV) / 2)) end
+	mc.Think = function(s)
+		if RealTime() < (s.next or 0) then return end
+		s.next = RealTime() + 0.5
+		local m = currentMayor()
+		if m ~= s.mayor then
+			s.mayor = m
+			if IsValid(m) then av:SetPlayer(m, 64) end
+		end
+		av:SetVisible(IsValid(m))
+	end
+	mc.Paint = function(s, w, h)
+		local m = s.mayor
+		local has = IsValid(m)
+		UI.Round(S(3), S(3), w - S(3), h - S(3), S(14), C.ink)
+		UI.Round(0, 0, w - S(3), h - S(3), S(14), C.panel2, has and C.amber or C.line)
+		local ax, ay = S(18), math.floor((h - AV) / 2)
+		UI.Round(ax - S(3), ay - S(3), AV + S(6), AV + S(6), S(12), has and C.amber or C.panel3, C.ink)
+		if not has then UI.Icon("crown", ax + (AV - 32) / 2, ay + (AV - 32) / 2, 32, Color(255, 255, 255, 110)) end
+		local tx = ax + AV + S(16)
+		local tw = w - tx - S(16)
+		local tinyH, nameH, smallH = UI.FontH("Praetor.Tiny"), UI.FontH("Praetor.H2"), UI.FontH("Praetor.Small")
+		local ty = math.floor((h - S(3) - (tinyH + nameH + smallH + S(4))) / 2)
+		UI.Text(P.Upper(P.L(has and "f4_mayor_now" or "f4_mayor_none")), "Praetor.Tiny", tx, ty, has and C.amber or C.muted)
+		ty = ty + tinyH + S(2)
+		if has then
+			-- "you" chip on the right when I am the mayor
+			local right = 0
+			if m == me() then
+				surface.SetFont("Praetor.Tiny")
+				local yw = surface.GetTextSize(P.L("f4_you")) + S(18)
+				right = chip(w - S(3) - S(16) - yw, ty + (nameH - S(22)) / 2, P.L("f4_you"), "Praetor.Tiny", C.bronze, nil, S(22)) + S(8)
+			end
+			UI.Name(m:Nick(), "Praetor.H2", tx, ty, C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, tw - right, true)
+			ty = ty + nameH + S(2)
+			local nLaws = #(DarkRP.getLaws and DarkRP.getLaws() or {})
+			if GetGlobalBool("DarkRP_LockDown") then
+				UI.Icon("warn", tx, ty + (smallH - 16) / 2, 16)
+				UI.Text(UI.Fit(P.L("f4_mayor_lock"), "Praetor.SmallB", tw - S(22)), "Praetor.SmallB", tx + S(22), ty, C.crimsonL)
+			else
+				UI.Text(UI.Fit(P.L("f4_mayor_laws", { V = nLaws }), "Praetor.Small", tw), "Praetor.Small", tx, ty, C.muted)
+			end
+		else
+			UI.Text(UI.Fit(P.L("f4_mayor_none_t"), "Praetor.H2", tw), "Praetor.H2", tx, ty, C.text)
+			ty = ty + nameH + S(2)
+			UI.Text(UI.Fit(P.L("f4_mayor_none_d"), "Praetor.Small", tw), "Praetor.Small", tx, ty, C.muted)
+		end
+	end
+	return mc
+end
+
+-- one command card; h comes from the fonts
+local function cmdCardH()
+	return S(12) + UI.FontH("Praetor.BodyB") + S(2) + UI.FontH("Praetor.Small") * 2 + S(6) + UI.FontH("Praetor.Tiny") + S(6) + S(12)
+end
+
+local function cmdCard(parent, c, tint)
+	local t = vgui.Create("DButton", parent)
+	t:SetText("")
+	t.anim = 0
+	t:SetTooltip(P.L("f4cd_" .. c[1]))
+	t.OnCursorEntered = function() UI.Sound("hover") end
+	t.Paint = function(s, w, h)
+		s.anim = UI.Lerp(s.anim, s:IsHovered() and 1 or 0, 14)
+		local off = S(3)
+		local press = s:IsDown() and off or 0
+		w, h = w - off, h - off
+		UI.Round(off, off, w, h, S(14), C.ink)
+		UI.Round(press, press, w, h, S(14), P.LerpColor(s.anim, C.panel2, C.hover), P.LerpColor(s.anim, C.line, tint))
+		-- icon disc, centred on the card's height
+		local D = S(46)
+		local dx, dy = press + S(14), press + math.floor((h - D) / 2)
+		UI.Round(dx, dy, D, D, D / 2, tint, C.ink)
+		UI.Icon(c[2], dx + (D - 28) / 2, dy + (D - 28) / 2, 28)
+		local tx = press + S(14) + D + S(14)
+		local tw = w - (tx - press) - S(12)
+		local y = press + S(12)
+		UI.Text(UI.Fit(P.L("f4c_" .. c[1]), "Praetor.BodyB", tw), "Praetor.BodyB", tx, y, C.ivory)
+		y = y + UI.FontH("Praetor.BodyB") + S(2)
+		-- what it does: two lines at most
+		if s.descW ~= tw then
+			s.descW = tw
+			local lines = UI.Wrap(P.L("f4cd_" .. c[1]), "Praetor.Small", tw)
+			if #lines > 2 then
+				lines[2] = UI.Fit(lines[2] .. " " .. table.concat(lines, " ", 3), "Praetor.Small", tw)
+				for i = #lines, 3, -1 do lines[i] = nil end
+			end
+			s.lines = lines
+		end
+		local lh = UI.FontH("Praetor.Small")
+		for i, l in ipairs(s.lines or {}) do UI.Text(l, "Praetor.Small", tx, y + (i - 1) * lh, C.muted) end
+		-- the chat command, for who prefers typing
+		local line = F4.ChatLine(c)
+		if line then
+			local th = UI.FontH("Praetor.Tiny")
+			local cy = press + h - S(12) - th - S(4)
+			surface.SetFont("Praetor.Tiny")
+			line = UI.Fit(line, "Praetor.Tiny", tw - S(12))
+			local lw = surface.GetTextSize(line) + S(12)
+			UI.Round(tx, cy, lw, th + S(4), S(6), C.bg, C.line)
+			UI.Text(line, "Praetor.Tiny", tx + S(6), cy + S(2), Color(tint.r, tint.g, tint.b, 235))
+		end
+	end
+	t.DoClick = function() UI.Sound("click") F4.RunCommand(c) end
+	return t
+end
+F4.CommandCard = cmdCard
+F4.CommandCardH = cmdCardH
+
+local function cmdGrid(parent, cmds, tint, start)
+	local grid = vgui.Create("DPanel", parent)
+	grid:Dock(TOP)
+	grid:DockMargin(0, 0, S(6), S(6))
+	grid.Paint = nil
+	grid.cards = {}
+	for i, c in ipairs(cmds) do
+		local card = cmdCard(grid, c, tint)
+		grid.cards[i] = card
+		appear(card, start + i)
+	end
+	grid.PerformLayout = function(s, w)
+		local gap = S(10)
+		local cols = math.Clamp(math.floor((w + gap) / (S(240) + gap)), 1, 4)
+		local cw = math.floor((w - gap * (cols - 1)) / cols)
+		local ch = cmdCardH()
+		for i, card in ipairs(s.cards) do
+			local col = (i - 1) % cols
+			local row = math.floor((i - 1) / cols)
+			card:SetPos(col * (cw + gap), row * (ch + gap))
+			card:SetSize(cw, ch)
+		end
+		local rows = math.ceil(#s.cards / cols)
+		local th = rows * ch + math.max(0, rows - 1) * gap
+		if s:GetTall() ~= th then s:SetTall(th) end
+	end
+	return grid
+end
+
+local function buildCity(panel)
+	local laws = lawsPanel(panel)
+	laws:Dock(RIGHT)
+	laws:SetWide(math.Clamp(math.floor(panel:GetParent():GetWide() * 0.34), S(280), S(380)))
+	laws:DockMargin(S(12), 0, 0, 0)
 
 	local sc = UI.Scroll(panel)
 	sc:Dock(FILL)
 	local function fill()
 		sc:Clear()
-		local groups = {
-			{ P.L("f4_cmd_all"), C.bronze, function(c) return not c.cp and not c.mayor end },
-			{ P.L("f4_cmd_police"), C.sky, function(c) return c.cp end },
-			{ P.L("f4_cmd_mayor"), C.amber, function(c) return c.mayor end },
-		}
+		mayorCard(sc)
 		local vis = F4.VisibleCommands()
 		local n = 0
-		for _, g in ipairs(groups) do
+		for _, g in ipairs(F4.CommandGroups) do
 			local cmds = {}
 			for _, c in ipairs(vis) do if g[3](c) then cmds[#cmds + 1] = c end end
 			if #cmds > 0 then
-				catHead(sc, g[1], g[2], #cmds)
-				local grid = vgui.Create("DIconLayout", sc)
-				grid:Dock(TOP)
-				grid:DockMargin(0, 0, S(6), S(4))
-				grid:SetSpaceX(S(8))
-				grid:SetSpaceY(S(8))
-				for _, c in ipairs(cmds) do
-					n = n + 1
-					local t = grid:Add("DButton")
-					t:SetText("")
-					t:SetSize(S(200), S(74))
-					t.anim = 0
-					t.OnCursorEntered = function() UI.Sound("hover") end
-					t.Paint = function(s, w, h)
-						s.anim = UI.Lerp(s.anim, s:IsHovered() and 1 or 0, 14)
-						local off = S(3)
-						local press = s:IsDown() and off or 0
-						w, h = w - off, h - off
-						UI.Round(off, off, w, h, S(14), C.ink)
-						UI.Round(press, press, w, h, S(14), P.LerpColor(s.anim, C.panel2, C.hover), P.LerpColor(s.anim, C.line, g[2]))
-						UI.Round(press + S(10), press + (h - S(40)) / 2, S(40), S(40), S(20), g[2], C.ink)
-						UI.Icon(c[2], press + S(10) + 4, press + (h - 32) / 2, 32)
-						UI.Text(UI.Fit(P.L("f4c_" .. c[1]), "Praetor.BodyB", w - S(66)), "Praetor.BodyB", press + S(58), press + S(24), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-						UI.Text(UI.Fit(P.L("f4cd_" .. c[1]), "Praetor.Tiny", w - S(66)), "Praetor.Tiny", press + S(58), press + S(46), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-					end
-					t.DoClick = function() UI.Sound("click") F4.RunCommand(c) end
-					appear(t, n)
-				end
+				local tint = F4.GroupColor(g[2])
+				catHead(sc, P.L(g[1]), tint, #cmds)
+				cmdGrid(sc, cmds, tint, n)
+				n = n + #cmds
 			end
 		end
 	end
@@ -820,7 +1041,6 @@ function F4.Open(tabId)
 	UI.PopIn(f, 0.34)
 	if P.Music then P.Music("f4", true) end
 	local side = S(236)
-	local showBar = P.Setting("f4_commands") ~= false
 
 	f.Paint = function(_, pw, ph)
 		pw, ph = pw - OFF, ph - OFF
@@ -830,17 +1050,21 @@ function F4.Open(tabId)
 		UI.Rect(side, bw, bw, ph - bw * 2, C.line)
 		UI.Rect(side + S(18), S(61), pw - side - S(36), 2, Color(C.line.r, C.line.g, C.line.b, 160))
 	end
-	f.OnKeyCodePressed = function(_, key)
-		if key == KEY_F4 or key == KEY_ESCAPE then F4.Close() end
+	-- the F4 press that opened the menu (and its key repeat while held) must not
+	-- close it: F4 closes only after the key was let go once
+	f.f4Up = false
+	f.OnKeyCodePressed = function(s, key)
+		if key == KEY_ESCAPE then F4.Close() return end
+		if key == KEY_F4 and s.f4Up then F4.Close() end
 	end
 	f.Think = function(s)
+		if not s.f4Up and not input.IsKeyDown(KEY_F4) then s.f4Up = true end
 		if input.IsKeyDown(KEY_ESCAPE) and gui.IsGameUIVisible() then gui.HideGameUI() F4.Close() return end
 		-- job / money / police changes refresh the open tab
 		if RealTime() < (s.nextSig or 0) then return end
 		s.nextSig = RealTime() + 0.5
 		local sig = me():Team() .. ":" .. tostring(rp("money")) .. ":" .. tostring(me().isMayor and me():isMayor()) .. ":" .. tostring(GetGlobalBool("DarkRP_LockDown")) .. ":" .. tostring(rp("HasGunlicense"))
 		if s.sig and sig ~= s.sig and IsValid(s.tab) and s.tab.Refresh and s.current ~= "jobs" then s.tab.Refresh() end
-		if s.sig and sig ~= s.sig and IsValid(s.cmdBar) then s.cmdBar:Build() end
 		s.sig = sig
 	end
 
@@ -915,58 +1139,10 @@ function F4.Open(tabId)
 	end
 	close.DoClick = F4.Close
 
-	local barH = showBar and S(58) or 0
 	local content = vgui.Create("DPanel", f)
 	content:SetPos(side + S(18), S(70))
-	content:SetSize(w - OFF - side - S(36), h - OFF - S(84) - barH)
+	content:SetSize(w - OFF - side - S(36), h - OFF - S(84))
 	content.Paint = nil
-
-	-- the RP command bar under the content
-	if showBar then
-		local cb = vgui.Create("DPanel", f)
-		cb:SetPos(side + S(18), h - OFF - barH - S(4))
-		cb:SetSize(w - OFF - side - S(36), barH)
-		cb.Paint = function(_, bw2, bh2)
-			UI.Round(0, S(6), bw2, bh2 - S(6), S(14), C.panel, C.line)
-		end
-		function cb:Build()
-			self:Clear()
-			local cmds = F4.VisibleCommands()
-			local avail = self:GetWide() - S(16)
-			local each = math.floor((avail - (#cmds - 1) * S(6)) / math.max(1, #cmds))
-			local iconOnly = each < S(104)
-			each = math.min(each, S(150))
-			local x = S(8)
-			for _, c in ipairs(cmds) do
-				local b = vgui.Create("DButton", self)
-				b:SetText("")
-				b:SetPos(x, S(12))
-				b:SetSize(each, barH - S(18))
-				b:SetTooltip(P.L("f4cd_" .. c[1]))
-				b.anim = 0
-				b.OnCursorEntered = function() UI.Sound("hover") end
-				b.Paint = function(s, bw3, bh3)
-					s.anim = UI.Lerp(s.anim, s:IsHovered() and 1 or 0, 14)
-					local off = S(3)
-					local press = s:IsDown() and off or 0
-					bw3, bh3 = bw3 - off, bh3 - off
-					UI.Round(off, off, bw3, bh3, bh3 / 2, C.ink)
-					local tint = c.cp and C.sky or (c.mayor and C.amber or C.bronze)
-					UI.Round(press, press - math.floor(s.anim * S(1)), bw3, bh3, bh3 / 2, P.LerpColor(s.anim, C.panel2, tint), P.LerpColor(s.anim, C.line, C.ink))
-					if iconOnly then
-						UI.Icon(c[2], press + (bw3 - 20) / 2, press + (bh3 - 20) / 2, 20)
-					else
-						UI.Icon(c[2], press + S(10), press + (bh3 - 20) / 2, 20)
-						UI.Text(UI.Fit(P.L("f4c_" .. c[1]), "Praetor.SmallB", bw3 - S(42)), "Praetor.SmallB", press + S(36), press + bh3 / 2, s.anim > 0.5 and inkOn(tint) or C.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-					end
-				end
-				b.DoClick = function() UI.Sound("click") F4.RunCommand(c) end
-				x = x + each + S(6)
-			end
-		end
-		cb:Build()
-		f.cmdBar = cb
-	end
 
 	function f:SelectTab(id)
 		local t
@@ -1029,8 +1205,18 @@ function F4.Open(tabId)
 	return f
 end
 
+-- one key press can reach here twice (the bind and DarkRP's own toggle):
+-- a second toggle right after the first is ignored
 function F4.Toggle()
-	if IsValid(F4.frame) then F4.Close() else F4.Open() end
+	local now = RealTime()
+	if now - (F4.lastToggle or 0) < 0.3 then return end
+	F4.lastToggle = now
+	if IsValid(F4.frame) then
+		if not F4.frame.f4Up and F4.frame.f4Up ~= nil then return end
+		F4.Close()
+	else
+		F4.Open()
+	end
 end
 
 -- ------------------------------------------------------------------ taking over DarkRP's F4
@@ -1050,7 +1236,7 @@ local function wrap()
 	local open, close, toggle = DarkRP.openF4Menu, DarkRP.closeF4Menu, DarkRP.toggleF4Menu
 	if not open and not toggle then return end
 	DarkRP.__praetorF4 = true
-	DarkRP.openF4Menu = function(...) if on() then return F4.Open() end if open then return open(...) end end
+	DarkRP.openF4Menu = function(...) if on() then if not IsValid(F4.frame) then F4.Open() end return end if open then return open(...) end end
 	DarkRP.closeF4Menu = function(...) if on() then return F4.Close() end if close then return close(...) end end
 	DarkRP.toggleF4Menu = function(...) if on() then return F4.Toggle() end if toggle then return toggle(...) end end
 end

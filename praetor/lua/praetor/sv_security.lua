@@ -48,7 +48,8 @@ end)
 concommand.Add("praetor_owner", function(ply, _, args)
 	if IsValid(ply) then
 		ply:PrintMessage(HUD_PRINTCONSOLE, "[Praetor] praetor_owner only works from the server console / rcon.\n")
-		if P.Security then P.Security(ply, "owner_cmd", "praetor_owner from client") end
+		-- an owner trying it in their own console is not an attack
+		if P.Security and not P.IsOwner(ply) then P.Security(ply, "owner_cmd", "praetor_owner from client") end
 		return
 	end
 	local action, who = (args[1] or "list"):lower(), args[2]
@@ -242,8 +243,27 @@ function PLAYER:SetUserGroup(name)
 	local curAuth = P.Authority(self)
 	local max = P.Setting("rank_lock_max")
 
+	-- the rank Praetor itself has saved for this player: another admin mod (SAM, ULX,
+	-- a bridge) setting that same rank when the player joins is not an attack
+	local sid = self:SteamID64()
+	local stored = sid and P.UserRows and P.UserRows[sid] and P.UserRows[sid].rank
+	if not stored and sid and P.UserRow then
+		local row = P.UserRow(sid)
+		stored = row and row.rank
+	end
+	if stored and stored == name then
+		P.ApplyUserGroup(self, name)
+		return
+	end
+
 	if P.Setting("rank_lock") and (P.IsOwner(self) or newAuth > max or curAuth > max) then
-		P.Security(self, "rank_external", string.format("%s -> %s blocked (%s)", self:GetUserGroup(), name, src))
+		-- Owners are ranked by Praetor alone (their owner seal is above any rank), so
+		-- an outside change on them is simply ignored. Only a non-owner GAINING
+		-- authority from code outside Praetor is what a backdoor / exploit does:
+		-- that one goes to the security log.
+		if not P.IsOwner(self) and newAuth > curAuth then
+			P.Security(self, "rank_external", string.format("%s -> %s blocked (%s)", self:GetUserGroup(), name, src))
+		end
 		return
 	end
 
@@ -321,11 +341,12 @@ function P.BackdoorScan()
 		end
 	end
 	P.LastScan = { t = os.time(), found = found }
-	if #found > 0 then
-		local names = {}
-		for _, f in ipairs(found) do names[#names + 1] = f.name end
-		P.Security(nil, "backdoor", table.concat(names, ", "))
-	end
+	-- Only the net names are proof: they exist only in known backdoors. A replaced
+	-- RunString / CompileString is listed on the scan (with the file that did it) for
+	-- the owner to look at, but many honest addons wrap those, so it is not an alert.
+	local names = {}
+	for _, f in ipairs(found) do if f.kind == "net" then names[#names + 1] = f.name end end
+	if #names > 0 then P.Security(nil, "backdoor", table.concat(names, ", ")) end
 	return P.LastScan
 end
 

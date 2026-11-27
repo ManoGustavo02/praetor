@@ -299,6 +299,19 @@ end
 
 -- Player names: cut with "..." to fit `maxW` and drawn with a font that has the
 -- letters (names in Russian, Japanese, Arabic... don't turn into boxes).
+-- height of one line of a font (the Praetor fonts are taller than their size, so
+-- stacks of name / rank / SteamID are placed from this, not from a fixed number)
+function UI.FontH(font)
+	surface.SetFont(font)
+	local _, h = surface.GetTextSize("ÁgjM")
+	return h
+end
+
+-- height of a line of a name: names with Cyrillic, Asian... letters use a taller font
+function UI.NameH(text, font)
+	return UI.FontH(UI.FontFor and UI.FontFor(tostring(text or ""), font) or font)
+end
+
 function UI.Name(text, font, x, y, col, ax, ay, maxW, shadow)
 	text = tostring(text or "")
 	local f = UI.FontFor and UI.FontFor(text, font) or font

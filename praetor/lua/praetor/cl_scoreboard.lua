@@ -236,9 +236,9 @@ local function makeRow(parent, ply, onSelect)
 		local nameCol = lighten(roleCol or ply:GetRankColor(), 30)
 		local title = ply:GetPraetorTitle()
 		if title then
-			UI.Name(ply:Nick(), "Praetor.BodyB", L.nameX, h / 2 - S(8), nameCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, L.nameW)
+			UI.Name(ply:Nick(), "Praetor.BodyB", L.nameX, h / 2 - S(9), nameCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, L.nameW)
 			if UI.StyleWidth(title, "Praetor.Tiny") <= L.nameW then
-				UI.DrawStyle(title, "Praetor.Tiny", L.nameX, h / 2 + S(10), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				UI.DrawStyle(title, "Praetor.Tiny", L.nameX, h / 2 + S(11), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			end
 		else
 			UI.Name(ply:Nick(), "Praetor.BodyB", L.nameX, h / 2, nameCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, L.nameW)
@@ -271,9 +271,9 @@ local function makeRow(parent, ply, onSelect)
 		if mode == "darkrp" then
 			if rp(ply, "Arrested") then icon("jail") end
 			-- wanted: the flag blinks
-			if rp(ply, "wanted") and math.floor(RealTime() * 3) % 2 == 0 then icon("flag") elseif rp(ply, "wanted") then ix = ix - isz - S(6) end
-			if rp(ply, "HasGunlicense") then icon("license") end
-			if isCP(ply) then icon("helm") end
+			if rp(ply, "wanted") and math.floor(RealTime() * 3) % 2 == 0 then icon("wanted") elseif rp(ply, "wanted") then ix = ix - isz - S(6) end
+			if rp(ply, "HasGunlicense") then icon("permit") end
+			if isCP(ply) then icon("police") end
 		end
 		if P.OnDuty(ply) then icon("shield") end
 		if ply:IsSpeaking() then icon("mic", C.laurel) end
@@ -429,27 +429,39 @@ local function buildCard(card, ply)
 	end
 
 	-- name, badges, title, SteamID
+	-- each line is placed from the real height of the line above, so a long or
+	-- non-Latin name never touches the rank and the SteamID has its own line
 	local y = pad + mdlH + S(8)
+	local nameH = math.max(UI.FontH("Praetor.H2"), UI.NameH(ply:Nick(), "Praetor.H2"))
+	local badgeY = nameH + S(6)
+	local lineY = badgeY + S(22) + S(8)
+	local lineH = math.max(UI.FontH("Praetor.Small"), UI.FontH("Praetor.Mono"))
+	local headH = lineY + lineH + S(4)
 	local head = vgui.Create("DPanel", card)
 	head:SetPos(pad, y)
-	head:SetSize(iw, S(74))
+	head:SetSize(iw, headH)
 	head.Paint = function(_, w, h)
 		if not IsValid(ply) then return end
 		UI.Name(ply:Nick(), "Praetor.H2", 0, 0, C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, w)
 		local style, icon = UI.PlayerRankStyle(ply)
-		local x = UI.Badge(style, icon, "Praetor.Tag", 0, S(28), S(22)) + S(6)
+		local x = UI.Badge(style, icon, "Praetor.Tag", 0, badgeY, S(22)) + S(6)
 		local tag = ply:GetPraetorTag()
-		if tag and x + UI.BadgeWidth(tag, tag.icon, "Praetor.Tag", S(22)) <= w then UI.Badge(tag, tag.icon, "Praetor.Tag", x, S(28), S(22)) end
+		if tag and x + UI.BadgeWidth(tag, tag.icon, "Praetor.Tag", S(22)) <= w then UI.Badge(tag, tag.icon, "Praetor.Tag", x, badgeY, S(22)) end
 		local title = ply:GetPraetorTitle()
 		local sid = ply:IsBot() and "BOT" or ply:SteamID()
+		local cy = lineY + lineH / 2
 		if title then
-			UI.DrawStyle(title, "Praetor.Small", 0, S(58), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-			UI.Text(sid, "Praetor.Tiny", w, S(58), C.dim, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+			surface.SetFont("Praetor.Tiny")
+			local sw = surface.GetTextSize(sid)
+			if UI.StyleWidth(title, "Praetor.Small") <= w - sw - S(14) then
+				UI.DrawStyle(title, "Praetor.Small", 0, cy, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			end
+			UI.Text(sid, "Praetor.Tiny", w, cy, C.dim, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		else
-			UI.Text(sid, "Praetor.Mono", 0, S(58), C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			UI.Text(sid, "Praetor.Mono", 0, cy, C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		end
 	end
-	y = y + S(74)
+	y = y + headH
 
 	-- 2 x 2 tiles
 	local tiles = vgui.Create("DPanel", card)
@@ -846,6 +858,27 @@ end)
 for _, m in pairs(MUSIC) do
 	cvars.AddChangeCallback(m[2], function() update() end, "Praetor.Music")
 end
+
+-- DarkRP comes with FAdmin, whose scoreboard hook also answers TAB; hooks run in
+-- no fixed order, so sometimes FAdmin's board opened instead of this one. While
+-- Praetor's scoreboard is on, TAB is answered here before any other hook.
+local guarded
+local function installTabGuard()
+	if hook.Call == guarded then return end
+	local orig = hook.Call
+	guarded = function(name, gm, ...)
+		if (name == "ScoreboardShow" or name == "ScoreboardHide") and P.Setting and P.Setting("scoreboard") then
+			local ok, err = pcall(name == "ScoreboardShow" and SB.Open or SB.Close)
+			if ok then return true end
+			ErrorNoHalt("[Praetor] scoreboard: " .. tostring(err) .. "\n")
+		end
+		return orig(name, gm, ...)
+	end
+	hook.Call = guarded
+end
+installTabGuard()
+hook.Add("InitPostEntity", "Praetor.TabGuard", installTabGuard)
+timer.Create("Praetor.TabGuard", 30, 0, installTabGuard)
 
 hook.Add("ScoreboardShow", "Praetor.Scoreboard", function()
 	if not P.Setting("scoreboard") then return end

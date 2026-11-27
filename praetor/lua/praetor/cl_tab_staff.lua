@@ -66,11 +66,13 @@ local function buildDetail(detail, e)
 		local av = S(52)
 		UI.DrawAvatar(e.sid, IsValid(online) and online or nil, S(14), S(14), av, 255, IsValid(online) and UI.AvatarFrame(online) or nil, e.name)
 		local x = S(14) + av + S(12)
-		UI.Name(e.name, "Praetor.H2", x, S(16), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, w - x - S(10))
+		UI.Name(e.name, "Praetor.H2", x, S(12), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, w - x - S(10))
 		local style, icon = UI.RankStyle(e.rank)
-		UI.Badge(style, icon, "Praetor.Tiny", x, S(44), S(20))
+		local by = S(12) + UI.NameH(e.name, "Praetor.H2") + S(5)
+		local bw = UI.Badge(style, icon, "Praetor.Tiny", x, by, S(20))
 		local st = e.on and (e.dutyNow and P.L("st_on_duty") or P.L("online")) or (inactive(e) and P.L("st_inactive") or P.L("st_last", { V = P.Date(e.last) }))
-		UI.Text(st, "Praetor.Tiny", w - S(14), S(54), e.on and C.laurel or (inactive(e) and C.crimsonL or C.muted), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+		-- the state goes on the right of the rank; if both don't fit, it is shortened
+		UI.Text(UI.Fit(st, "Praetor.Tiny", w - x - bw - S(28)), "Praetor.Tiny", w - S(14), by + S(10), e.on and C.laurel or (inactive(e) and C.crimsonL or C.muted), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 
 		-- 14 days of play time
 		local gy = S(86)
@@ -294,20 +296,23 @@ P.AddTab("staff", {
 				local row = vgui.Create("DButton", sc)
 				row:SetText("")
 				row:Dock(TOP)
-				row:SetTall(S(44))
+				row:SetTall(S(52))
 				row:DockMargin(0, 0, S(4), S(4))
 				row.Paint = function(s, w, h)
 					local sel = state.sel == e.sid
 					UI.Round(0, 0, w, h, S(6), sel and Color(C.bronze.r, C.bronze.g, C.bronze.b, 40) or (s:IsHovered() and C.hover or C.panel), sel and C.bronze or C.line)
 					local xs = colX(w)
 					local online = player.GetBySteamID64(e.sid)
-					local av = h - S(14)
-					UI.DrawAvatar(e.sid, IsValid(online) and online or nil, xs[1][1], S(7), av, 255, IsValid(online) and UI.AvatarFrame(online) or nil, e.name)
+					local av = h - S(16)
+					UI.DrawAvatar(e.sid, IsValid(online) and online or nil, xs[1][1], S(8), av, 255, IsValid(online) and UI.AvatarFrame(online) or nil, e.name)
 					local nx = xs[1][1] + av + S(10)
 					local style, icon = UI.RankStyle(e.rank)
 					local bw = UI.BadgeWidth(style, icon, "Praetor.Tiny", S(18))
-					UI.Name(e.name, "Praetor.SmallB", nx, S(14), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, xs[1][2] - av - S(20))
-					if bw < xs[1][2] - av - S(16) then UI.Badge(style, icon, "Praetor.Tiny", nx, h - S(24), S(18)) end
+					-- name on top, rank under it with a clear gap
+					local nh = UI.NameH(e.name, "Praetor.SmallB")
+					local ny = math.max(S(4), math.floor((h - nh - S(5) - S(18)) / 2))
+					UI.Name(e.name, "Praetor.SmallB", nx, ny, C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, xs[1][2] - av - S(20))
+					if bw < xs[1][2] - av - S(16) then UI.Badge(style, icon, "Praetor.Tiny", nx, ny + nh + S(5), S(18)) end
 					-- hours with a small bar against the top one
 					UI.Text(hours(e.online), "Praetor.SmallB", xs[2][1], S(16), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 					local bw2 = xs[2][2] - S(14)

@@ -46,7 +46,7 @@ local SECTIONS = {
 	} },
 	{ "darkrpui", {
 		{ "hud", "bool" }, { "hud_hunger", "bool" }, { "hud_agenda", "bool" },
-		{ "f4", "bool" }, { "f4_commands", "bool" },
+		{ "f4", "bool" }, { "rp_drawer", "bool" }, { "rp_aliases", "bool" },
 	} },
 	{ "overhead", {
 		{ "overhead", "bool" }, { "overhead_dist", "number" }, { "overhead_avatar", "bool" }, { "overhead_rank", "bool" },
@@ -64,8 +64,14 @@ local SECTIONS = {
 		{ "duty_reports", "bool" },
 		{ "duty_strip", "bool" }, { "duty_baton", "bool" }, { "duty_cloak", "bool" },
 		{ "duty_afk", "bool" }, { "duty_goal", "bool" },
-		{ "staff_esp", "bool" }, { "ghost_cloaked", "bool" },
-		{ "esp_block", "bool" }, { "chip_alerts", "bool" }, { "chip_cpu_alert", "number" },
+		{ "staff_esp", "bool" }, { "esp_chams", "bool" }, { "ghost_cloaked", "bool" },
+	} },
+	-- E2 / Starfall: alerts, anti-lag and blocked names
+	{ "chips", {
+		{ "chip_alerts", "bool" }, { "chip_cpu_alert", "number" }, { "chip_esp_alert", "bool" },
+		{ "chip_autostop", "bool" }, { "chip_stop_pct", "number" }, { "chip_stop_secs", "number" },
+		{ "chip_lag_guard", "bool" }, { "chip_lag_pct", "number" },
+		{ "chip_block_words", "longtext" }, { "esp_block", "bool" },
 	} },
 	{ "logs", {
 		{ "log_days", "number" }, { "log_damage", "bool" }, { "log_props", "bool" },
@@ -94,6 +100,7 @@ local SECTIONS = {
 	{ "spawning", {
 		{ "dupe_max_ents", "number" }, { "dupe_max_cons", "number" }, { "dupe_cooldown", "number" }, { "dupe_bypass", "bool" },
 		{ "dupe_announce", "choice", { "all", "staff", "none" } }, { "dupe_message", "longtext" },
+		{ "dupe_block_words", "longtext" },
 		{ "prop_blacklist", "longtext" },
 	} },
 	{ "propprotect", {
@@ -109,6 +116,7 @@ local SECTIONS = {
 		{ "ac_enabled", "bool" }, { "ac_notify", "bool" },
 		{ "ac_lag", "bool" }, { "ac_lag_ms", "number" }, { "ac_min_awake", "number" }, { "ac_lag_remove", "bool" },
 		{ "ac_crazy", "bool" }, { "ac_spawn_freeze", "bool" }, { "ac_physenv", "bool" },
+		{ "ac_unfreeze", "bool" }, { "ac_unfreeze_min", "number" },
 		{ "ac_spam", "bool" }, { "ac_spam_count", "number" }, { "ac_spam_secs", "number" },
 		{ "ac_net", "bool" }, { "ac_net_limit", "number" },
 		{ "ac_chat", "bool" }, { "ac_chat_count", "number" }, { "ac_chat_secs", "number" },

@@ -183,6 +183,77 @@ function P.CheckDupe(ply, nEnts, nCons, tool, badModel)
 	return true
 end
 
+-- ------------------------------------------------------------------ dupe names
+-- Dupes whose name (or, for Workshop dupes, title / tags / description) has one
+-- of the words of dupe_block_words are refused: crash dupes are usually shared
+-- with names like "crasher" or "server crash". Owners are not checked.
+local function dupeWord(text)
+	local list = P.Setting("dupe_block_words")
+	if not isstring(list) or P.Trim(list) == "" or not P.AutoModCompile then return nil end
+	local block = P.AutoModCompile(list)
+	if #block == 0 then return nil end
+	return P.AutoModFind(tostring(text or ""), block, {}, false)
+end
+P.DupeWord = dupeWord
+
+function P.DupeNameRefused(ply, name, word, tool)
+	if not IsValid(ply) or not once(ply, "name") then return end
+	P.Log("dupe", "l_dupe_name", { A = P.LogPly(ply), V = P.Str(tostring(name), 80), S = word, V2 = tool }, { ply })
+	P.DupeBlocked(ply, 0, 0, tool, "name", false, word)
+	if P.Security then P.Security(ply, "dupe_name", P.Str(tostring(name), 80) .. " (" .. word .. ", " .. tostring(tool) .. ")", true) end
+end
+
+local function fileBase(path)
+	return (string.GetFileFromFilename(tostring(path or "")):gsub("%.%w+$", ""))
+end
+
+-- Advanced Duplicator 2 keeps the name of the file the player opened
+local function adv2Word(ply)
+	if P.IsOwner(ply) then return nil end
+	local d = ply.AdvDupe2
+	local name = istable(d) and (d.Name or d.name)
+	if not isstring(name) or name == "" then return nil end
+	local word = dupeWord(fileBase(name))
+	return word, fileBase(name)
+end
+
+-- GMod's duplicator: the name of the dupe file comes at the end of "ArmDupe".
+-- The original receiver runs as always; when the name is refused, the dupe it
+-- armed is taken away before it can be pasted.
+local function wrapArm()
+	local recv = net.Receivers and net.Receivers["armdupe"]
+	if not recv or recv == P.ArmWrapped then return end
+	local orig = recv
+	local wrapped = function(len, client)
+		local captured
+		local rs = net.ReadString
+		net.ReadString = function(...)
+			local v = rs(...)
+			if captured == nil then captured = v end
+			return v
+		end
+		local ok, err = pcall(orig, len, client)
+		net.ReadString = rs
+		if not ok then ErrorNoHalt("[Praetor] ArmDupe: " .. tostring(err) .. "\n") end
+		if not IsValid(client) or not client.CurrentDupe or P.IsOwner(client) then return end
+		local base = captured and fileBase(captured) or ""
+		local word = base ~= "" and dupeWord(base) or nil
+		-- a Workshop dupe already refused by its title / description
+		if not word and (client.PraetorWSDupeBad or 0) > CurTime() then
+			word, base = client.PraetorWSDupeWord, client.PraetorWSDupeTitle or base
+		end
+		if word then
+			client.CurrentDupe = nil
+			client.CurrentDupeArmed = false
+			P.DupeNameRefused(client, base, word, "duplicator")
+		end
+	end
+	net.Receivers["armdupe"] = wrapped
+	P.ArmWrapped = wrapped
+end
+hook.Add("InitPostEntity", "Praetor.DupeNames", function() timer.Simple(2, wrapArm) end)
+timer.Simple(6, wrapArm)
+
 local DUPE_TOOLS = { duplicator = true, advdupe2 = true, adv_duplicator = true }
 
 -- Checked before the toolgun fires.
@@ -194,6 +265,10 @@ hook.Add("CanTool", "Praetor.Dupes", function(ply, tr, tool)
 	elseif tool == "advdupe2" then data = ply.AdvDupe2
 	else data = ply.AdvDupe end
 	if not data then return end
+	if tool == "advdupe2" then
+		local word, name = adv2Word(ply)
+		if word then P.DupeNameRefused(ply, name, word, tool) return false end
+	end
 	local e, c, bad = countDupe(data)
 	if e == 0 then return end
 	if not P.CheckDupe(ply, e, c, tool, bad) then return false end
@@ -214,6 +289,7 @@ local function wrap()
 				local r = { pcall(orig, ply, entList, conList, ...) }
 				ply.PraetorPasting = nil
 				if not r[1] then ErrorNoHalt(tostring(r[2]) .. "\n") return {}, {} end
+				if P.ACCheckPasted and istable(r[2]) then pcall(P.ACCheckPasted, ply, r[2]) end
 				return unpack(r, 2)
 			end
 			return orig(ply, entList, conList, ...)
@@ -224,6 +300,12 @@ local function wrap()
 		AdvDupe2.PraetorWrapped = true
 		AdvDupe2.InitPastingQueue = function(ply, ...)
 			if IsValid(ply) and ply:IsPlayer() and ply.AdvDupe2 then
+				local word, name = adv2Word(ply)
+				if word then
+					ply.AdvDupe2.Pasting = false
+					P.DupeNameRefused(ply, name, word, "advdupe2")
+					return
+				end
 				local e, c, bad = countDupe(ply.AdvDupe2)
 				if e > 0 and not P.CheckDupe(ply, e, c, "advdupe2", bad) then
 					ply.AdvDupe2.Pasting = false

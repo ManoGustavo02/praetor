@@ -208,6 +208,47 @@ if SERVER then
 		end)
 	end)
 
+	-- Workshop dupes (spawn menu > Dupes): before the game downloads one, the
+	-- player's client asks here; the title, tags and description are checked
+	-- with dupe_block_words. Steam not answering lets the dupe through.
+	local dupeCache = {}
+	function P.CheckDupeWorkshop(id, cb)
+		id = wsId(id)
+		if not id then cb(nil) return end
+		local c = dupeCache[id]
+		if c ~= nil then cb(c.word or nil, c.title) return end
+		http.Post("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/",
+			{ itemcount = "1", ["publishedfileids[0]"] = id },
+			function(body)
+				local t = util.JSONToTable(body or "") or {}
+				local d = t.response and t.response.publishedfiledetails and t.response.publishedfiledetails[1]
+				if not d or tonumber(d.result) ~= 1 then cb(nil, id) return end
+				local tags = {}
+				for _, tg in ipairs(d.tags or {}) do tags[#tags + 1] = tostring(tg.tag or "") end
+				local text = table.concat({ tostring(d.title or ""), table.concat(tags, " "), P.Str(d.description or "", 3000) }, "\n")
+				local word = P.DupeWord and P.DupeWord(text) or nil
+				dupeCache[id] = { word = word or false, title = tostring(d.title or id) }
+				cb(word, tostring(d.title or id))
+			end,
+			function() cb(nil, id) end)
+	end
+
+	P.Receive("dupe_ws", { rate = 3 }, function(ply, data)
+		local id = wsId(data.id)
+		if not id then return end
+		if P.IsOwner(ply) then P.Send(ply, "dupe_ws", { id = id, ok = true }) return end
+		P.CheckDupeWorkshop(id, function(word, title)
+			if not IsValid(ply) then return end
+			if word then
+				ply.PraetorWSDupeBad = CurTime() + 120
+				ply.PraetorWSDupeWord = word
+				ply.PraetorWSDupeTitle = P.Str(title or id, 80) .. " (" .. id .. ")"
+				if P.DupeNameRefused then P.DupeNameRefused(ply, ply.PraetorWSDupeTitle, word, "workshop") end
+			end
+			P.Send(ply, "dupe_ws", { id = id, ok = word == nil })
+		end)
+	end)
+
 	-- players joining late learn the verdicts already made
 	hook.Add("PlayerInitialSpawn", "Praetor.WorkshopGuard", function(ply)
 		timer.Simple(5, function()
@@ -281,6 +322,37 @@ else
 			end)
 		end
 	end
+
+	-- Workshop dupes: the spawn menu's "download and arm" waits for the server
+	local dupeWait = {}
+	P.On("dupe_ws", function(d)
+		local id = tostring(d.id or "")
+		local go = dupeWait[id]
+		dupeWait[id] = nil
+		timer.Remove("Praetor.DupeWS." .. id)
+		if go and d.ok then go() end
+	end)
+	local function wrapDupeMenu()
+		local wd = rawget(_G, "ws_dupe")
+		if not istable(wd) or not isfunction(wd.DownloadAndArm) or wd.DownloadAndArm == wd.PraetorDAA then return end
+		local orig = wd.DownloadAndArm
+		local mine = function(self, id, ...)
+			local sid = wsId(id)
+			if not sid then return orig(self, id, ...) end
+			local extra = { ... }
+			dupeWait[sid] = function() orig(self, id, unpack(extra)) end
+			P.Request("dupe_ws", { id = sid })
+			-- no answer: the dupe goes on as normal
+			timer.Create("Praetor.DupeWS." .. sid, 12, 1, function()
+				local go = dupeWait[sid]
+				dupeWait[sid] = nil
+				if go then go() end
+			end)
+		end
+		wd.DownloadAndArm = mine
+		wd.PraetorDAA = mine
+	end
+	timer.Create("Praetor.DupeMenuWrap", 2, 0, wrapDupeMenu)
 
 	-- Wardrobe: before it downloads an addon (also for the model list of its menu)
 	hook.Add("Wardrobe_ValidateInfo", "Praetor.WorkshopGuard", function(wsid, info)

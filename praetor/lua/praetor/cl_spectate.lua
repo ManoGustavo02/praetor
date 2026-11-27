@@ -325,7 +325,7 @@ hook.Add("HUDPaint", "Praetor.Spectate", function()
 	}
 	local hh = hintsHeight(list, inner)
 	local isP = t:IsPlayer()
-	local rowsH = isP and (S(26) + S(24) + S(22) + S(22) + S(22)) or S(30)
+	local rowsH = isP and (S(32) + S(24) + S(22) + S(22) + S(22)) or S(30)
 	local h = pad + S(16) + rowsH + S(8) + hh + pad
 	local y = ScrH() - h - S(28)
 	UI.Comic(x, y, w, h, S(12), Color(C.panel.r, C.panel.g, C.panel.b, 235), C.edge, S(4), 170)
@@ -348,7 +348,7 @@ hook.Add("HUDPaint", "Praetor.Spectate", function()
 		local badgeW = S(150)
 		UI.Name(t:Nick(), "Praetor.H2", x + pad, ty + S(13), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, inner - badgeW - S(10), true)
 		UI.Badge(style, icon, "Praetor.Tag", x + w - pad, ty + S(2), S(22), 255, TEXT_ALIGN_RIGHT)
-		ty = ty + S(26)
+		ty = ty + S(32)
 		-- health and armor bars, side by side
 		local half = math.floor((inner - S(10)) / 2)
 		local hp, maxHp = math.max(0, t:Health()), math.max(1, t:GetMaxHealth())

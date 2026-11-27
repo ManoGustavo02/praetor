@@ -175,9 +175,18 @@ local function drawPlayer(ply, alpha)
 
 	-- small info line (hours only from 1h on: "0m" over a newcomer says nothing)
 	local info = {}
+	-- DarkRP: the job on its own line, in the job colour, with seals for the gun
+	-- license, wanted and arrested next to it
+	local job, jobCol
 	if s("overhead_job") then
-		local job, jobCol = jobInfo(ply)
-		if job and job ~= "" then info[#info + 1] = { job, jobCol, pill = true } end
+		job, jobCol = jobInfo(ply)
+		if job == "" then job = nil end
+	end
+	local seals = {}
+	if P.IsDarkRP() and ply.getDarkRPVar then
+		if ply:getDarkRPVar("HasGunlicense") then seals[#seals + 1] = { "permit", C.sky } end
+		if ply:getDarkRPVar("wanted") then seals[#seals + 1] = { "wanted", C.crimson } end
+		if ply:getDarkRPVar("Arrested") then seals[#seals + 1] = { "jail", C.amber } end
 	end
 	if s("overhead_hours") then
 		local secs = P.PlayTime(ply)
@@ -202,11 +211,19 @@ local function drawPlayer(ply, alpha)
 	local infoW = 0
 	for i, it in ipairs(info) do infoW = infoW + surface.GetTextSize(it[1]) + (it.pill and 28 or 0) + (i > 1 and sepW or 0) end
 
-	local contentH = NAME_H + (#parts > 0 and (BADGE_H + 10) or 0) + (#info > 0 and INFO_H or 0)
+	local jobW = 0
+	if job then
+		job = UI.Fit(job, "Praetor.OH.Tag", NAME_MAX - 60)
+		surface.SetFont("Praetor.OH.Tag")
+		jobW = surface.GetTextSize(job) + 76
+	end
+	local sealsW = #seals > 0 and (#seals * (BADGE_H + 8) + (job and 4 or 0)) or 0
+	local jobRow = job ~= nil or #seals > 0
+	local contentH = NAME_H + (#parts > 0 and (BADGE_H + 10) or 0) + (jobRow and (BADGE_H + 10) or 0) + (#info > 0 and INFO_H or 0)
 	local showAv = s("overhead_avatar")
 	local innerH = math.max(showAv and AV or 0, contentH)
 	local showHP = s("overhead_health")
-	local contentW = math.max(nameW, bsum, infoW)
+	local contentW = math.max(nameW, bsum, infoW, jobW + sealsW)
 	local w = PAD * 2 + (showAv and (AV + GAP) or 0) + contentW
 	local h = PAD * 2 + innerH + (showHP and 14 or 0)
 	local x0, y0 = -w / 2, -h
@@ -282,6 +299,28 @@ local function drawPlayer(ply, alpha)
 		for i, pt in ipairs(parts) do
 			UI.Badge(pt[1], pt[2], "Praetor.OH.Tag", bx, cy, BADGE_H, A, TEXT_ALIGN_LEFT)
 			bx = bx + badgeW[i] + 12
+		end
+		cy = cy + BADGE_H + 4
+	end
+
+	if jobRow then
+		cy = cy + 6
+		local jx = cx
+		if job then
+			local jc = jobCol or C.bronze
+			UI.Round(jx + 4, cy + 4, jobW, BADGE_H, BADGE_H / 2, Color(C.ink.r, C.ink.g, C.ink.b, 160 * alpha))
+			UI.Round(jx, cy, jobW, BADGE_H, BADGE_H / 2, Color(jc.r, jc.g, jc.b, 240 * alpha), Color(C.ink.r, C.ink.g, C.ink.b, A), 4)
+			local lum = jc.r * 0.299 + jc.g * 0.587 + jc.b * 0.114
+			local tc = lum > 150 and C.ink or color_white
+			UI.Icon("brief", jx + 12, cy + (BADGE_H - 34) / 2, 34, Color(255, 255, 255, A))
+			draw.SimpleText(job, "Praetor.OH.Tag", jx + 56, cy + BADGE_H / 2, Color(tc.r, tc.g, tc.b, A), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			jx = jx + jobW + 12
+		end
+		for _, se in ipairs(seals) do
+			local c = se[2]
+			UI.Round(jx, cy, BADGE_H, BADGE_H, BADGE_H / 2, Color(c.r, c.g, c.b, 235 * alpha), Color(C.ink.r, C.ink.g, C.ink.b, A), 4)
+			UI.Icon(se[1], jx + (BADGE_H - 34) / 2, cy + (BADGE_H - 34) / 2, 34, Color(255, 255, 255, A))
+			jx = jx + BADGE_H + 8
 		end
 		cy = cy + BADGE_H + 4
 	end

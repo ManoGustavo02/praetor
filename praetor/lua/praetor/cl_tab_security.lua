@@ -409,12 +409,12 @@ P.AddTab("security", {
 					local r = row(topBox, S(36), function(_, w, h)
 						UI.Round(0, 0, w, h, S(6), C.panel2)
 						UI.DrawAvatar(o.s, P.BySID(o.s), S(6), S(5), S(26), 255, nil, o.n)
-						UI.Name(o.n, "Praetor.SmallB", S(40), S(12), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - S(140))
+						UI.Name(o.n, "Praetor.SmallB", S(40), S(12), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - S(150))
 						-- moving props bar
 						local bw = w - S(150)
-						UI.Round(S(40), S(24), bw, S(4), S(2), C.bg)
+						UI.Round(S(40), S(26), bw, S(4), S(2), C.bg)
 						local f = (o.a or 0) / maxA
-						if f > 0 then UI.Round(S(40), S(24), math.max(S(4), bw * f), S(4), S(2), f > 0.6 and C.amber or C.sky) end
+						if f > 0 then UI.Round(S(40), S(26), math.max(S(4), bw * f), S(4), S(2), f > 0.6 and C.amber or C.sky) end
 						UI.Text(P.L("sec_ac_owner_n", { V = o.c or 0, V2 = o.a or 0 }), "Praetor.Tiny", w - S(8), h / 2, C.muted, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 					end)
 					r:SetCursor("hand")
@@ -531,14 +531,14 @@ P.AddTab("security", {
 			if #d.owners == 0 then note(owners, P.L("sec_no_owner"), C.crimsonL) end
 			for _, o in ipairs(d.owners) do
 				local right2 = o.host and P.L("sec_owner_host") or P.SID32(o.sid)
-				local r = row(owners, S(40), function(_, w, h)
+				local r = row(owners, S(46), function(_, w, h)
 					UI.Round(0, 0, w, h, S(6), C.panel2)
-					UI.Icon("crown", S(44), S(6), 16)
+					UI.Icon("crown", S(44), S(14) - 8, 16)
 					UI.Name(o.name ~= "" and o.name or "?", "Praetor.SmallB", S(64), S(14), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - S(70))
-					UI.Text(right2, "Praetor.Tiny", S(44), S(28), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+					UI.Text(right2, "Praetor.Tiny", S(44), S(33), C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 				end)
 				local av = UI.FramedAvatar(r, S(30), nil, o.sid)
-				av:SetPos(S(6), S(5))
+				av:SetPos(S(6), S(8))
 			end
 			fit(owners)
 
@@ -547,13 +547,13 @@ P.AddTab("security", {
 			famBox:Clear()
 			if #(d.family or {}) == 0 then note(famBox, P.L("sec_family_none")) end
 			for _, f in ipairs(d.family or {}) do
-				local r = row(famBox, S(40), function(_, w, h)
+				local r = row(famBox, S(46), function(_, w, h)
 					UI.Round(0, 0, w, h, S(6), C.panel2)
-					UI.Name(f.name, "Praetor.SmallB", S(44), S(13), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - S(50))
-					UI.Text(P.L("sec_family_owner", { S = util.SteamIDFrom64(f.owner) }), "Praetor.Tiny", S(44), S(28), C.amber, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+					UI.Name(f.name, "Praetor.SmallB", S(44), S(14), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, w - S(50))
+					UI.Text(UI.Fit(P.L("sec_family_owner", { S = util.SteamIDFrom64(f.owner) }), "Praetor.Tiny", w - S(50)), "Praetor.Tiny", S(44), S(33), C.amber, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 				end)
 				local av = UI.FramedAvatar(r, S(30), nil, f.sid)
-				av:SetPos(S(6), S(5))
+				av:SetPos(S(6), S(8))
 				r:SetCursor("hand")
 				r.OnMousePressed = function()
 					UI.Popup({

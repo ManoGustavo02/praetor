@@ -24,7 +24,7 @@ local function infoRows(ply)
 	return rows
 end
 
-local HEAD_H = S(84)
+local HEAD_H = S(100)
 local ROW_H = S(22)
 
 -- the quick action tiles, in sections (move, state, life, punish, manage)
@@ -46,12 +46,13 @@ local function detail(panel, ply)
 	panel.Paint = function(_, w, h)
 		UI.Tablet(0, 0, w, h, C.panel, C.line)
 		if not IsValid(ply) then return end
-		UI.Name(ply:Nick(), "Praetor.H2", S(84), S(12), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, w - S(96))
+		UI.Name(ply:Nick(), "Praetor.H2", S(84), S(10), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, w - S(96))
 		local style, icon = UI.PlayerRankStyle(ply)
-		local x = S(84) + UI.Badge(style, icon, "Praetor.Tag", S(84), S(38), S(22)) + S(6)
+		local by = math.min(S(10) + UI.NameH(ply:Nick(), "Praetor.H2") + S(5), HEAD_H - S(22) - UI.FontH("Praetor.Mono") - S(10))
+		local x = S(84) + UI.Badge(style, icon, "Praetor.Tag", S(84), by, S(22)) + S(6)
 		local tag = ply:GetPraetorTag()
-		if tag then UI.Badge(tag, tag.icon, "Praetor.Tag", x, S(38), S(22)) end
-		UI.Text(ply:IsBot() and "BOT" or ply:SteamID(), "Praetor.Mono", S(84), S(64), C.dim)
+		if tag and x + UI.BadgeWidth(tag, tag.icon, "Praetor.Tag", S(22)) <= w - S(12) then UI.Badge(tag, tag.icon, "Praetor.Tag", x, by, S(22)) end
+		UI.Text(ply:IsBot() and "BOT" or ply:SteamID(), "Praetor.Mono", S(84), by + S(22) + S(5), C.dim)
 		UI.Rule(S(12), HEAD_H, w - S(24), C.line)
 		for i, r in ipairs(infoRows(ply)) do
 			local y = HEAD_H + S(8) + (i - 1) * ROW_H

@@ -34,9 +34,18 @@ end
 P.JailClock = clock
 
 -- ------------------------------------------------------------------ sign over the cell
--- drawn in 3D2D (big fonts, small scale); centred on x = 0, bottom at y = 0
+-- drawn in 3D2D (big fonts, small scale); centred on x = 0, bottom at y = 0.
+-- Every line is placed from the real height of its font and the sign grows with
+-- what it holds: a long name is shortened, a long reason wraps in up to 3 lines.
+local function fontH(f)
+	surface.SetFont(f)
+	local _, h = surface.GetTextSize("ÁgjM")
+	return h
+end
+
+local SIGN_MAXW = 900
 function P.DrawJailSign(ply, info)
-	local pad, maxW = 34, 980
+	local pad, maxW = 36, SIGN_MAXW
 	local name = ply:Nick()
 	local time = info.perm and P.L("jail_perm") or clock(info.left)
 	local tag = P.L("jail_sign")
@@ -48,10 +57,19 @@ function P.DrawJailSign(ply, info)
 	local nameW = math.min(maxW, surface.GetTextSize(name))
 	surface.SetFont("Praetor.OH.Rank")
 	local timeW = surface.GetTextSize(time)
+
+	local lines = UI.Wrap(info.reason, "Praetor.OH.Small", maxW)
+	if #lines > 3 then
+		lines = { lines[1], lines[2], UI.Fit(table.concat(lines, " ", 3), "Praetor.OH.Small", maxW) }
+	end
 	surface.SetFont("Praetor.OH.Small")
-	local reasonW = math.min(maxW, surface.GetTextSize(info.reason))
+	local reasonW = 0
+	for _, l in ipairs(lines) do reasonW = math.max(reasonW, surface.GetTextSize(l)) end
+
+	local nameH, timeH, lineH = fontH(nameFont), fontH("Praetor.OH.Rank"), fontH("Praetor.OH.Small")
+	local pillH = 60
 	local w = math.max(tagW, nameW, timeW, reasonW) + pad * 2
-	local h = pad + 60 + 14 + 70 + 52 + 50 + pad
+	local h = pad + pillH + 14 + nameH + timeH + 12 + #lines * lineH + pad
 	local x, y = -w / 2, -h
 
 	UI.Round(x + 10, y + 12, w, h, 26, Color(C.ink.r, C.ink.g, C.ink.b, 200))
@@ -59,17 +77,20 @@ function P.DrawJailSign(ply, info)
 	UI.Round(x + 6, y + 6, w - 12, 8, 4, C.crimson)
 
 	-- red pill with the cuffs: PRESO / JAILED
-	local cy = y + pad + 30
-	UI.Round(-tagW / 2, cy - 30, tagW, 60, 30, C.crimson, C.ink, 4)
-	UI.Icon("jail", -tagW / 2 + 22, cy - 24, 48)
-	draw.SimpleText(tag, "Praetor.OH.Tag", -tagW / 2 + 22 + 48 + 14, cy, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	local cy = y + pad
+	UI.Round(-tagW / 2, cy, tagW, pillH, pillH / 2, C.crimson, C.ink, 4)
+	UI.Icon("jail", -tagW / 2 + 22, cy + (pillH - 48) / 2, 48)
+	draw.SimpleText(tag, "Praetor.OH.Tag", -tagW / 2 + 22 + 48 + 14, cy + pillH / 2, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	cy = cy + pillH + 14
 
-	cy = cy + 30 + 14 + 35
-	UI.Name(name, "Praetor.OH.Name", 0, cy, C.ivory, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, maxW)
-	cy = cy + 35 + 26
-	draw.SimpleText(time, "Praetor.OH.Rank", 0, cy, info.perm and C.amber or C.ivory, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-	cy = cy + 26 + 25
-	draw.SimpleText(UI.Fit(info.reason, "Praetor.OH.Small", maxW), "Praetor.OH.Small", 0, cy, C.muted, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	UI.Name(name, "Praetor.OH.Name", 0, cy, C.ivory, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, maxW)
+	cy = cy + nameH
+	draw.SimpleText(time, "Praetor.OH.Rank", 0, cy, info.perm and C.amber or C.ivory, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+	cy = cy + timeH + 12
+	for _, l in ipairs(lines) do
+		draw.SimpleText(l, "Praetor.OH.Small", 0, cy, C.muted, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+		cy = cy + lineH
+	end
 end
 
 -- ------------------------------------------------------------------ card for the prisoner
@@ -88,11 +109,14 @@ hook.Add("HUDPaint", "Praetor.JailHUD", function()
 	local pad = S(14)
 	local inner = w - pad * 2
 	local reasonLines = UI.Wrap(info.reason, "Praetor.Body", inner)
-	if #reasonLines > 2 then
-		reasonLines = { reasonLines[1], UI.Fit(table.concat(reasonLines, " ", 2), "Praetor.Body", inner) }
+	if #reasonLines > 3 then
+		reasonLines = { reasonLines[1], reasonLines[2], UI.Fit(table.concat(reasonLines, " ", 3), "Praetor.Body", inner) }
 	end
-	local headH, barH, infoH = S(36), S(26), S(46)
-	local reasonH = S(16) + #reasonLines * S(19)
+	-- heights from the fonts, so the text never runs out of the card
+	local tinyH, boldH, lineH = fontH("Praetor.Tiny"), fontH("Praetor.BodyB"), fontH("Praetor.Body")
+	local headH, barH = S(36), S(26)
+	local infoH = S(8) + tinyH + S(2) + boldH + S(8)
+	local reasonH = tinyH + S(2) + #reasonLines * lineH
 	local h = pad + headH + barH + infoH + reasonH + pad
 	local x = math.floor((ScrW() - w) / 2)
 	local y = math.floor(ScrH() - h - S(96) + (1 - a) * S(24))
@@ -131,17 +155,18 @@ hook.Add("HUDPaint", "Praetor.JailHUD", function()
 	local iy = ty + headH + barH
 	UI.Rect(x + pad, iy, inner, 1, A(C.line))
 	local colW = math.floor((inner - S(12)) / 2)
-	UI.Text(P.L("jail_by"):upper(), "Praetor.Tiny", x + pad, iy + S(8), A(C.dim))
-	UI.Name(info.by, "Praetor.BodyB", x + pad, iy + S(22), A(C.ivory), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, colW)
+	local vy = iy + S(8) + tinyH + S(2)
+	UI.Text(UI.Fit(P.L("jail_by"):upper(), "Praetor.Tiny", colW), "Praetor.Tiny", x + pad, iy + S(8), A(C.dim))
+	UI.Name(info.by, "Praetor.BodyB", x + pad, vy, A(C.ivory), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, colW)
 	local cx = x + pad + colW + S(12)
-	UI.Text(P.L("jail_total"):upper(), "Praetor.Tiny", cx, iy + S(8), A(C.dim))
+	UI.Text(UI.Fit(P.L("jail_total"):upper(), "Praetor.Tiny", colW), "Praetor.Tiny", cx, iy + S(8), A(C.dim))
 	local total = info.perm and P.L("jail_perm") or P.FormatDuration(math.max(1, math.ceil(info.len / 60)), P.L("jail_perm"))
-	UI.Text(UI.Fit(total, "Praetor.BodyB", colW), "Praetor.BodyB", cx, iy + S(22), A(C.ivory))
+	UI.Text(UI.Fit(total, "Praetor.BodyB", colW), "Praetor.BodyB", cx, vy, A(C.ivory))
 
 	-- reason
 	local ry = iy + infoH
-	UI.Text(P.L("jail_reason"):upper(), "Praetor.Tiny", x + pad, ry + S(2), A(C.dim))
+	UI.Text(P.L("jail_reason"):upper(), "Praetor.Tiny", x + pad, ry, A(C.dim))
 	for i, l in ipairs(reasonLines) do
-		UI.Text(l, "Praetor.Body", x + pad, ry + S(16) + (i - 1) * S(19), A(C.text))
+		UI.Text(l, "Praetor.Body", x + pad, ry + tinyH + S(2) + (i - 1) * lineH, A(C.text))
 	end
 end)

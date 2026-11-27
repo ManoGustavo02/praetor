@@ -1,3 +1,50 @@
+[h2]1.7.0[/h2]
+[b]English[/b]
+A DarkRP update (new HUD, City tab with the mayor, RP commands drawer, commands in Portuguese, job over the head), a stronger anti-crash, real protection against E2 / Starfall lag, a dupe filter, a minimal ESP, redone announcements and a security log with far fewer false alarms.
+[list]
+[*][b]DarkRP HUD redone[/b]: one card with the profile picture, name and job on top, health, armor and hunger in aligned rows (icon, bar, number) and money with the salary at the bottom. A gun license seal shows next to the job when you have one.
+[*][b]Job over the head[/b]: in DarkRP the tag over the head shows the job on its own line, in the job colour, with seals for gun license, wanted and arrested.
+[*][b]F4 City tab[/b]: the current mayor (picture and name, or "no mayor right now"), the laws, and every RP command you can use in cards that fill the screen: icon, name, what it does and the chat command. New commands: cheque, call the police, agenda, hit price, give license, reset laws, city broadcast and lottery. The list follows your job (police, mayor, agenda, hitman).
+[*][b]RP commands drawer[/b]: a tab with an arrow on the right edge of the screen (hold C to click it, type /comandos, or bind praetor_rpcmds). It slides out with the commands of your job, what each one does and how to type it. Replaces the cramped bar at the bottom of the F4.
+[*][b]Commands in Portuguese[/b]: DarkRP commands can also be typed in Portuguese, for example /soltardinheiro, /procurar, /toque, /criarlei, /anuncio. Accents and upper case don't matter and the English ones keep working. DarkRP still decides who can use each one.
+[*][b]F4 fixes[/b]: the F4 key opens and closes with one press (before, it only stayed open while held). In Jobs, the badges under the job name wrap to a new line instead of going under the description.
+[*][b]TAB in DarkRP[/b]: FAdmin's scoreboard (it comes with DarkRP) sometimes opened instead of Praetor's. Praetor's TAB now always opens while it is on.
+[*][b]Notifications[/b]: only Praetor and DarkRP messages use Praetor's look. Game notices such as undo (Z) and cleanup keep the normal GMod look.
+[*][b]New DarkRP icons[/b]: gun license, police, wanted, money bag, siren, gavel, agenda, cheque, lottery, broadcast, hit and lockdown.
+[*][b]Announcements redone[/b]: the middle one is now a centred card with the icon on a medal, the title, the text, who sent it and the time left as a bar inside the card (no more line across the screen). The top bar and the corner cards have the time bar inside, the author next to the title and the right spacing for every font. Announcements in the chat get a band in their own colour, like staff messages.
+[*][b]Anti-crash for big contraptions[/b]: unfreezing a big frozen contraption (physgun reload) now happens a few props at a time while the server is watched; if the ticks get slow it is frozen again. Contraptions with many props stacked in the same spot (the usual crash dupe of props and ropes) are not unfrozen at all, and dupes pasted already unfrozen with a pile like that are frozen at once. A very slow tick with props stuck in each other freezes them right away instead of waiting.
+[*][b]E2 and Starfall[/b]: a chip that stays above the CPU limit for some seconds is stopped (optional), and when the whole server lags the chip using the most CPU is stopped. Stopping a chip now also removes what it made (holograms and the Starfall screen). Chips with a blocked word in the name (crash, esp... list in Settings) can't be placed.
+[*][b]Dupe filter[/b]: dupes with a blocked word (crash, lag... list in Settings) in the name or in the Workshop title / description are refused, for saved dupes, Workshop dupes and Advanced Duplicator 2.
+[*][b]Staff ESP redone[/b]: minimal and clean. The player model in the rank colour through walls, corner brackets, the full name (never cut), SteamID and distance, and thin health and armor bars with the numbers. No more side card or picture.
+[*][b]Security log[/b]: much more exact. No more alerts for the owner changing their own rank, for ranks applied by SAM / ULX at join, for a minimized game not sending a screenshot, for an ESP chip when the player had none, or for clicking fast in the menu (only many in a minute). The backdoor scan only alerts for known backdoor names.
+[*][b]Jail sign[/b]: long names and reasons fit (the reason wraps in up to 3 lines).
+[*][b]Layout[/b]: names, ranks and SteamIDs no longer touch each other in the TAB, staff panel, users, players, reports, promotions, security and spectate.
+[*]Screenshots tab: right click on a picture no longer gives an error.
+[/list]
+
+[b]Português[/b]
+Uma atualização de DarkRP (HUD novo, aba Cidade com o prefeito, gaveta de comandos de RP, comandos em português, profissão em cima da cabeça), anti-crash mais forte, proteção de verdade contra lag de E2 / Starfall, filtro de dupes, ESP minimalista, anúncios refeitos e um log de segurança com muito menos alarmes falsos.
+[list]
+[*][b]HUD do DarkRP refeito[/b]: um cartão com a foto de perfil, nome e profissão em cima, vida, colete e fome em linhas alinhadas (ícone, barra, número) e o dinheiro com o salário embaixo. Um selo de porte de armas aparece ao lado da profissão quando você tem.
+[*][b]Profissão em cima da cabeça[/b]: no DarkRP a tag em cima da cabeça mostra a profissão numa linha própria, na cor dela, com selos de porte, procurado e preso.
+[*][b]Aba Cidade do F4[/b]: o prefeito atual (foto e nome, ou "sem prefeito no momento"), as leis e todos os comandos de RP que você pode usar em cartões que ocupam a tela: ícone, nome, o que faz e o comando do chat. Comandos novos: cheque, chamar a polícia, agenda, preço do contrato, dar porte, limpar leis, comunicado e loteria. A lista segue a sua profissão (polícia, prefeito, agenda, matador).
+[*][b]Gaveta de comandos de RP[/b]: uma aba com uma seta na borda direita da tela (segure C para clicar, digite /comandos ou use praetor_rpcmds numa tecla). Ela desliza com os comandos da sua profissão, o que cada um faz e como digitar. Substitui a barra apertada no rodapé do F4.
+[*][b]Comandos em português[/b]: os comandos do DarkRP também podem ser digitados em português, por exemplo /soltardinheiro, /procurar, /toque, /criarlei, /anuncio. Acento e maiúscula não importam e os em inglês continuam funcionando. Quem pode usar cada um continua sendo decidido pelo DarkRP.
+[*][b]Correções no F4[/b]: a tecla F4 abre e fecha com um toque (antes só ficava aberto segurando). Em Profissões, os selos embaixo do nome passam para a linha de baixo em vez de ficar por baixo da descrição.
+[*][b]TAB no DarkRP[/b]: o placar do FAdmin (que vem com o DarkRP) às vezes abria no lugar do Praetor. Agora o TAB do Praetor sempre abre enquanto estiver ligado.
+[*][b]Notificações[/b]: só as mensagens do Praetor e do DarkRP usam o visual do Praetor. Avisos do jogo como desfazer (Z) e limpeza continuam com o visual normal do GMod.
+[*][b]Ícones novos de DarkRP[/b]: porte de armas, polícia, procurado, saco de dinheiro, sirene, martelo de juiz, agenda, cheque, loteria, comunicado, contrato e toque de recolher.
+[*][b]Anúncios refeitos[/b]: o do meio agora é um cartão centralizado com o ícone numa medalha, o título, o texto, quem enviou e o tempo restante como uma barra dentro do cartão (sem a linha atravessando a tela). A barra do topo e os cartões de canto têm a barra de tempo por dentro, o autor ao lado do título e o espaçamento certo para cada fonte. Anúncios no chat ganham uma faixa na cor deles, como as mensagens da staff.
+[*][b]Anti-crash para construções grandes[/b]: descongelar uma construção grande (reload da physgun) agora acontece aos poucos enquanto o servidor é observado; se os ticks ficarem lentos, tudo volta a congelar. Construções com muitos props empilhados no mesmo lugar (a dupe de crash comum, com props e cordas) não são descongeladas, e dupes coladas já descongeladas com uma pilha assim são congeladas na hora. Um tick muito lento com props presos uns nos outros congela eles na hora, sem esperar.
+[*][b]E2 e Starfall[/b]: um chip que fica acima do limite de CPU por alguns segundos é parado (opcional), e quando o servidor inteiro trava o chip que mais usa CPU é parado. Parar um chip agora também remove o que ele criou (hologramas e a tela do Starfall). Chips com palavra bloqueada no nome (crash, esp... lista nas Configurações) não podem ser colocados.
+[*][b]Filtro de dupes[/b]: dupes com palavra bloqueada (crash, lag... lista nas Configurações) no nome ou no título / descrição da Oficina são recusadas, nas dupes salvas, nas da Oficina e no Advanced Duplicator 2.
+[*][b]ESP da staff refeito[/b]: minimalista e limpo. O modelo do jogador na cor do cargo através das paredes, cantos da caixa, o nome inteiro (nunca cortado), SteamID e distância, e barras finas de vida e colete com os números. Sem o cartão lateral e sem foto.
+[*][b]Log de segurança[/b]: muito mais exato. Sem alertas para o dono mudando o próprio cargo, para cargos aplicados pelo SAM / ULX na entrada, para jogo minimizado que não manda print, para chip de ESP quando o jogador não tinha nenhum, ou para cliques rápidos no menu (só muitos num minuto). A busca de backdoor só alerta nomes de backdoor conhecidos.
+[*][b]Placa da jail[/b]: nomes e motivos longos cabem (o motivo quebra em até 3 linhas).
+[*][b]Layout[/b]: nomes, cargos e SteamIDs não ficam mais grudados no TAB, painel da staff, usuários, jogadores, denúncias, promoções, segurança e spectate.
+[*]Aba Prints: o botão direito numa imagem não dá mais erro.
+[/list]
+
 [h2]1.6.0[/h2]
 [b]English[/b]
 A real jail, a full staff mode (baton, ESP, shift summary, weekly goals), suspicious chip alerts, spray control, a wiki inside the menu, a new spectate, smarter commands, a new loading screen and a careful pass over the whole interface.

@@ -38,11 +38,25 @@ hook.Add("PlayerDisconnected", "Praetor.NetBuckets", function(ply)
 end)
 
 local strikes = {}
+local soft = {}
 
-local function flag(ply, kind, info)
-	if P.Security then P.Security(ply, kind, info) end
+-- kind: what was wrong. soft = something an honest game can also do now and then
+-- (clicking very fast, a menu still open right after the rank changed): those only
+-- reach the security log when they repeat many times in a minute. Messages that a
+-- normal game never sends (unknown operation, giant packet) are logged at once.
+local function flag(ply, kind, info, isSoft)
 	local sid = P.SIDOf(ply)
 	strikes[sid] = (strikes[sid] or 0) + 1
+	if isSoft then
+		local key = sid .. kind
+		local r = soft[key]
+		local now = CurTime()
+		if not r or now - r.t > 60 then r = { t = now, n = 0 } soft[key] = r end
+		r.n = r.n + 1
+		if r.n ~= (kind == "net_rate" and 60 or 8) then return end
+		info = tostring(info) .. " (x" .. r.n .. " / 60s)"
+	end
+	if P.Security then P.Security(ply, kind, info) end
 end
 
 net.Receive("praetor_rq", function(len, ply)
@@ -56,18 +70,18 @@ net.Receive("praetor_rq", function(len, ply)
 	local o = rec.opts
 
 	if not allowRate(ply, op, o.rate) then
-		if (strikes[P.SIDOf(ply)] or 0) < 40 then flag(ply, "net_rate", op) end
+		flag(ply, "net_rate", op, true)
 		return
 	end
 
-	if o.owner and not P.IsOwner(ply) then flag(ply, "net_denied", op) return end
+	if o.owner and not P.IsOwner(ply) then flag(ply, "net_denied", op, true) return end
 	if o.perm then
 		local perms = istable(o.perm) and o.perm or { o.perm }
 		local any = false
 		for _, pm in ipairs(perms) do
 			if P.Has(ply, pm) then any = true break end
 		end
-		if not any then flag(ply, "net_denied", op) return end
+		if not any then flag(ply, "net_denied", op, true) return end
 	end
 
 	local size = net.ReadUInt(16)

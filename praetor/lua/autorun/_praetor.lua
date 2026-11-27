@@ -3,7 +3,7 @@
 -- files: addons written for ULX or SAM can find the compatibility bridge early.
 
 Praetor = Praetor or {}
-Praetor.Version = "1.6.0"
+Praetor.Version = "1.7.0"
 
 local shared = {
 	"sh_core.lua",
@@ -19,6 +19,7 @@ local shared = {
 	"sh_cmd_server.lua",
 	"sh_cmd_users.lua",
 	"sh_cmd_darkrp.lua",
+	"sh_rpcmds.lua",
 	"sh_cmd_sits.lua",
 	"sh_cmd_votes.lua",
 	"sh_cmd_screen.lua",
@@ -89,6 +90,7 @@ local client = {
 	"cl_scoreboard.lua",
 	"cl_hud.lua",
 	"cl_f4.lua",
+	"cl_rpdrawer.lua",
 	"cl_spectate.lua",
 	"cl_report.lua",
 	"cl_staff.lua",

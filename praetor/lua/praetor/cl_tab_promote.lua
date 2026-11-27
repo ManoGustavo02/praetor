@@ -71,7 +71,7 @@ P.AddTab("promote", {
 				local row = vgui.Create("DButton", nsc)
 				row:SetText("")
 				row:Dock(TOP)
-				row:SetTall(S(50))
+				row:SetTall(S(58))
 				row:DockMargin(0, 0, S(4), S(4))
 				row:SetTooltip(P.L("alt_open"))
 				row.Paint = function(s, w, h)
@@ -86,11 +86,11 @@ P.AddTab("promote", {
 					UI.Badge(style, icon, "Praetor.Tiny", w - S(8), S(6), S(18), 255, TEXT_ALIGN_RIGHT)
 					local frac = math.Clamp(n.have / math.max(1, n.need), 0, 1)
 					local bw2 = w - x - S(10)
-					UI.Round(x, h - S(16), bw2, S(5), S(2), Color(255, 255, 255, 16))
-					UI.Round(x, h - S(16), math.max(S(4), bw2 * frac), S(5), S(2), frac >= 1 and C.laurel or C.bronze)
+					UI.Round(x, h - S(12), bw2, S(5), S(2), Color(255, 255, 255, 16))
+					UI.Round(x, h - S(12), math.max(S(4), bw2 * frac), S(5), S(2), frac >= 1 and C.laurel or C.bronze)
 					local left = math.max(0, n.need - n.have)
-					UI.Text(left > 0 and P.L("pm_left", { V = P.FormatHours(left) }) or P.L("pm_ready"), "Praetor.Tiny", w - S(10), h - S(26), C.muted, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
-					if n.off then UI.Text(P.L("pm_offline"), "Praetor.Tiny", x, h - S(26), C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
+					UI.Text(left > 0 and P.L("pm_left", { V = P.FormatHours(left) }) or P.L("pm_ready"), "Praetor.Tiny", w - S(10), h - S(23), C.muted, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+					if n.off then UI.Text(P.L("pm_offline"), "Praetor.Tiny", x, h - S(23), C.dim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER) end
 				end
 				row.DoClick = function() P.OpenMenu("users", { sid = n.sid }) end
 			end

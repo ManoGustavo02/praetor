@@ -47,7 +47,8 @@ P.Defaults = {
 	hud_hunger        = true,       -- the hunger bar (only when DarkRP's hunger mod is on)
 	hud_agenda        = true,       -- the agenda / laws box
 	f4                = true,
-	f4_commands       = true,       -- the bar of RP commands in the F4
+	rp_drawer         = true,       -- the RP commands drawer at the right edge of the screen
+	rp_aliases        = true,       -- DarkRP commands can be typed in Portuguese (/soltardinheiro = /dropmoney)
 	-- overhead tag
 	overhead          = true,
 	overhead_dist     = 700,
@@ -70,6 +71,7 @@ P.Defaults = {
 	duty_on           = true,       -- staff mode exists (off: !staffmode is refused and nothing below runs)
 	duty_reports      = false,      -- report alerts only for staff on duty; taking a report off duty asks to start it
 	staff_esp         = true,       -- staff on duty can turn on the ESP (permission esp)
+	esp_chams         = true,       -- the ESP shows player models through walls (each staff: praetor_esp_chams)
 	duty_strip        = true,       -- !duty puts away the weapons that hurt (given back after)
 	duty_baton        = true,       -- !duty gives the staff baton
 	duty_cloak        = false,      -- !duty also makes the staff invisible (taken off when duty ends)
@@ -79,6 +81,13 @@ P.Defaults = {
 	sprays            = true,       -- players can use their spray (staff can still block one player)
 	chip_alerts       = true,       -- staff on duty are warned about heavy or suspicious E2 / Starfall chips
 	chip_cpu_alert    = 80,         -- % of the CPU limit that counts as heavy
+	chip_esp_alert    = false,      -- also alert when a chip keeps reading where the players are (many honest chips do)
+	chip_autostop     = true,       -- a chip at the edge of its CPU quota for too long is stopped
+	chip_stop_pct     = 95,         -- % of the quota that counts as "at the edge"
+	chip_stop_secs    = 10,         -- for how long
+	chip_lag_guard    = true,       -- all chips together eat most of the server tick: the heaviest one stops
+	chip_lag_pct      = 60,         -- % of one server tick used by all chips together
+	chip_block_words  = "*crash*, lagger*, *servercrash*, esp, aimbot*, wallhack*, *exploit*", -- chip names that are refused
 	esp_block         = true,       -- E2 / Starfall chips can't find or follow staff on duty or invisible players
 	-- logs & reports
 	log_days          = 21,
@@ -116,6 +125,7 @@ P.Defaults = {
 	prop_blacklist    = "",         -- models a dupe may not carry (the owner adds the paths)
 	dupe_announce     = "staff",    -- who sees "X tried to paste a dupe of N entities": all / staff / none
 	dupe_message      = "",         -- custom text, {player} {count} {limit}; empty = built-in message
+	dupe_block_words  = "*crash*, crasher*, lagger*, *servercrash*, *lagmachine*, *exploit*", -- dupe names / Workshop titles that are refused
 	-- prop protection
 	pp_enabled        = true,       -- players only touch their own things (off by itself when FPP / another CPPI runs)
 	pp_cleanup_min    = 5,          -- props of who left are removed after this many minutes (0 = never)
@@ -140,6 +150,8 @@ P.Defaults = {
 	ac_lag_ms         = 120,        -- average frame time that counts as lag (ms)
 	ac_min_awake      = 25,         -- props awake needed to blame the physics for the lag
 	ac_lag_remove     = false,      -- remove (instead of freeze) colliding props when lag keeps going
+	ac_unfreeze       = true,       -- big contraptions unfreeze a few props per tick (refrozen if the server lags); piles of props stay frozen
+	ac_unfreeze_min   = 25,         -- frozen props in a contraption before that guard looks at it
 	ac_crazy          = true,       -- props with broken physics (NaN / absurd speed)
 	ac_spam           = true,       -- spawn spam
 	ac_spam_count     = 12,         -- spawns allowed ...

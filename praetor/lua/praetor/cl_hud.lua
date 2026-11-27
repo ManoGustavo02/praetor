@@ -1,5 +1,5 @@
--- Praetor: DarkRP HUD. A comic card at the bottom left (avatar, name, job,
--- health, armor, hunger, money and salary), the ammo at the bottom right, the
+-- Praetor: DarkRP HUD. A card at the bottom left (avatar, name, job, health,
+-- armor, hunger, money and salary on one grid), the ammo at the bottom right, the
 -- agenda at the top left and a banner during a lockdown.
 -- Server: Settings > DarkRP (hud, hud_hunger, hud_agenda). Each player can
 -- turn it off with praetor_hud 0 and get DarkRP's own HUD back.
@@ -101,100 +101,146 @@ end
 
 -- ------------------------------------------------------------------ pieces
 
--- outlined bar with an icon, the value and a ghost part
-local function bar(x, y, w, h, icon, frac, ghost, col, label)
-	local bw = UI.BW()
-	UI.Round(x + S(2), y + S(2), w, h, h / 2, C.ink)
-	UI.Round(x, y, w, h, h / 2, C.bg, C.ink)
-	local iw = w - bw * 2
+local function fontH(f)
+	surface.SetFont(f)
+	local _, h = surface.GetTextSize("ÁgjM")
+	return h
+end
+
+-- flat rounded bar with a ghost part (what was just lost)
+local function bar(x, y, w, h, frac, ghost, col)
 	frac, ghost = math.Clamp(frac, 0, 1), math.Clamp(ghost or 0, 0, 1)
-	if ghost > frac then UI.Round(x + bw, y + bw, math.max(h - bw * 2, iw * ghost), h - bw * 2, (h - bw * 2) / 2, Color(255, 255, 255, 170)) end
+	UI.Round(x, y, w, h, h / 2, Color(0, 0, 0, 120))
+	if ghost > frac then UI.Round(x, y, math.max(h, w * ghost), h, h / 2, Color(255, 255, 255, 150)) end
 	if frac > 0 then
-		UI.Round(x + bw, y + bw, math.max(h - bw * 2, iw * frac), h - bw * 2, (h - bw * 2) / 2, col)
-		-- a light line on top, like a shine
-		UI.Round(x + bw + S(4), y + bw + S(2), math.max(0, iw * frac - S(8)), S(2), S(1), Color(255, 255, 255, 70))
+		UI.Round(x, y, math.max(h, w * frac), h, h / 2, col)
+		UI.Round(x + S(3), y + 1, math.max(0, w * frac - S(6)), math.max(1, math.floor(h / 3)), S(1), Color(255, 255, 255, 45))
 	end
-	-- the icon sits on a disc at the start of the bar
-	local d = h + S(10)
-	UI.Round(x - d / 2, y + h / 2 - d / 2, d, d, d / 2, col, C.ink)
-	UI.Icon(icon, x - 10, y + h / 2 - 10, 20)
-	draw.SimpleText(label, "Praetor.Tiny", x + w - S(8) + 1, y + h / 2 + 1, C.ink, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
-	draw.SimpleText(label, "Praetor.Tiny", x + w - S(8), y + h / 2, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 end
 
 local function pill(x, y, text, font, fill, icon, fg)
 	surface.SetFont(font)
-	local tw, th = surface.GetTextSize(text)
-	local h = th + S(10)
-	local w = tw + S(20) + (icon and S(22) or 0)
-	UI.Comic(x, y, w, h, h / 2, fill, C.ink, S(3))
-	local tx = x + S(10)
-	if icon then UI.Icon(icon, tx, y + (h - 16) / 2, 16) tx = tx + S(22) end
+	local tw = surface.GetTextSize(text)
+	local h = fontH(font) + S(6)
+	local w = tw + S(16) + (icon and S(20) or 0)
+	UI.Comic(x, y, w, h, h / 2, fill, C.ink, S(2))
+	local tx = x + S(8)
+	if icon then UI.Icon(icon, tx, y + (h - 16) / 2, 16) tx = tx + S(20) end
 	draw.SimpleText(text, font, tx, y + h / 2, fg or inkOn(fill), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	return w, h
 end
 
+local function shadowText(text, font, x, y, col, ax, ay)
+	draw.SimpleText(text, font, x + 1, y + 1, Color(0, 0, 0, 170), ax, ay)
+	draw.SimpleText(text, font, x, y, col, ax, ay)
+end
+
 -- ------------------------------------------------------------------ main card
+-- One card, three rows on a grid:
+--   header  avatar | name, job
+--   bars    icon | bar | value      (health, armor, hunger)
+--   footer  money | salary
+-- Every row is placed from the real height of its fonts, the icons and the
+-- values sit in fixed columns, nothing hangs out of the card.
 
 local born
 local function drawMain()
 	local me = LocalPlayer()
-	local sw, sh = ScrW(), ScrH()
+	local sh = ScrH()
 	born = born or RealTime()
 	local k = UI.EaseBack(math.min(1, (RealTime() - born) / 0.5))
 	local hasHunger = P.Setting("hud_hunger") ~= false and rp("Energy") ~= nil
-	local W = S(372)
-	local H = hasHunger and S(156) or S(134)
+
+	local pad = S(14)
+	local W = S(340)
+	local av = S(50)
+	local nameH, tinyH, smallH, moneyH = fontH("Praetor.H2"), fontH("Praetor.Tiny"), fontH("Praetor.SmallB"), fontH("Praetor.BodyB")
+	local pillH = tinyH + S(6)
+	local headH = math.max(av, nameH + S(4) + pillH)
+	local barH, rowH = S(9), math.max(S(20), smallH)
+	local rows = hasHunger and 3 or 2
+	local footH = moneyH
+	local H = pad + headH + S(12) + 1 + S(10) + rows * rowH + (rows - 1) * S(4) + S(10) + 1 + S(10) + footH + pad
+
 	local x = S(22)
 	local y = sh - H - S(22) + math.floor((1 - k) * S(60))
 
 	local hp, mhp = show.hp, math.max(1, me:GetMaxHealth())
 	local low = me:Health() / mhp <= 0.25 and me:Alive()
-	-- low health: the outline blinks red
 	local edge = C.lineL
 	if low then edge = P.LerpColor((math.sin(RealTime() * 8) + 1) / 2, C.lineL, C.crimson) end
-	-- shake for a moment when hit
 	local shake = math.max(0, 0.25 - (RealTime() - hitAt)) * 4
 	x = x + math.floor(math.sin(RealTime() * 70) * S(3) * shake)
 
-	UI.Comic(x, y, W, H, S(16), Color(C.panel.r, C.panel.g, C.panel.b, 238), edge, S(5))
+	UI.Comic(x, y, W, H, S(14), Color(C.panel.r, C.panel.g, C.panel.b, 238), edge, S(4))
+	local ix, iw = x + pad, W - pad * 2
 
-	-- avatar with a job-coloured frame
+	-- header: avatar with a frame in the job colour, name and job
 	local job = rp("job") or team.GetName(me:Team())
 	local jc = team.GetColor(me:Team())
-	local av = S(62)
-	local ax, ay = x + S(14), y + S(14)
-	UI.Round(ax - S(3) + S(3), ay - S(3) + S(3), av + S(6), av + S(6), S(14), C.ink)
-	UI.Round(ax - S(3), ay - S(3), av + S(6), av + S(6), S(14), jc, C.ink)
-	drawAvatar(ax, ay, av)
-
-	-- name and job pill
-	local tx = ax + av + S(14)
-	local nm = UI.Fit(me:Nick(), "Praetor.H2", W - (tx - x) - S(14))
-	draw.SimpleText(nm, "Praetor.H2", tx + S(2), ay + S(2), C.ink)
-	draw.SimpleText(nm, "Praetor.H2", tx, ay, C.ivory)
-	pill(tx, ay + S(32), UI.Fit(job, "Praetor.SmallB", W - (tx - x) - S(40)), "Praetor.SmallB", jc)
+	local hy = y + pad
+	local ay = hy + math.floor((headH - av) / 2)
+	UI.Round(ix - S(3), ay - S(3), av + S(6), av + S(6), S(12), jc, C.ink)
+	drawAvatar(ix, ay, av)
+	local tx = ix + av + S(12)
+	local tw = ix + iw - tx
+	local ty = hy + math.floor((headH - (nameH + S(4) + pillH)) / 2)
+	UI.Name(me:Nick(), "Praetor.H2", tx, ty, C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, tw, true)
+	-- job pill, and the gun license seal next to it when I have one
+	local lic = rp("HasGunlicense")
+	local licW = 0
+	if lic then
+		surface.SetFont("Praetor.Tiny")
+		licW = surface.GetTextSize(P.L("sb_license")) + S(36) + S(6)
+	end
+	local jw = pill(tx, ty + nameH + S(4), UI.Fit(job, "Praetor.Tiny", tw - S(20) - licW), "Praetor.Tiny", jc)
+	if lic then pill(tx + jw + S(6), ty + nameH + S(4), P.L("sb_license"), "Praetor.Tiny", C.sky, "permit") end
 
 	-- bars
-	local bx = x + S(40)
-	local bw = W - S(56)
-	local by = ay + av + S(18)
-	local barH = S(16)
-	bar(bx, by, bw, barH, "heart", hp / mhp, show.ghostHp / mhp, low and P.LerpColor((math.sin(RealTime() * 8) + 1) / 2, C.crimson, C.crimsonL) or C.crimson, math.max(0, me:Health()) .. "")
-	by = by + barH + S(8)
+	local ry = hy + headH + S(12)
+	UI.Rect(ix, ry, iw, 1, C.line)
+	ry = ry + 1 + S(10)
+	local valW = S(46)
+	local bx = ix + S(26)
+	local bw = iw - S(26) - valW - S(8)
+	local function row(icon, iconCol, frac, ghost, col, value)
+		local cy = ry + rowH / 2
+		UI.Icon(icon, ix, cy - 9, 18, iconCol)
+		bar(bx, cy - barH / 2, bw, barH, frac, ghost, col)
+		shadowText(value, "Praetor.SmallB", ix + iw, cy, C.ivory, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+		ry = ry + rowH + S(4)
+	end
+	local hpCol = low and P.LerpColor((math.sin(RealTime() * 8) + 1) / 2, C.crimson, C.crimsonL) or C.crimson
+	row("heart", nil, hp / mhp, show.ghostHp / mhp, hpCol, tostring(math.max(0, me:Health())))
 	local ma = math.max(1, me.GetMaxArmor and me:GetMaxArmor() or 100)
-	bar(bx, by, bw, barH, "shield", show.ar / ma, 0, C.sky, me:Armor() .. "")
+	row("shield", nil, show.ar / ma, 0, C.sky, tostring(math.max(0, me:Armor())))
 	if hasHunger then
-		by = by + barH + S(8)
 		local en = tonumber(rp("Energy")) or 100
-		bar(bx, by, bw, barH, "leaf", show.en / 100, 0, en <= 20 and C.crimsonL or C.amber, math.floor(en) .. "%")
+		row("leaf", nil, show.en / 100, 0, en <= 20 and C.crimsonL or C.amber, math.floor(en) .. "%")
+	end
+	ry = ry - S(4) + S(10)
+
+	-- footer: money on the left, salary on the right
+	UI.Rect(ix, ry, iw, 1, C.line)
+	ry = ry + 1 + S(10)
+	local fy = ry + footH / 2
+	UI.Icon("coin", ix, fy - 9, 18)
+	local moneyTxt = money(math.floor(show.money))
+	shadowText(moneyTxt, "Praetor.BodyB", ix + S(26), fy, C.laurel, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	local sal = tonumber(rp("salary")) or 0
+	if sal > 0 then
+		local st = P.L("hud_salary", { V = money(sal) })
+		surface.SetFont("Praetor.BodyB")
+		local mw = surface.GetTextSize(moneyTxt)
+		local room = iw - S(26) - mw - S(30)
+		st = UI.Fit(st, "Praetor.Tiny", room)
+		surface.SetFont("Praetor.Tiny")
+		local sw = surface.GetTextSize(st)
+		shadowText(st, "Praetor.Tiny", ix + iw, fy, C.muted, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+		UI.Icon("clock", ix + iw - sw - S(20), fy - 8, 16, C.muted)
 	end
 
-	-- money and salary pills above the card, floating "+$" over them
-	local mx, my = x + S(4), y - S(40)
-	local mw = pill(mx, my, money(math.floor(show.money)), "Praetor.BodyB", C.laurel, "coin")
-	local sal = tonumber(rp("salary")) or 0
-	if sal > 0 then pill(mx + mw + S(8), my + S(4), "+" .. money(sal), "Praetor.Tiny", C.panel3, "clock", C.laurel) end
+	-- "+$100" / "-$50" float up over the card
 	for i = #floaters, 1, -1 do
 		local f = floaters[i]
 		local age = RealTime() - f.t
@@ -202,32 +248,29 @@ local function drawMain()
 			table.remove(floaters, i)
 		else
 			local a = 255 * math.min(1, (1.6 - age) * 2)
-			local fy = my - S(8) - age * S(36)
+			local fy2 = y - S(6) - age * S(36)
 			local txt = (f.v > 0 and "+" or "-") .. money(math.abs(f.v))
 			local col = f.v > 0 and C.laurel or C.crimsonL
-			draw.SimpleText(txt, "Praetor.H2", mx + S(14) + S(2), fy + S(2), Color(C.ink.r, C.ink.g, C.ink.b, a), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
-			draw.SimpleText(txt, "Praetor.H2", mx + S(14), fy, Color(col.r, col.g, col.b, a), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText(txt, "Praetor.H2", x + S(8) + S(2), fy2 + S(2), Color(C.ink.r, C.ink.g, C.ink.b, a), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText(txt, "Praetor.H2", x + S(8), fy2, Color(col.r, col.g, col.b, a), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 		end
 	end
 
-	-- states over the money: wanted (blinks), arrested, license
+	-- states over the card: wanted (blinks), arrested, license
 	local chips = {}
-	if rp("wanted") then chips[#chips + 1] = { P.L("sb_wanted"), C.crimson, "flag", blink = true } end
+	if rp("wanted") then chips[#chips + 1] = { P.L("sb_wanted"), C.crimson, "wanted", blink = true } end
 	if rp("Arrested") then chips[#chips + 1] = { P.L("hud_arrested"), C.amber, "jail" } end
-	if rp("HasGunlicense") then chips[#chips + 1] = { P.L("sb_license"), C.sky, "license" } end
-	local cx = x + S(4)
-	local cy = my - S(34)
+
+	local cx = x
+	local cy = y - S(10) - pillH
 	for _, c in ipairs(chips) do
-		if not c.blink or math.floor(RealTime() * 3) % 2 == 0 then
-			local w2 = pill(cx, cy, c[1], "Praetor.Tiny", c[2], c[3])
-			cx = cx + w2 + S(6)
-		else
-			surface.SetFont("Praetor.Tiny")
-			cx = cx + surface.GetTextSize(c[1]) + S(48)
-		end
+		surface.SetFont("Praetor.Tiny")
+		local cw = surface.GetTextSize(c[1]) + S(36)
+		if not c.blink or math.floor(RealTime() * 3) % 2 == 0 then pill(cx, cy, c[1], "Praetor.Tiny", c[2], c[3]) end
+		cx = cx + cw + S(6)
 	end
 	if rp("wanted") and rp("wantedReason") then
-		draw.SimpleText(UI.Fit(tostring(rp("wantedReason")), "Praetor.Small", S(360)), "Praetor.Small", x + S(6), cy - S(14), C.crimsonL, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		shadowText(UI.Fit(tostring(rp("wantedReason")), "Praetor.Small", W), "Praetor.Small", x + S(2), cy - S(6), C.crimsonL, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 	end
 end
 

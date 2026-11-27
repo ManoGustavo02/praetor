@@ -169,7 +169,7 @@ P.AddTab("chips", {
 				local tw = tagsWidth(tags)
 				local showTags = tw <= nw * 0.6
 				local nameW = showTags and (nw - tw - S(6)) or nw
-				UI.Text(UI.Fit(tostring(cc.n or "?"), "Praetor.BodyB", nameW), "Praetor.BodyB", nx, S(19), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				UI.Text(UI.Fit(tostring(cc.n or "?"), "Praetor.BodyB", nameW), "Praetor.BodyB", nx, S(18), C.ivory, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 				if showTags then
 					surface.SetFont("Praetor.BodyB")
 					local tx = nx + math.min(surface.GetTextSize(UI.Fit(tostring(cc.n or "?"), "Praetor.BodyB", nameW)), nameW) + S(8)
@@ -192,7 +192,7 @@ P.AddTab("chips", {
 					for _, t in ipairs(tags) do names[#names + 1] = t[1] end
 					line = line .. "  ·  " .. table.concat(names, ", ")
 				end
-				UI.Text(UI.Fit(line, "Praetor.Small", nw - S(24)), "Praetor.Small", nx + S(24), S(43), (not showTags and bad) and C.amber or C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				UI.Text(UI.Fit(line, "Praetor.Small", nw - S(24)), "Praetor.Small", nx + S(24), S(44), (not showTags and bad) and C.amber or C.muted, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 			end
 			return row
 		end

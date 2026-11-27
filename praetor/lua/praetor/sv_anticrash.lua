@@ -183,9 +183,30 @@ hook.Add("Think", "Praetor.AntiCrash", function()
 	local avg = sum / #frames
 	state.avg = avg * 1000
 	if dt * 1000 > state.peak then state.peak = dt * 1000 end
-	if not on("ac_lag") or sum < 0.9 then return end
+	if not on("ac_lag") then return end
 	-- the first minute of a map is loading, not a crash
 	if now - mapStart < 60 then return end
+	-- one tick of more than a second with props stuck in each other: a physics
+	-- pile-up is starting, act at once instead of waiting for the average
+	if dt > 1 and state.stage == 0 and now >= cooldown then
+		local busy, _, stuck = physicsBusy()
+		if busy and stuck >= 4 then
+			local n, owners = freezePenetrating()
+			state.stage = 1
+			lagSince = lagSince or now
+			cooldown = now + 1
+			local who = ownersText(owners)
+			remember("freeze", n, who)
+			if n > 0 then
+				local ms = math.Round(dt * 1000) .. " ms"
+				P.Log("security", "l_ac_freeze", { V = n, V2 = who, S = ms })
+				secLog(nil, "ac_freeze", n .. " props, " .. ms .. (who ~= "" and (" - " .. who) or ""))
+				alertStaff("n_ac_freeze", { V = n, S = who ~= "" and who or "-" })
+			end
+			return
+		end
+	end
+	if sum < 0.9 then return end
 	-- the server can never be faster than its tick rate: compare above that
 	local limit = math.max(0.05, TICK * 2, P.Setting("ac_lag_ms") / 1000)
 	-- one long frame (a hitch) pushes the average up for a second: only count
@@ -283,6 +304,152 @@ hook.Add("PlayerSpawnedProp", "Praetor.ACSpawnFreeze", function(ply, _, e)
 		end
 	end)
 end)
+
+-- ------------------------------------------------------------------ big contraptions
+-- Crash dupes are usually many props piled in the same spot and tied with ropes.
+-- Pasted frozen they do nothing; unfrozen all at once, the physics has to solve
+-- every collision and every rope in one tick and the server hangs or dies.
+--  * Piled props: props whose centres sit in the same spot (3 or more in a few
+--    units). Normal builds almost never do that, so it is a safe sign.
+--  * Unfreezing (physgun reload) a contraption of ac_unfreeze_min+ frozen props:
+--    when many of them are piled it stays frozen; otherwise it is unfrozen a few
+--    props per tick while the server is watched, and if the ticks turn slow
+--    everything goes back to frozen. A normal car or house just unfreezes over a
+--    few ticks.
+--  * A dupe pasted already unfrozen with many piled props is frozen at once.
+
+-- how many of these entities share their spot with 2+ others
+local function piled(list)
+	local cells, n = {}, 0
+	for _, e in ipairs(list) do
+		if IsValid(e) then
+			local p = e:WorldSpaceCenter()
+			local k = math.floor(p.x / 4) .. ":" .. math.floor(p.y / 4) .. ":" .. math.floor(p.z / 4)
+			cells[k] = (cells[k] or 0) + 1
+		end
+	end
+	for _, c in pairs(cells) do if c >= 3 then n = n + c end end
+	return n
+end
+P.ACPiled = piled
+
+local function tooPiled(n, total)
+	return n >= math.max(8, math.ceil(total * 0.2))
+end
+
+local unfreezeJobs = {}
+local jobLast = SysTime()
+
+hook.Add("OnPhysgunReload", "Praetor.ACUnfreeze", function(_, ply)
+	if not on("ac_unfreeze") or not IsValid(ply) or P.IsOwner(ply) then return end
+	if unfreezeJobs[ply] then return false end
+	local ent = ply:GetEyeTrace().Entity
+	if not IsValid(ent) or ent:IsPlayer() or ent:IsWorld() then return end
+	local all = constraint.GetAllConstrainedEntities(ent) or { ent }
+	local objs, list = {}, {}
+	for _, e in pairs(all) do
+		if IsValid(e) then
+			list[#list + 1] = e
+			for i = 0, e:GetPhysicsObjectCount() - 1 do
+				local po = e:GetPhysicsObjectNum(i)
+				if IsValid(po) and not po:IsMoveable() and hook.Run("CanPlayerUnfreeze", ply, e, po) ~= false then
+					objs[#objs + 1] = { e, po }
+				end
+			end
+		end
+	end
+	local min = math.max(5, tonumber(P.Setting("ac_unfreeze_min")) or 25)
+	if #objs < min then return end -- small: GMod unfreezes it as always
+
+	local n = piled(list)
+	if tooPiled(n, #list) then
+		P.Notify(ply, "n_ac_piled_you", { V = n }, "warn")
+		P.Log("security", "l_ac_piled", { A = P.LogPly(ply), V = n, V2 = #list }, { ply })
+		secLog(ply, "ac_piled", n .. " / " .. #list .. " props piled, unfreeze refused")
+		alertStaff("n_ac_piled", { S = ply:Nick(), V = n })
+		return false
+	end
+	unfreezeJobs[ply] = { objs = objs, i = 0, done = {}, slow = 0, total = #objs }
+	ply:SendLua("if GAMEMODE.UnfrozeObjects then GAMEMODE:UnfrozeObjects(" .. #objs .. ") end")
+	return false
+end)
+
+local function refreeze(job)
+	for _, o in ipairs(job.done) do
+		if IsValid(o[2]) then
+			o[2]:EnableMotion(false)
+			o[2]:Sleep()
+		end
+	end
+end
+
+hook.Add("Think", "Praetor.ACUnfreeze", function()
+	local now = SysTime()
+	local dt = now - jobLast
+	jobLast = now
+	if not next(unfreezeJobs) then return end
+	for ply, job in pairs(unfreezeJobs) do
+		-- a very slow tick, or a few slow ones, while it unfreezes: back to frozen
+		if job.i > 0 then
+			if dt > 0.5 then job.slow = job.slow + 2 elseif dt > 0.2 then job.slow = job.slow + 1 end
+		end
+		if job.slow >= 2 then
+			refreeze(job)
+			unfreezeJobs[ply] = nil
+			if IsValid(ply) then
+				local ms = math.Round(dt * 1000) .. " ms"
+				P.Notify(ply, "n_ac_unfreeze_stop_you", { V = #job.done }, "warn")
+				P.Log("security", "l_ac_unfreeze_stop", { A = P.LogPly(ply), V = #job.done, V2 = job.total, S = ms }, { ply })
+				secLog(ply, "ac_unfreeze", #job.done .. " / " .. job.total .. " props, " .. ms)
+				alertStaff("n_ac_unfreeze_stop", { S = ply:Nick(), V = #job.done })
+			end
+		elseif not IsValid(ply) then
+			unfreezeJobs[ply] = nil
+		elseif job.i < #job.objs then
+			for _ = 1, 6 do
+				job.i = job.i + 1
+				local o = job.objs[job.i]
+				if not o then break end
+				if IsValid(o[1]) and IsValid(o[2]) and not o[2]:IsMoveable() then
+					o[2]:EnableMotion(true)
+					o[2]:Wake()
+					job.done[#job.done + 1] = o
+				end
+			end
+			job.finished = now
+		elseif now - (job.finished or now) > 3 then
+			-- watched for 3 seconds after the last prop: all fine
+			unfreezeJobs[ply] = nil
+		end
+	end
+end)
+hook.Add("PlayerDisconnected", "Praetor.ACUnfreeze", function(ply) unfreezeJobs[ply] = nil end)
+
+-- a dupe pasted unfrozen with a pile of props in it (called by the dupe guard)
+function P.ACCheckPasted(ply, list)
+	if not on("ac_unfreeze") or not istable(list) or (IsValid(ply) and P.IsOwner(ply)) then return end
+	local arr, moving = {}, 0
+	for _, e in pairs(list) do
+		if IsValid(e) then
+			arr[#arr + 1] = e
+			local po = e:GetPhysicsObject()
+			if IsValid(po) and po:IsMoveable() then moving = moving + 1 end
+		end
+	end
+	if moving < 5 then return end
+	local n = piled(arr)
+	if not tooPiled(n, #arr) then return end
+	for _, e in ipairs(arr) do
+		local po = e:GetPhysicsObject()
+		if IsValid(po) then po:EnableMotion(false) po:Sleep() end
+	end
+	if IsValid(ply) then
+		P.Notify(ply, "n_ac_piled_you", { V = n }, "warn")
+		P.Log("security", "l_ac_piled", { A = P.LogPly(ply), V = n, V2 = #arr }, { ply })
+		secLog(ply, "ac_piled", n .. " / " .. #arr .. " props piled, pasted unfrozen: frozen")
+		alertStaff("n_ac_piled", { S = ply:Nick(), V = n })
+	end
+end
 
 -- ------------------------------------------------------------------ physics budget
 
