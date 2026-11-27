@@ -309,11 +309,14 @@ end
 
 -- height of a line of a name: names with Cyrillic, Asian... letters use a taller font
 function UI.NameH(text, font)
-	return UI.FontH(UI.FontFor and UI.FontFor(tostring(text or ""), font) or font)
+	text = tostring(text or "")
+	if UI.PlainName then text = UI.PlainName(text) end
+	return UI.FontH(UI.FontFor and UI.FontFor(text, font) or font)
 end
 
 function UI.Name(text, font, x, y, col, ax, ay, maxW, shadow)
 	text = tostring(text or "")
+	if UI.PlainName then text = UI.PlainName(text) end
 	local f = UI.FontFor and UI.FontFor(text, font) or font
 	if maxW then text = UI.Fit(text, f, maxW) end
 	if shadow then draw.SimpleText(text, f, x + 1, y + 1, Color(0, 0, 0, 160), ax, ay) end

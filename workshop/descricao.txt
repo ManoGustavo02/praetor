@@ -1,90 +1,102 @@
 [h1]Praetor Admin System[/h1]
-Praetor is a complete admin mod for Garry's Mod. It replaces SAM or ULX on its own, and everything is set up from one menu in the game, with no config files to edit.
+Praetor is a complete admin mod for Garry's Mod. It replaces SAM or ULX on its own and everything is set up from one menu in the game, with no config files to edit.
 
 [h2]Getting started[/h2]
 [list]
 [*]In the server console, run [b]praetor_owner add <your SteamID>[/b].
 [*]In the game, type [b]!menu[/b] (or bind a key to [b]praetor_menu[/b]).
 [*]Coming from SAM or ULX? Settings > Import brings over your ranks, users and bans.
+[*]Lost? The [b]Wiki[/b] tab explains every part of the addon, in English and Portuguese.
 [/list]
 
 [h2]Moderation[/h2]
 [list]
-[*][b]Ranks[/b] with inheritance and permissions you turn on or off with one click. Each rank can have its own colour and icon.
-[*][b]94 commands[/b] (kick, ban, jail, bring, freeze, spectate...) by chat (! or /), menu or scoreboard. Build your own with blocks, no code needed.
-[*][b]Warnings and bans[/b] with the full history of each player. A banned player sees the reason, the time left and your Discord link.
-[*][b]Reports[/b]: the player can attach a screenshot and talks with the staff member who takes it, who sees the damage, chat and past reports of both sides.
-[*][b]Logs[/b] of kills, damage, props, connections, DarkRP and TTT, kept even after a crash.
-[*][b]Staff panel[/b] (time on duty, punishments), support rooms (!sit) and promotions by time played.
+[*][b]Ranks[/b] with inheritance and permissions you switch on or off with one click, each with its own colour and icon.
+[*][b]Over 90 commands[/b] (kick, ban, jail, bring, freeze, spectate...) by chat, menu or TAB. Click a command to fill its arguments, or build your own with blocks, no code needed.
+[*][b]Player history[/b]: warnings, bans, notes and linked accounts of every player, even offline.
+[*][b]Reports[/b] with a screenshot and a chat between the player and the staff member who takes it.
+[*][b]Logs[/b] of kills, damage, props, connections, DarkRP and TTT, with a Discord webhook per category.
+[*][b]Staff tools[/b]: staff panel, support rooms (!sit), promotions by play time and a clean ESP for the staff.
 [/list]
 
 [h2]Server protection[/h2]
 [list]
-[*][b]AutoMod[/b] blocks bad words even with tricks (p.u.t.a, 4ss) and checks GIFs and Workshop outfits (Outfitter, PAC3) before anyone downloads them.
-[*][b]Anti-crash[/b] that freezes the props causing lag, a [b]dupe blocker[/b], alt accounts of banned players and a [b]screenshot of a player's screen[/b].
-[*][b]Prop protection[/b]: players only touch their own props, the staff touches everything (CPPI; steps aside if FPP is installed).
-[*][b]Restrictions[/b] of weapons, entities, NPCs, vehicles, props and tools per rank, set with a right click in the Q menu.
+[*][b]Anti-crash[/b]: freezes the props causing lag, unfreezes big contraptions a little at a time and refuses the usual crash dupes.
+[*][b]E2 and Starfall[/b]: chips that use too much CPU are stopped, along with what they created.
+[*][b]Dupe and chip filter[/b]: dupes and chips with blocked words in the name are refused.
+[*][b]Restrictions[/b] of weapons, entities, NPCs, vehicles, props and tools per rank.
+[*][b]AutoMod[/b] for bad words, GIFs and Workshop outfits, plus prop protection and a security log.
+[/list]
+
+[h2]DarkRP[/h2]
+[list]
+[*][b]HUD[/b] with picture, name, job, health, armor, hunger, money and gun license.
+[*][b]F4 menu[/b] read from your DarkRP: jobs, shop and a City tab with the mayor, the laws and every RP command you can use.
+[*][b]RP commands drawer[/b] on the edge of the screen, and commands that also work in Portuguese (/procurar, /soltardinheiro...).
+[*][b]Job over the head[/b], with gun license, wanted and arrested seals.
 [/list]
 
 [h2]For the players[/h2]
 [list]
-[*][b]Chat[/b] with rank tags, avatars, GIFs, links and command suggestions.
-[*][b]Scoreboard[/b] that adapts to the gamemode, with optional music, and name tags above heads.
-[*][b]Loading screen[/b] with your server name, tips, music and the real download progress.
-[*][b]Votes[/b] (polls, map vote, votekick, voteban, votemute) and timed [b]announcements[/b].
+[*][b]Chat[/b] with rank tags, avatars and GIFs.
+[*][b]Scoreboard[/b] that adapts to the gamemode, and a [b]loading screen[/b] with your server name, tips and music.
+[*][b]Votes[/b] (polls, map vote, votekick) and [b]announcements[/b] in the middle, top, corner or chat.
 [/list]
 
-[h2]DarkRP[/h2]
-Its own HUD and F4 menu, read from your DarkRP setup: each job with its model, description, weapons, salary and slots, plus the shop and RP commands (drop money, sell doors, wanted, lockdown...). Job bans and whitelists. Each part can be turned off.
-
 [h2]Works with[/h2]
-Sandbox, DarkRP, TTT, Murder, Prop Hunt and more. Addons made for ULX, SAM or CAMI keep working. Discord webhook per log category. English and Portuguese.
+Sandbox, DarkRP, TTT, Murder, Prop Hunt and more. Addons made for ULX, SAM or CAMI keep working. English and Portuguese.
 
 [b]Pairs with Blackbox - Reports & Damage Logs[/b] (also mine): its punishments are saved in Praetor's bans.
 
 [hr][/hr]
 
 [h1]Praetor Admin System[/h1]
-O Praetor é um admin mod completo para Garry's Mod. Substitui o SAM ou o ULX sozinho, e tudo é configurado num menu dentro do jogo, sem editar arquivo.
+O Praetor é um admin mod completo para Garry's Mod. Substitui o SAM ou o ULX sozinho e tudo é configurado num menu dentro do jogo, sem editar arquivo.
 
 [h2]Primeiros passos[/h2]
 [list]
 [*]No console do servidor, rode [b]praetor_owner add <seu SteamID>[/b].
 [*]No jogo, digite [b]!menu[/b] (ou coloque uma tecla em [b]praetor_menu[/b]).
 [*]Vem do SAM ou ULX? Configurações > Importar traz seus cargos, usuários e bans.
+[*]Ficou com dúvida? A aba [b]Wiki[/b] explica cada parte do addon, em português e inglês.
 [/list]
 
 [h2]Moderação[/h2]
 [list]
-[*][b]Cargos[/b] com herança e permissões que você liga ou desliga com um clique. Cada cargo pode ter sua cor e seu ícone.
-[*][b]94 comandos[/b] (kick, ban, jail, bring, freeze, spectate...) pelo chat (! ou /), menu ou TAB. Monte os seus com blocos, sem programar.
-[*][b]Avisos e bans[/b] com o histórico completo de cada jogador. Quem é banido vê o motivo, o tempo que falta e o link do seu Discord.
-[*][b]Denúncias[/b]: o jogador pode anexar um print e conversa com o staff que pegar o caso, que vê o dano, o chat e as denúncias antigas dos dois lados.
-[*][b]Logs[/b] de mortes, dano, props, conexões, DarkRP e TTT, guardados mesmo depois de um crash.
-[*][b]Painel da staff[/b] (tempo em serviço, punições), salas de atendimento (!sit) e promoção por tempo de jogo.
+[*][b]Cargos[/b] com herança e permissões que você liga ou desliga com um clique, cada um com sua cor e ícone.
+[*][b]Mais de 90 comandos[/b] (kick, ban, jail, bring, freeze, spectate...) pelo chat, menu ou TAB. Clique num comando para preencher os argumentos, ou monte os seus com blocos, sem programar.
+[*][b]Histórico do jogador[/b]: avisos, bans, anotações e contas ligadas de cada jogador, mesmo offline.
+[*][b]Denúncias[/b] com print e um chat entre o jogador e o staff que pegar o caso.
+[*][b]Logs[/b] de mortes, dano, props, conexões, DarkRP e TTT, com webhook do Discord por categoria.
+[*][b]Ferramentas da staff[/b]: painel, salas de atendimento (!sit), promoção por tempo de jogo e um ESP limpo para a staff.
 [/list]
 
 [h2]Proteção do servidor[/h2]
 [list]
-[*][b]AutoMod[/b] bloqueia palavrões mesmo com truque (p.u.t.a, 4ss) e checa GIFs e roupas da Oficina (Outfitter, PAC3) antes de alguém baixar.
-[*][b]Anti-crash[/b] que congela os props que estão causando lag, [b]bloqueador de dupes[/b], contas secundárias de banidos e [b]print da tela de um jogador[/b].
-[*][b]Proteção de props[/b]: o jogador só mexe nos próprios props, a staff mexe em tudo (CPPI; sai da frente se o FPP estiver instalado).
-[*][b]Restrições[/b] de armas, entidades, NPCs, veículos, props e ferramentas por cargo, com o botão direito no menu Q.
+[*][b]Anti-crash[/b]: congela os props que causam lag, descongela construções grandes aos poucos e recusa as dupes de crash conhecidas.
+[*][b]E2 e Starfall[/b]: chips que usam CPU demais são parados, junto com o que eles criaram.
+[*][b]Filtro de dupes e chips[/b]: dupes e chips com palavras bloqueadas no nome são recusados.
+[*][b]Restrições[/b] de armas, entidades, NPCs, veículos, props e ferramentas por cargo.
+[*][b]AutoMod[/b] para palavrões, GIFs e roupas da Oficina, além de proteção de props e log de segurança.
+[/list]
+
+[h2]DarkRP[/h2]
+[list]
+[*][b]HUD[/b] com foto, nome, profissão, vida, colete, fome, dinheiro e porte de armas.
+[*][b]Menu F4[/b] lido do seu DarkRP: profissões, loja e uma aba Cidade com o prefeito, as leis e todos os comandos de RP que você pode usar.
+[*][b]Gaveta de comandos de RP[/b] na borda da tela, e comandos que também funcionam em português (/procurar, /soltardinheiro...).
+[*][b]Profissão em cima da cabeça[/b], com selos de porte, procurado e preso.
 [/list]
 
 [h2]Para os jogadores[/h2]
 [list]
-[*][b]Chat[/b] com tag do cargo, avatar, GIFs, links e sugestão de comandos.
-[*][b]TAB[/b] que se adapta ao gamemode, com música opcional, e nome em cima da cabeça dos jogadores.
-[*][b]Tela de loading[/b] com o nome do servidor, dicas, música e o progresso real dos downloads.
-[*][b]Votações[/b] (enquete, mapa, votekick, voteban, votemute) e [b]anúncios[/b] automáticos.
+[*][b]Chat[/b] com tag do cargo, avatar e GIFs.
+[*][b]TAB[/b] que se adapta ao gamemode, e [b]tela de loading[/b] com o nome do servidor, dicas e música.
+[*][b]Votações[/b] (enquete, mapa, votekick) e [b]anúncios[/b] no meio, no topo, no canto ou no chat.
 [/list]
 
-[h2]DarkRP[/h2]
-HUD e menu F4 próprios, lidos do seu DarkRP: cada profissão com modelo, descrição, armas, salário e vagas, além da loja e dos comandos de RP (dropar dinheiro, vender portas, procurado, toque de recolher...). Ban e whitelist de profissão. Cada parte pode ser desligada.
-
 [h2]Funciona com[/h2]
-Sandbox, DarkRP, TTT, Murder, Prop Hunt e outros. Addons feitos para ULX, SAM ou CAMI continuam funcionando. Webhook do Discord por categoria de log. Inglês e português.
+Sandbox, DarkRP, TTT, Murder, Prop Hunt e outros. Addons feitos para ULX, SAM ou CAMI continuam funcionando. Inglês e português.
 
 [b]Combina com o Blackbox - Reports & Damage Logs[/b] (também meu): as punições dele ficam salvas nos bans do Praetor.
 

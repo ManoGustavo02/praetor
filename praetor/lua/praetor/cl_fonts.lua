@@ -45,6 +45,46 @@ local function needsWide(text)
 	return false
 end
 
+-- "Fancy" names made of math letters (𝓝𝓪𝓶𝓮, 𝐍𝐚𝐦𝐞, ℕ𝕒𝕞𝕖...) or full-width letters
+-- (Ｎａｍｅ): no font in the game has them and they showed as boxes. They are drawn
+-- as the plain letters they stand for.
+local LETTERLIKE = {
+	[0x210E] = "h", [0x212C] = "B", [0x2130] = "E", [0x2131] = "F", [0x210B] = "H", [0x2110] = "I", [0x2112] = "L",
+	[0x2133] = "M", [0x211B] = "R", [0x212F] = "e", [0x210A] = "g", [0x2134] = "o", [0x212D] = "C", [0x210C] = "H",
+	[0x2111] = "I", [0x211C] = "R", [0x2128] = "Z", [0x2102] = "C", [0x210D] = "H", [0x2115] = "N", [0x2119] = "P",
+	[0x211A] = "Q", [0x211D] = "R", [0x2124] = "Z",
+}
+local plainCache, plainCount = {}, 0
+local function plainChar(c)
+	if c >= 0x1D400 and c <= 0x1D6A3 then
+		local k = (c - 0x1D400) % 52
+		return k < 26 and string.char(65 + k) or string.char(97 + k - 26)
+	end
+	if c >= 0x1D7CE and c <= 0x1D7FF then return string.char(48 + (c - 0x1D7CE) % 10) end
+	if c >= 0xFF01 and c <= 0xFF5E then return string.char(c - 0xFEE0) end
+	if c >= 0x24B6 and c <= 0x24CF then return string.char(65 + c - 0x24B6) end -- Ⓐ
+	if c >= 0x24D0 and c <= 0x24E9 then return string.char(97 + c - 0x24D0) end -- ⓐ
+	if c >= 0x1F130 and c <= 0x1F149 then return string.char(65 + c - 0x1F130) end -- 🄰
+	if c >= 0x1F150 and c <= 0x1F169 then return string.char(65 + c - 0x1F150) end -- 🅐
+	if c >= 0x1F170 and c <= 0x1F189 then return string.char(65 + c - 0x1F170) end -- 🅰
+	return LETTERLIKE[c]
+end
+function P.UI.PlainName(text)
+	if not isstring(text) or not text:find("[\240-\244\226\239]") then return text end
+	local hit = plainCache[text]
+	if hit then return hit end
+	local ok, out = pcall(function()
+		local parts = {}
+		for _, c in utf8.codes(text) do parts[#parts + 1] = plainChar(c) or utf8.char(c) end
+		return table.concat(parts)
+	end)
+	out = ok and out or text
+	if plainCount > 2000 then plainCache, plainCount = {}, 0 end
+	plainCache[text] = out
+	plainCount = plainCount + 1
+	return out
+end
+
 function P.UI.FontFor(text, name)
 	if not isstring(text) or not text:find("[\128-\255]") then return name end
 	local need = wideCache[text]

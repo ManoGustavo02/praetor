@@ -194,7 +194,7 @@ local function drawPlayer(ply, alpha)
 	end
 
 	-- measure
-	local name = ply:Nick()
+	local name = UI.PlainName and UI.PlainName(ply:Nick()) or ply:Nick()
 	local nameFont = UI.FontFor("" .. name, "Praetor.OH.Name")
 	-- very long names are cut, so the card keeps a sane size and the rank badge
 	-- under the name is always readable

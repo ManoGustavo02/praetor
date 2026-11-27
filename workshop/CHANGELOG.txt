@@ -18,6 +18,7 @@ A DarkRP update (new HUD, City tab with the mayor, RP commands drawer, commands 
 [*][b]Staff ESP redone[/b]: minimal and clean. The player model in the rank colour through walls, corner brackets, the full name (never cut), SteamID and distance, and thin health and armor bars with the numbers. No more side card or picture.
 [*][b]Security log[/b]: much more exact. No more alerts for the owner changing their own rank, for ranks applied by SAM / ULX at join, for a minimized game not sending a screenshot, for an ESP chip when the player had none, or for clicking fast in the menu (only many in a minute). The backdoor scan only alerts for known backdoor names.
 [*][b]Jail sign[/b]: long names and reasons fit (the reason wraps in up to 3 lines).
+[*][b]Stylized names[/b]: names written with fancy letters (bold or italic math letters, full-width, letters in circles or squares) no longer show up as boxes in the menu, TAB, HUD and over the head; they are shown as normal letters.
 [*][b]Layout[/b]: names, ranks and SteamIDs no longer touch each other in the TAB, staff panel, users, players, reports, promotions, security and spectate.
 [*]Screenshots tab: right click on a picture no longer gives an error.
 [/list]
@@ -41,6 +42,7 @@ Uma atualização de DarkRP (HUD novo, aba Cidade com o prefeito, gaveta de coma
 [*][b]ESP da staff refeito[/b]: minimalista e limpo. O modelo do jogador na cor do cargo através das paredes, cantos da caixa, o nome inteiro (nunca cortado), SteamID e distância, e barras finas de vida e colete com os números. Sem o cartão lateral e sem foto.
 [*][b]Log de segurança[/b]: muito mais exato. Sem alertas para o dono mudando o próprio cargo, para cargos aplicados pelo SAM / ULX na entrada, para jogo minimizado que não manda print, para chip de ESP quando o jogador não tinha nenhum, ou para cliques rápidos no menu (só muitos num minuto). A busca de backdoor só alerta nomes de backdoor conhecidos.
 [*][b]Placa da jail[/b]: nomes e motivos longos cabem (o motivo quebra em até 3 linhas).
+[*][b]Nomes estilizados[/b]: nomes escritos com letras decoradas (letras matemáticas em negrito ou itálico, largas, dentro de círculos ou quadrados) não aparecem mais como quadradinhos no menu, TAB, HUD e em cima da cabeça; elas aparecem como letras normais.
 [*][b]Layout[/b]: nomes, cargos e SteamIDs não ficam mais grudados no TAB, painel da staff, usuários, jogadores, denúncias, promoções, segurança e spectate.
 [*]Aba Prints: o botão direito numa imagem não dá mais erro.
 [/list]
